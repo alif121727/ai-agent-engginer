@@ -1,0 +1,41 @@
+{
+  "model": "Mazda RX-7",
+  "catalog": {
+    "merk": "Mazda",
+    "seri": "FD3S",
+    "tahun": "1992–2002",
+    "kategori": "klasik",
+    "mesin": "rotary twin-turbo 1.3L (13B-REW)",
+    "tenaga": "255–280 PS",
+    "torsi": "294 Nm",
+    "layout": "front mid-engine, RWD",
+    "berat": "1.270 kg",
+    "nol100": "5,3 dtk",
+    "vmax": "250 km/jam",
+    "sumber": "https://en.wikipedia.org/wiki/Mazda_RX-7"
+  },
+  "specs": [
+    {
+      "text": "rotary twin-turbo 1.3L (13B-REW) · 255–280 PS",
+      "source": "brief"
+    },
+    {
+      "text": "Torsi 294 Nm · front mid-engine, RWD",
+      "source": "brief"
+    },
+    {
+      "text": "0–100 km/jam 5,3 dtk · top speed 250 km/jam",
+      "source": "brief"
+    },
+    {
+      "text": "Berat 1.270 kg · produksi 1992–2002",
+      "source": "brief"
+    },
+    {
+      "text": "Rotary twin-turbo dengan distribusi bobot hampir sempurna.",
+      "source": "brief"
+    }
+  ],
+  "missing": [],
+  "note": "angka dari brief didahulukan; sisanya dari katalog yang bersumber Wikipedia"
+}

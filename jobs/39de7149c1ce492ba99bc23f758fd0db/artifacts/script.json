@@ -1,0 +1,41 @@
+{
+  "model": "Mazda RX-7",
+  "tagline": "Mesin tanpa piston, suara yang tidak bisa ditiru siapa pun.",
+  "lines": [
+    {
+      "sceneIndex": 0,
+      "onScreenText": "Mesin tanpa piston, suara yang tidak bisa dit…",
+      "voiceover": "Mazda RX-7. Mesin tanpa piston, suara yang tidak bisa ditiru siapa pun."
+    },
+    {
+      "sceneIndex": 1,
+      "onScreenText": "Mazda RX-7",
+      "voiceover": "Ini Mazda RX-7, 1992–2002. Mesin rotary twin-turbo 1.3L (13B-REW)."
+    },
+    {
+      "sceneIndex": 2,
+      "onScreenText": "rotary twin-turbo 1.3L",
+      "voiceover": "Salah satu andalannya: 0–100 km/jam 5,3 dtk · top speed 250 km/jam."
+    },
+    {
+      "sceneIndex": 3,
+      "onScreenText": "Torsi 294 Nm",
+      "voiceover": "Kabin Mazda FD3S, semua tersusun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "onScreenText": "0–100 km/jam 5,3 dtk",
+      "voiceover": "Di jalan, 255–280 PS, nol sampai seratus 5,3 dtk."
+    },
+    {
+      "sceneIndex": 5,
+      "onScreenText": "",
+      "voiceover": "rotary twin-turbo 1.3L (13B-REW) · 255–280 PS."
+    },
+    {
+      "sceneIndex": 6,
+      "onScreenText": "Mazda RX-7",
+      "voiceover": "Mazda RX-7. Mesin tanpa piston, suara yang tidak bisa ditiru siapa pun."
+    }
+  ]
+}

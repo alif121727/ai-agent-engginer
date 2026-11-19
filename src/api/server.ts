@@ -10,6 +10,7 @@ import { pickTheme } from '../core/theme.ts';
 import { loadCatalog, aliasesFor } from '../core/catalog.ts';
 import { planScenes, estimateCost } from '../pipeline/scenes.ts';
 import { paths, slugify, jobDir } from '../core/fsx.ts';
+import { assetFolderSlug } from '../visuals/types.ts';
 import {
   createJob,
   createStages,
@@ -428,8 +429,10 @@ export function createApp(opts: AppOptions = {}) {
   });
 
   // ---- own assets (upload from the browser, no extra dependency) ----
-  const ownDir = (model: string) =>
-    path.join(paths.assets, 'own', model.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase());
+  // Must resolve through the catalog: folders are named by hand after the
+  // catalog slug, so a naive slug of the display name ("mazda-rx-7") would
+  // write uploads where the pipeline never looks.
+  const ownDir = (model: string) => path.join(paths.assets, 'own', assetFolderSlug(model));
   const ASSET_EXT = /\.(jpe?g|png|webp|mp4|mov)$/i;
 
   /**

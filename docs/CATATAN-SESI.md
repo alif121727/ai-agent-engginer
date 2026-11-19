@@ -262,3 +262,51 @@ folder yang benar (`r34`→6 foto, `hachiroku`→5, `22b`→6, `gullwing`→3).
 kongkret (full frame, lensa prime, f/1.8, ISO 100, RAW) dan `NEGATIVE_PROMPT`
 ditambah artefak yang membuat mobil hasil generator terlihat seperti mainan
 (warna terlalu jenuh, kulit plastik, roda mengambang, bayangan ganda).
+
+---
+
+## 11. Sesi 5 — satu job lagi (Mazda RX-7, 45 dtk)
+
+Permintaan: jalankan satu job lagi. Dipilih **Mazda RX-7 (FD3S)**, model yang
+belum pernah dirender dan punya 6 foto di `assets/own/mazda-rx7-fd/`. Durasi
+45 dtk, bukan 30, supaya sekaligus membuktikan durasi benar-benar bisa diatur.
+
+Brief diambil dari katalog (`findModel('rx7')` + `detailBrief`), jadi tidak ada
+angka yang dikarang: rotary twin-turbo 1.3L 13B-REW, 255–280 PS, torsi 294 Nm,
+0–100 km/jam 5,3 dtk, top speed 250 km/jam, berat 1.270 kg.
+
+**Hasil** (job `39de7149c1ce492ba99bc23f758fd0db`):
+
+- 9/9 tahap `done`, tanpa error, waktu render ±3,5 menit.
+- Video 35,4 MB: H.264 1920×1080, 45,0 dtk tepat, audio AAC 48 kHz stereo,
+  −14,0 LUFS.
+- 7 scene, **7/7 aset `provider: local`** dari folder RX-7 (6 foto; scene 7
+  memakai ulang foto-1 karena scene lebih banyak dari foto).
+- QA **14/14 lulus**: resolusi, durasi, audio, tanpa-fallback, 6 frame dengan
+  ketajaman 13–22, "tidak-kosong" rata-rata 16,8, "tidak-beku" 6/6 frame beda.
+- Kecocokan scene ↔ foto sumber diuji dengan korelasi thumbnail 32×32:
+  scene-01..06 → foto-1..6, scene-07 → foto-1, semuanya **korelasi 1.000**.
+  Ini memastikan yang dirender memang RX-7, bukan gambar acak seperti kasus
+  picsum di sesi 1.
+
+### 11.1 Bug baru: panel unggah aset menulis ke folder yang salah
+
+Halaman detail menampilkan "Tersimpan di `assets/own/mazda-rx-7`", padahal
+folder nyata dan folder yang dibaca pipeline adalah `mazda-rx7-fd`. Penyebabnya
+`ownDir()` di `src/api/server.ts` membuat slug sendiri dari nama tampilan
+(`model.replace(...)`), bukan lewat `assetFolderSlug()`. Akibatnya setiap foto
+yang diunggah user untuk model katalog dengan nama folder kustom akan
+tersimpan di tempat yang tidak pernah dibaca pipeline — kegagalan senyap, sama
+seperti bug §4b tetapi di lapisan API.
+
+Perbaikan: `ownDir()` memakai `assetFolderSlug(model)`, sehingga unggah, daftar,
+saji, dan hapus semuanya menunjuk folder yang sama dengan pipeline.
+
+Bukti: tes baru "unggahan aset model katalog masuk ke folder yang dibaca
+pipeline". Dengan kode lama tes gagal (`berkas harus mendarat di
+…/assets/own/mazda-rx7-fd`); dengan kode baru lulus. `npm test`: **55 lulus,
+0 gagal**. Di browser panel aset kini menampilkan `assets/own/mazda-rx7-fd`
+dan 6 pratinjau foto.
+
+**Catatan login.** Username direset ke `admin123` (email `admin@studio.id`),
+karena kredensial yang tercatat sebelumnya sudah tidak cocok dengan DB.

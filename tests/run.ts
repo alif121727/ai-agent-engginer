@@ -475,6 +475,43 @@ await check('API menolak unggah berkas dengan ekstensi asing', async () => {
   }
 });
 
+await check('unggahan aset model katalog masuk ke folder yang dibaca pipeline', async () => {
+  const { app } = createApp({ startWorker: false });
+  const { assetFolderSlug, userAssetsFor } = await import('../src/visuals/types.ts');
+  const server = app.listen(0);
+  const port = (server.address() as { port: number }).port;
+  const base = `http://127.0.0.1:${port}`;
+  // A catalog name whose display form slugifies differently from its folder
+  // ("Mazda RX-7" -> "mazda-rx-7" vs the real "mazda-rx7-fd").
+  const model = 'Mazda RX-7';
+  const name = `uji-${Date.now()}.jpg`;
+  const login = await fetch(`${base}/api/login`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email: 'uji@studio.id', password: 'rahasia123' }),
+  });
+  const cookie = (login.headers.get('set-cookie') ?? '').split(';')[0];
+  const dir = path.join(process.cwd(), 'assets', 'own', assetFolderSlug(model));
+  try {
+    const upload = await fetch(`${base}/api/assets/${encodeURIComponent(model)}?name=${name}`, {
+      method: 'POST',
+      headers: { cookie, 'content-type': 'application/octet-stream' },
+      body: Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00]),
+    });
+    assert(upload.status === 201, `unggah harus 201, dapat ${upload.status}`);
+    assert(fs.existsSync(path.join(dir, name)), `berkas harus mendarat di ${dir}`);
+    const seen = userAssetsFor(model, path.join(process.cwd(), 'assets', 'own')).map((f) => path.basename(f));
+    assert(seen.includes(name), `pipeline harus melihat berkas yang baru diunggah (${seen.join(', ')})`);
+  } finally {
+    await fetch(`${base}/api/assets/${encodeURIComponent(model)}/${encodeURIComponent(name)}`, {
+      method: 'DELETE',
+      headers: { cookie },
+    }).catch(() => {});
+    fs.rmSync(path.join(dir, name), { force: true });
+    server.close();
+  }
+});
+
 await check('API menandai gambar stok acak dan menyajikan berkas aset', async () => {
   const { app } = createApp({ startWorker: false });
   const server = app.listen(0);

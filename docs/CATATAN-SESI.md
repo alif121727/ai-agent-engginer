@@ -94,9 +94,34 @@ Tiga job dijalankan penuh sampai `done`, semuanya 14 cek QA lulus:
 | `4c3a860f` | Koenigsegg Jesko | 30 dtk | generator gratis, **tanpa foto** | lulus |
 | `44575cde` | Lamborghini Huracan STO | 30 dtk | foto asli | lulus |
 | `c3ab4937` | Porsche Taycan Turbo S | 45 dtk | foto asli | lulus |
+| `dd99c58f` | Porsche 911 GT3 RS | 30 dtk | foto asli (6/6) | lulus |
 
 Job 45 dtk membuktikan durasi benar-benar bisa diatur, bukan hanya 30 dtk.
 Output: H.264 1920x1080 30 fps + audio AAC, durasi tepat sesuai brief.
+
+## 4b. Sesi 3 — 12 model punya foto tapi tidak pernah dipakai
+
+Ditemukan saat menjawab "apakah tugasnya sudah selesai". Bukan keluhan user,
+tapi bug senyap: `userAssetsFor()` mencari folder lewat `slugifyModel(model)`,
+sedangkan folder di `assets/own/` dinamai tangan dengan versi/generasi
+(`porsche-911-gt3-rs-992`, `ford-gt-2017`, `bmw-m4-competition-g82`). Untuk 12
+dari 30 model katalog, hasilnya `[]` → job diam-diam jatuh ke generator gambar
+walau foto asli tersedia. Tidak ada error, tidak ada peringatan.
+
+Perbaikan: `assetFolderSlug()` memakai `findModel(model)?.slug` lebih dulu
+(slug katalog = nama folder sebenarnya), dan `slugifyModel` hanya sebagai
+cadangan untuk model di luar katalog. Pesan bantuan unggah foto juga ikut
+memakai slug yang benar supaya user menaruh file di folder yang dibaca.
+
+Verifikasi: job `dd99c58f` (Porsche 911 GT3 RS) → 6/6 aset `provider: local`
+dari `porsche-911-gt3-rs-992`, video 1920x1080 30 dtk, QA 14/14 lulus.
+Tes regresi ditambahkan: "foto katalog terbaca meski nama foldernya beda dari
+slug otomatis" (41 pemeriksaan total).
+
+Catatan desain yang dijaga: folder `porsche-911-gt3` (di luar katalog) tetap
+sah, karena brief boleh menyebut model apa pun. Folder kosong seperti
+`toyota-gr-supra` dan `toyota-ae86` juga bukan kegagalan — model itu memang
+belum punya foto dan akan memakai generator.
 
 ## 5. Riwayat commit sesi ini
 

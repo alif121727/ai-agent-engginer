@@ -1,0 +1,57 @@
+services:
+  api:
+    build: .
+    restart: unless-stopped
+    env_file: [.env]
+    environment:
+      PORT: 8080
+      DB_KIND: ${DB_KIND:-sqlite}
+      DB_PATH: /app/data/studio.db
+      DATABASE_URL: ${DATABASE_URL:-}
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/data
+      - ./jobs:/app/jobs
+      - ./assets:/app/assets
+      - ./input:/app/input
+      - ./cache:/app/cache
+    depends_on:
+      db:
+        condition: service_healthy
+        required: false
+
+  worker:
+    build: .
+    restart: unless-stopped
+    env_file: [.env]
+    command: ["node", "--experimental-strip-types", "src/worker/main.ts"]
+    environment:
+      DB_KIND: ${DB_KIND:-sqlite}
+      DB_PATH: /app/data/studio.db
+      DATABASE_URL: ${DATABASE_URL:-}
+    volumes:
+      - ./data:/app/data
+      - ./jobs:/app/jobs
+      - ./assets:/app/assets
+      - ./input:/app/input
+      - ./cache:/app/cache
+    depends_on:
+      api:
+        condition: service_started
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    profiles: ["postgres"]
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-studio}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-studio}
+      POSTGRES_DB: ${POSTGRES_DB:-studio}
+    volumes:
+      - ./data/pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-studio}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5

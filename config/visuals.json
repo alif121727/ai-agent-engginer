@@ -1,0 +1,43 @@
+{
+  "adapters": {
+    "local": {
+      "id": "local",
+      "label": "Aset milik pengguna",
+      "kind": "local",
+      "enabled": true,
+      "requiresKey": false,
+      "description": "Foto/video di assets/own/<model>/ atau kolom referensi template. Prioritas tertinggi karena paling akurat."
+    },
+    "video-gen": {
+      "id": "video-gen",
+      "label": "Generator video (image-to-video)",
+      "kind": "video-gen",
+      "enabled": true,
+      "requiresKey": true,
+      "envKey": "VIDEO_PROVIDER_API_KEY",
+      "model": "provider-default-i2v",
+      "description": "Animasikan keyframe fotorealistik jadi klip 3-5 detik. Dipakai kalau kunci tersedia."
+    },
+    "image-gen": {
+      "id": "image-gen",
+      "label": "Generator gambar",
+      "kind": "image-gen",
+      "enabled": true,
+      "requiresKey": true,
+      "envKey": "IMAGE_PROVIDER_API_KEY",
+      "model": "provider-default-t2i",
+      "description": "Keyframe fotorealistik per scene. Kalau video-gen tidak ada, animasi memakai gerak kamera Remotion."
+    },
+    "stock-api": {
+      "id": "stock-api",
+      "label": "Stock footage",
+      "kind": "stock-api",
+      "enabled": true,
+      "requiresKey": true,
+      "envKey": "STOCK_API_KEY",
+      "model": "pexels",
+      "creditsFile": "assets/credits.json",
+      "description": "Klip stok berlisensi. Atribusi wajib disimpan di assets/credits.json."
+    }
+  }
+}

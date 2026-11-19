@@ -1,0 +1,56 @@
+{
+  "minDurasi": 30,
+  "maxDurasi": 600,
+  "workTime": {
+    "mode": "real",
+    "total": 90,
+    "perRole": 10
+  },
+  "agentPreset": "9-orang",
+  "visualAdapters": ["local", "video-gen", "image-gen", "stock-api"],
+  "connection": {
+    "probeIntervalMs": 5000,
+    "probeTimeoutMs": 3000,
+    "failuresToOffline": 3,
+    "successesToOnline": 2,
+    "probeUrls": [
+      "https://api.openai.com/v1/models",
+      "https://www.google.com/generate_204"
+    ],
+    "pauseLocalRendering": true,
+    "pauseWhenNoViewer": false
+  },
+  "cost": {
+    "maxCostPerJob": 5,
+    "maxCostPerHari": 25,
+    "currency": "USD",
+    "estimates": {
+      "perSceneImage": 0.04,
+      "perSceneVideo": 0.35,
+      "perSecondRender": 0.001,
+      "perSecondSpeech": 0.002
+    }
+  },
+  "quality": {
+    "minWidth": 1280,
+    "minHeight": 720,
+    "minSharpness": 60,
+    "maxRegenerations": 3,
+    "sceneHashDistance": 4,
+    "forbidTextInImage": true
+  },
+  "publish": {
+    "timezone": "Asia/Jakarta",
+    "lateToleranceMenit": 60,
+    "dryRun": true,
+    "maxRetries": 3
+  },
+  "render": {
+    "width": 1920,
+    "height": 1080,
+    "fps": 30,
+    "crf": 16,
+    "preset": "slow",
+    "loudnessLufs": -14
+  }
+}

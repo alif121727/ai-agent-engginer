@@ -1,0 +1,504 @@
+import express, { type NextFunction, type Request, type Response } from 'express';
+import fs from 'node:fs';
+import path from 'node:path';
+import { z } from 'zod';
+import { logger } from '../core/log.ts';
+import { bus, currentConnection, recordEvent, wireBus } from '../core/bus.ts';
+import { loadDefaults, loadAgents, loadAdapters, loadThemes } from '../core/config.ts';
+import { parseBrief, resolveDuration, BriefError } from '../core/brief.ts';
+import { pickTheme } from '../core/theme.ts';
+import { planScenes, estimateCost } from '../pipeline/scenes.ts';
+import { paths, slugify, jobDir } from '../core/fsx.ts';
+import {
+  createJob,
+  createStages,
+  getJob,
+  listJobs,
+  listStages,
+  listEvents,
+  getSetting,
+  setSetting,
+  updateJob,
+  dailyCost,
+} from '../db/repo.ts';
+import { stagesFor, listPresets } from '../agents/registry.ts';
+import {
+  authenticate,
+  createSession,
+  createUser,
+  destroySession,
+  purgeExpiredSessions,
+  sessionUser,
+  userCount,
+  type User,
+} from '../auth/auth.ts';
+import { rateLimit } from '../auth/rate-limit.ts';
+import { Worker } from '../worker/worker.ts';
+import { loadCapability } from '../pipeline/llm.ts';
+import { publishJob, listPublications } from '../publish/instagram.ts';
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace Express {
+    interface Request {
+      user?: User;
+    }
+  }
+}
+
+const COOKIE = 'studio_session';
+const loginLimiter = rateLimit(10, 60_000);
+
+export interface AppOptions {
+  worker?: Worker;
+  /** Disable the background monitor in tests. */
+  startWorker?: boolean;
+}
+
+export function createApp(opts: AppOptions = {}) {
+  wireBus();
+  const app = express();
+  app.disable('x-powered-by');
+  app.use(express.json({ limit: '2mb' }));
+
+  const worker = opts.worker;
+
+  // ---- auth helpers ----
+  const readUser = async (req: Request): Promise<User | null> => {
+    const token = parseCookies(req.headers.cookie ?? '')[COOKIE];
+    return sessionUser(token);
+  };
+
+  const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
+    const user = await readUser(req);
+    if (!user) {
+      res.status(401).json({ error: 'perlu login' });
+      return;
+    }
+    req.user = user;
+    next();
+  };
+
+  // ---- public ----
+  app.get('/api/health', (_req, res) => {
+    res.json({
+      ok: true,
+      connection: currentConnection(),
+      db: process.env.DB_KIND ?? 'sqlite',
+      ffmpeg: Boolean(process.env.FFMPEG_OK ?? 'true'),
+    });
+  });
+
+  app.get('/api/bootstrap', async (_req, res) => {
+    const count = await userCount();
+    res.json({ needsSetup: count === 0 });
+  });
+
+  app.post('/api/setup', async (req, res) => {
+    if ((await userCount()) > 0) {
+      res.status(409).json({ error: 'setup sudah dilakukan' });
+      return;
+    }
+    const parsed = z.object({ email: z.string().email(), password: z.string().min(8) }).safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: 'email/password tidak valid (password minimal 8 karakter)' });
+      return;
+    }
+    try {
+      const user = await createUser(parsed.data.email, parsed.data.password);
+      const token = await createSession(user.id);
+      res.setHeader('Set-Cookie', cookieHeader(token));
+      res.json({ user });
+    } catch (err) {
+      res.status(400).json({ error: err instanceof Error ? err.message : 'gagal membuat akun' });
+    }
+  });
+
+  app.post('/api/login', async (req, res) => {
+    if (!loginLimiter.allow(req.ip ?? 'unknown')) {
+      res.status(429).json({ error: 'terlalu banyak percobaan, coba lagi nanti' });
+      return;
+    }
+    const parsed = z.object({ email: z.string(), password: z.string() }).safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: 'email/password wajib' });
+      return;
+    }
+    const user = await authenticate(parsed.data.email, parsed.data.password);
+    if (!user) {
+      res.status(401).json({ error: 'email atau password salah' });
+      return;
+    }
+    await purgeExpiredSessions();
+    const token = await createSession(user.id);
+    res.setHeader('Set-Cookie', cookieHeader(token));
+    res.json({ user });
+  });
+
+  app.post('/api/logout', async (req, res) => {
+    const token = parseCookies(req.headers.cookie ?? '')[COOKIE];
+    if (token) await destroySession(token);
+    res.setHeader('Set-Cookie', `${COOKIE}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax`);
+    res.json({ ok: true });
+  });
+
+  app.get('/api/me', async (req, res) => {
+    res.json({ user: await readUser(req) });
+  });
+
+  // ---- everything below needs a session ----
+  app.use('/api', requireAuth);
+
+  app.get('/api/config', async (_req, res) => {
+    const defaults = loadDefaults();
+    const themes = loadThemes();
+    const agents = loadAgents();
+    const adapters = loadAdapters();
+    const minDurasi = await getSetting('minDurasi', defaults.minDurasi);
+    const workTime = await getSetting('workTime', defaults.workTime);
+    res.json({
+      minDurasi,
+      maxDurasi: defaults.maxDurasi,
+      workTime,
+      presets: listPresets(),
+      agentPreset: await getSetting('agentPreset', defaults.agentPreset),
+      themes: Object.values(themes.themes).map((t) => ({
+        id: t.id,
+        palette: t.palette,
+        mood: t.mood,
+        keywords: t.keywords,
+      })),
+      adapters: Object.values(adapters.adapters).map((a) => ({
+        id: a.id,
+        label: a.label,
+        kind: a.kind,
+        enabled: a.enabled,
+        configured: a.requiresKey ? Boolean(a.envKey && process.env[a.envKey]) : true,
+      })),
+      cost: { maxCostPerJob: defaults.cost.maxCostPerJob, maxCostPerHari: defaults.cost.maxCostPerHari },
+      connection: defaults.connection,
+      llm: loadCapability(),
+      agents: Object.values(agents.agents).map((a) => ({
+        id: a.id,
+        name: a.name,
+        short: a.short,
+        role: a.role,
+        kind: a.kind,
+        allowedTools: a.allowedTools,
+      })),
+    });
+  });
+
+  app.post('/api/estimate', async (req, res) => {
+    const defaults = loadDefaults();
+    const minDurasi = await getSetting('minDurasi', defaults.minDurasi);
+    const parsed = z.object({ durasi: z.number().positive(), rasio: z.string().optional(), model: z.string().optional() }).safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: 'durasi wajib angka positif' });
+      return;
+    }
+    const { durationSec, bumped } = resolveDuration(
+      { model: parsed.data.model ?? 'mobil', durasi: parsed.data.durasi },
+      minDurasi,
+      defaults.maxDurasi,
+    );
+    const themes = loadThemes();
+    const theme = pickTheme(parsed.data.model ?? 'mobil', themes.themes, themes.defaultTheme);
+    const scenes = planScenes({
+      brief: { model: parsed.data.model ?? 'mobil' },
+      durationSec,
+      theme,
+      aspect: parsed.data.rasio ?? '16:9',
+    });
+    const adapters = loadAdapters();
+    const withVideo = Object.values(adapters.adapters).some(
+      (a) => a.kind === 'video-gen' && a.envKey && process.env[a.envKey],
+    );
+    const cost = estimateCost({
+      durationSec,
+      sceneCount: scenes.length,
+      withVideo,
+      estimates: defaults.cost.estimates,
+    });
+    res.json({
+      durationSec,
+      bumped,
+      sceneCount: scenes.length,
+      cost,
+      minutes: Math.max(1, Math.round((scenes.length * 20 + durationSec) / 60)),
+      themeId: theme.id,
+    });
+  });
+
+  app.post('/api/jobs', async (req, res) => {
+    const defaults = loadDefaults();
+    const minDurasi = await getSetting('minDurasi', defaults.minDurasi);
+    try {
+      const rawBrief = req.body?.brief ?? req.body;
+      const brief = typeof rawBrief === 'string' ? parseBrief(rawBrief) : parseBrief(JSON.stringify(rawBrief));
+      const { durationSec, bumped } = resolveDuration(brief, minDurasi, defaults.maxDurasi);
+      const themes = loadThemes();
+      const theme = pickTheme(brief.model, themes.themes, themes.defaultTheme);
+      const aspect = brief.rasio ?? '16:9';
+      const preset = String(req.body?.preset ?? (await getSetting('agentPreset', defaults.agentPreset)));
+      const mode = req.body?.mode === 'final' ? 'final' : 'draft';
+      const scenes = planScenes({ brief, durationSec, theme, aspect });
+      const adapters = loadAdapters();
+      const withVideo = Object.values(adapters.adapters).some(
+        (a) => a.kind === 'video-gen' && a.envKey && process.env[a.envKey],
+      );
+      const costEstimate = estimateCost({
+        durationSec,
+        sceneCount: scenes.length,
+        withVideo,
+        estimates: defaults.cost.estimates,
+      });
+
+      const job = await createJob({
+        briefSlug: slugify(brief.model),
+        title: brief.model,
+        model: brief.model,
+        themeId: theme.id,
+        mode,
+        durationSec,
+        aspect,
+        preset,
+        brief: { ...brief, durasi: durationSec },
+        costEstimate,
+        scheduledAt: brief.jadwalPublish ?? null,
+      });
+      await createStages(job.id, stagesFor(preset));
+      await recordEvent({
+        jobId: job.id,
+        level: 'info',
+        scope: 'api',
+        message: `template diterima: ${brief.model}`,
+        data: { durationSec, bumped, preset, mode },
+      });
+      if (bumped) {
+        await recordEvent({
+          jobId: job.id,
+          level: 'warn',
+          scope: 'api',
+          message: `durasi dinaikkan ke minimum ${durationSec} detik`,
+        });
+      }
+      res.status(201).json({ job, stages: await listStages(job.id) });
+    } catch (err) {
+      if (err instanceof BriefError) {
+        res.status(400).json({ error: err.message });
+        return;
+      }
+      logger('api').error('gagal membuat job', err);
+      res.status(500).json({ error: err instanceof Error ? err.message : 'gagal membuat job' });
+    }
+  });
+
+  app.get('/api/jobs', async (req, res) => {
+    const limit = Math.min(200, Number(req.query.limit ?? 50));
+    const jobs = await listJobs(limit);
+    res.json({ jobs });
+  });
+
+  app.get('/api/jobs/:id', async (req, res) => {
+    const job = await getJob(req.params.id);
+    if (!job) {
+      res.status(404).json({ error: 'job tidak ditemukan' });
+      return;
+    }
+    res.json({
+      job,
+      stages: await listStages(job.id),
+      events: await listEvents(job.id, 200),
+      artifacts: listArtifacts(job.id),
+    });
+  });
+
+  app.post('/api/jobs/:id/approve-cost', async (req, res) => {
+    const job = await getJob(req.params.id);
+    if (!job) {
+      res.status(404).json({ error: 'job tidak ditemukan' });
+      return;
+    }
+    if (worker) await worker.approveCost(job.id);
+    else await updateJob(job.id, { status: 'queued' });
+    res.json({ ok: true });
+  });
+
+  app.post('/api/jobs/:id/cancel', async (req, res) => {
+    await updateJob(req.params.id, { status: 'cancelled' });
+    res.json({ ok: true });
+  });
+
+  app.get('/api/jobs/:id/events', async (req, res) => {
+    const level = req.query.level ? String(req.query.level) : undefined;
+    res.json({ events: await listEvents(req.params.id, 500, level) });
+  });
+
+  app.get('/api/jobs/:id/file/:name', async (req, res) => {
+    const name = path.basename(req.params.name);
+    const file = path.join(jobDir(req.params.id), name);
+    if (!fs.existsSync(file)) {
+      res.status(404).json({ error: 'berkas tidak ada' });
+      return;
+    }
+    res.sendFile(file);
+  });
+
+  app.get('/api/jobs/:id/asset/:scene', async (req, res) => {
+    const assets = readArtifactList(req.params.id, 'assets.json');
+    const scene = Number(req.params.scene);
+    const asset = assets.find((a) => Number(a.sceneIndex) === scene);
+    if (!asset || !fs.existsSync(String(asset.path))) {
+      res.status(404).json({ error: 'aset tidak ada' });
+      return;
+    }
+    res.sendFile(String(asset.path));
+  });
+
+  app.get('/api/dashboard', async (_req, res) => {
+    const jobs = await listJobs(50);
+    const active = jobs.find((j) => ['running', 'queued', 'paused_offline', 'awaiting_cost_approval'].includes(j.status));
+    const defaults = loadDefaults();
+    res.json({
+      connection: currentConnection(),
+      activeJob: active ?? null,
+      activeStages: active ? await listStages(active.id) : [],
+      queue: jobs.filter((j) => ['queued', 'awaiting_cost_approval', 'paused_offline'].includes(j.status)).length,
+      costToday: await dailyCost(),
+      costLimit: defaults.cost.maxCostPerHari,
+      jobCostLimit: defaults.cost.maxCostPerJob,
+      agents: listPresets(),
+      publications: await listPublications(),
+    });
+  });
+
+  app.get('/api/settings', async (_req, res) => {
+    const defaults = loadDefaults();
+    res.json({
+      minDurasi: await getSetting('minDurasi', defaults.minDurasi),
+      workTime: await getSetting('workTime', defaults.workTime),
+      agentPreset: await getSetting('agentPreset', defaults.agentPreset),
+      visualOrder: await getSetting('visualOrder', defaults.visualAdapters),
+      maxCostPerJob: await getSetting('maxCostPerJob', defaults.cost.maxCostPerJob),
+      maxCostPerHari: await getSetting('maxCostPerHari', defaults.cost.maxCostPerHari),
+      connection: await getSetting('connection', defaults.connection),
+      publish: await getSetting('publish', defaults.publish),
+      providerConfigured: {
+        image: Boolean(process.env.IMAGE_PROVIDER_API_KEY),
+        video: Boolean(process.env.VIDEO_PROVIDER_API_KEY),
+        stock: Boolean(process.env.STOCK_API_KEY),
+        llm: Boolean(process.env.LLM_API_KEY),
+        instagram: Boolean(process.env.IG_ACCESS_TOKEN),
+      },
+    });
+  });
+
+  app.put('/api/settings', async (req, res) => {
+    const allowed = [
+      'minDurasi',
+      'workTime',
+      'agentPreset',
+      'visualOrder',
+      'maxCostPerJob',
+      'maxCostPerHari',
+      'connection',
+      'publish',
+    ];
+    for (const key of allowed) {
+      if (req.body?.[key] !== undefined) await setSetting(key, req.body[key]);
+    }
+    // Secrets are write-only: stored server side, never echoed back.
+    for (const [key, env] of Object.entries({
+      imageProviderApiKey: 'IMAGE_PROVIDER_API_KEY',
+      videoProviderApiKey: 'VIDEO_PROVIDER_API_KEY',
+      stockApiKey: 'STOCK_API_KEY',
+      llmApiKey: 'LLM_API_KEY',
+      igAccessToken: 'IG_ACCESS_TOKEN',
+    })) {
+      const value = req.body?.[key];
+      if (typeof value === 'string' && value.length > 0) {
+        process.env[env] = value;
+        await setSetting(`secret:${key}`, 'disimpan');
+      }
+    }
+    res.json({ ok: true });
+  });
+
+  app.post('/api/publish/:jobId', async (req, res) => {
+    try {
+      const result = await publishJob({
+        jobId: req.params.jobId,
+        platform: String(req.body?.platform ?? 'instagram'),
+        dryRun: req.body?.dryRun !== false,
+        caption: req.body?.caption,
+      });
+      res.json(result);
+    } catch (err) {
+      res.status(400).json({ error: err instanceof Error ? err.message : 'publish gagal' });
+    }
+  });
+
+  // ---- SSE ----
+  app.get('/api/events', async (req, res) => {
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache, no-transform',
+      Connection: 'keep-alive',
+      'X-Accel-Buffering': 'no',
+    });
+    res.write(`event: hello\ndata: ${JSON.stringify({ connection: currentConnection() })}\n\n`);
+    const unsubscribe = bus.subscribe((event) => {
+      res.write(`event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`);
+    });
+    const keepAlive = setInterval(() => res.write(': ping\n\n'), 15_000);
+    req.on('close', () => {
+      clearInterval(keepAlive);
+      unsubscribe();
+    });
+  });
+
+  // ---- static UI ----
+  const publicDir = paths.publicDir;
+  app.use(express.static(publicDir, { index: 'index.html', maxAge: '1h' }));
+  app.use((req, res, next) => {
+    if (req.method !== 'GET') return next();
+    if (req.path.startsWith('/api')) return next();
+    const index = path.join(publicDir, 'index.html');
+    if (fs.existsSync(index)) res.sendFile(index);
+    else res.status(503).send('UI belum dibangun. Jalankan: npm run build:ui');
+  });
+
+  return { app, worker };
+}
+
+function cookieHeader(token: string): string {
+  const secure = process.env.APP_URL?.startsWith('https') ? '; Secure' : '';
+  return `${COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${60 * 60 * 24 * 7}${secure}`;
+}
+
+export function parseCookies(header: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const part of header.split(';')) {
+    const [k, ...rest] = part.trim().split('=');
+    if (!k) continue;
+    out[k] = decodeURIComponent(rest.join('='));
+  }
+  return out;
+}
+
+function readArtifactList(jobId: string, file: string): Record<string, unknown>[] {
+  const target = path.join(jobDir(jobId), 'artifacts', file);
+  if (!fs.existsSync(target)) return [];
+  try {
+    return JSON.parse(fs.readFileSync(target, 'utf8')) as Record<string, unknown>[];
+  } catch {
+    return [];
+  }
+}
+
+function listArtifacts(jobId: string): string[] {
+  const dir = path.join(jobDir(jobId), 'artifacts');
+  if (!fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir);
+}

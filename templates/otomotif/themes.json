@@ -1,0 +1,75 @@
+{
+  "defaultTheme": "generic",
+  "themes": {
+    "lamborghini": {
+      "id": "lamborghini",
+      "keywords": ["lamborghini", "huracan", "huracán", "aventador", "revuelto", "urus"],
+      "palette": { "primary": "#FFD400", "secondary": "#0A0A0A", "accent": "#FF6A1A" },
+      "mood": "agresif, kontras tinggi, geometri tajam",
+      "grade": { "contrast": 1.25, "saturation": 1.15, "temperature": -200 },
+      "cameraLanguage": "low angle, cepat, whip pan, potongan pendek",
+      "lighting": "studio gelap dengan rim light kuning",
+      "descriptor": "Lamborghini supercar bercat kuning mengilap, sudut tajam, aerodinamis agresif"
+    },
+    "mustang": {
+      "id": "mustang",
+      "keywords": ["mustang", "ford mustang", "shelby", "gt500", "dark horse"],
+      "palette": { "primary": "#1B4FD8", "secondary": "#FF6A1A", "accent": "#F3E9D8" },
+      "mood": "muscle car, gagah, jalanan Amerika",
+      "grade": { "contrast": 1.1, "saturation": 1.05, "temperature": 150 },
+      "cameraLanguage": "tracking rendah, gerak lambat, burnout",
+      "lighting": "golden hour di jalan aspal terbuka",
+      "descriptor": "Ford Mustang muscle car bercat biru dengan aksen oranye, bodi lebar, grill besar"
+    },
+    "gtr": {
+      "id": "gtr",
+      "keywords": ["gt-r", "gtr", "nissan gt-r", "skyline", "r35"],
+      "palette": { "primary": "#7A8A99", "secondary": "#0B1E3A", "accent": "#38E1FF" },
+      "mood": "teknis, presisi, malam neon",
+      "grade": { "contrast": 1.2, "saturation": 1.1, "temperature": -400 },
+      "cameraLanguage": "stabil, presisi, orbit lambat, detail mesin",
+      "lighting": "malam basah dengan pantulan neon biru",
+      "descriptor": "Nissan GT-R gunmetal dengan aksen neon biru, bodi teknis, velg forged"
+    },
+    "ferrari": {
+      "id": "ferrari",
+      "keywords": ["ferrari", "296", "296 gtb", "sf90", "roma", "f8"],
+      "palette": { "primary": "#D40000", "secondary": "#FFFFFF", "accent": "#F3E9D8" },
+      "mood": "sinematik, warisan balap, elegan",
+      "grade": { "contrast": 1.18, "saturation": 1.08, "temperature": 120 },
+      "cameraLanguage": "orbit sinematik, close-up detail, speed ramp",
+      "lighting": "softbox studio dan golden hour",
+      "descriptor": "Ferrari bercat merah mengilap, proporsi mid-engine, detail aerodinamis halus"
+    },
+    "porsche": {
+      "id": "porsche",
+      "keywords": ["porsche", "911", "gt3", "carrera", "taycan"],
+      "palette": { "primary": "#FFFFFF", "secondary": "#0A0A0A", "accent": "#D40000" },
+      "mood": "presisi, bersih, minimal",
+      "grade": { "contrast": 1.05, "saturation": 0.98, "temperature": 0 },
+      "cameraLanguage": "dolly halus, simetri, detail presisi",
+      "lighting": "studio terang dengan bayangan lembut",
+      "descriptor": "Porsche 911 bercat putih bersih dengan aksen merah, siluet ikonik, velg presisi"
+    },
+    "supra": {
+      "id": "supra",
+      "keywords": ["supra", "gr supra", "toyota supra", "a90"],
+      "palette": { "primary": "#FF6A1A", "secondary": "#0A0A0A", "accent": "#F3E9D8" },
+      "mood": "tuner, malam kota, budaya jalanan",
+      "grade": { "contrast": 1.22, "saturation": 1.12, "temperature": 80 },
+      "cameraLanguage": "handheld halus, refleksi basah, orbit rendah",
+      "lighting": "malam kota basah dengan lampu oranye",
+      "descriptor": "Toyota GR Supra bercat oranye dengan aksen hitam, bodi tuner, lampu kota"
+    },
+    "generic": {
+      "id": "generic",
+      "keywords": [],
+      "palette": { "primary": "#FF6A1A", "secondary": "#0A0A0A", "accent": "#F3E9D8" },
+      "mood": "netral, sinematik",
+      "grade": { "contrast": 1.1, "saturation": 1.05, "temperature": 0 },
+      "cameraLanguage": "orbit sinematik, detail close-up",
+      "lighting": "studio netral dengan rim light",
+      "descriptor": "mobil sport modern dengan cat mengilap dan proporsi realistis"
+    }
+  }
+}

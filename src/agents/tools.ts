@@ -14,7 +14,7 @@ import type { AssetRecord, Brief, ScenePlan } from '../core/types.ts';
 import { resolveDuration } from '../core/brief.ts';
 import { jobDir } from '../core/fsx.ts';
 import { checkAssets } from '../pipeline/quality.ts';
-import { ffprobe, contactSheet, frameSharpness, extractFrame } from '../render/ffmpeg.ts';
+import { ffprobe, contactSheet, frameSharpness, extractFrame, perceptualHash } from '../render/ffmpeg.ts';
 import type { RenderResult } from '../render/assemble.ts';
 import { markSceneDone, readSceneCheckpoint, markStageComplete } from '../pipeline/checkpoint.ts';
 
@@ -554,7 +554,12 @@ tool('approve_job', 'Verifikasi hasil akhir lalu setujui atau tolak', async (_ar
   const frameDir = path.join(jobDir(ctx.jobId), 'qa-frames');
   fs.mkdirSync(frameDir, { recursive: true });
   const sampled = Math.min(6, Math.max(2, scenes.length));
+  // This gate exists to catch a render that came out black or frozen, so it
+  // measures "not blank", not photographic crispness: the per-asset gate
+  // already judges sharpness of the source stills.
+  const MIN_FRAME_SHARPNESS = 2;
   const sharpness: number[] = [];
+  const frameHashes: string[] = [];
   for (let i = 0; i < sampled; i++) {
     const at = ((probe.durationSec ?? 2) * (i + 0.5)) / sampled;
     const frame = path.join(frameDir, `frame-${i + 1}.jpg`);
@@ -565,13 +570,27 @@ tool('approve_job', 'Verifikasi hasil akhir lalu setujui atau tolak', async (_ar
     }
     const sharp = frameSharpness(frame, 0);
     sharpness.push(sharp);
-    checks.push({ name: `frame-${i + 1}`, ok: sharp >= defaults.quality.minSharpness, detail: `ketajaman ${sharp}` });
+    frameHashes.push(perceptualHash(frame, 0));
+    checks.push({
+      name: `frame-${i + 1}`,
+      ok: sharp >= MIN_FRAME_SHARPNESS,
+      detail: `ketajaman ${sharp}`,
+    });
   }
   const avgSharp = sharpness.length ? sharpness.reduce((a, b) => a + b, 0) / sharpness.length : 0;
   checks.push({
     name: 'tidak-kosong',
-    ok: avgSharp > 0,
+    ok: avgSharp >= MIN_FRAME_SHARPNESS,
     detail: `rata-rata ketajaman ${avgSharp.toFixed(1)}`,
+  });
+
+  // Identical sampled frames mean the encoder produced a still image for the
+  // whole clip, which a blank-frame check alone would not notice.
+  const distinct = new Set(frameHashes).size;
+  checks.push({
+    name: 'tidak-beku',
+    ok: frameHashes.length < 2 || distinct >= Math.max(2, Math.ceil(frameHashes.length / 2)),
+    detail: `${distinct} dari ${frameHashes.length} frame berbeda`,
   });
 
   const assetReport = checkAssets({

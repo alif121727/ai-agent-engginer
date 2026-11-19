@@ -7,7 +7,11 @@ Commons memberi atribusi jelas dan gambar benar-benar mobil.
 
 Pemakaian:
     python3 scripts/fetch-photos.py toyota-gr-supra "Toyota GR Supra" 4
-    python3 scripts/fetch-photos.py toyota-ae86 "Toyota AE86" 4
+    python3 scripts/fetch-photos.py bmw-m4-gt3 "BMW M4 GT3" 5 --require "GT3"
+
+`--require` menyaring nama file: pencarian Commons untuk "M4 GT3" juga
+mengembalikan M4 jalan raya, dan foto yang salah model lebih buruk daripada
+tidak ada foto.
 """
 
 from __future__ import annotations
@@ -80,10 +84,17 @@ def thumb_url(title: str) -> str | None:
     return None
 
 
-def download(url: str, dest: str) -> tuple[int, bytes]:
-    req = urllib.request.Request(url, headers={"User-Agent": UA})
-    with urllib.request.urlopen(req, timeout=60) as r:
-        blob = r.read()
+def download(url: str, dest: str, tries: int = 4) -> tuple[int, bytes]:
+    for i in range(tries):
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": UA})
+            with urllib.request.urlopen(req, timeout=60) as r:
+                blob = r.read()
+            break
+        except Exception:
+            if i == tries - 1:
+                raise
+            time.sleep(10 * (i + 1))
     if len(blob) < 20_000:
         raise RuntimeError(f"terlalu kecil ({len(blob)} B)")
     with open(dest, "wb") as f:
@@ -108,6 +119,10 @@ def main() -> int:
         return 2
     slug, query = sys.argv[1], sys.argv[2]
     want = int(sys.argv[3]) if len(sys.argv) > 3 else 4
+    require = ""
+    if "--require" in sys.argv:
+        require = sys.argv[sys.argv.index("--require") + 1]
+    require_re = re.compile(require, re.I) if require else None
 
     dest_dir = os.path.join(OUT_ROOT, slug)
     os.makedirs(dest_dir, exist_ok=True)
@@ -125,6 +140,9 @@ def main() -> int:
             break
         if SKIP.search(title):
             print(f"  lewati (bw/interior) {title}")
+            continue
+        if require_re and not require_re.search(title):
+            print(f"  lewati (bukan {require}) {title}")
             continue
         try:
             info = thumb_url(title)

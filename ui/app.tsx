@@ -39,12 +39,25 @@ interface AgentInfo {
   allowedTools: string[];
 }
 
+interface CatalogModel {
+  slug: string;
+  merk: string;
+  model: string;
+  seri: string;
+  tahun: string;
+  kategori: string;
+  tenaga: string;
+  torsi: string;
+  tagline: string;
+}
+
 interface Config {
   minDurasi: number;
   maxDurasi: number;
   presets: { name: string; agents: string[] }[];
   agentPreset: string;
   themes: { id: string; palette: { primary: string; secondary: string; accent: string }; mood: string; keywords: string[] }[];
+  catalog: CatalogModel[];
   adapters: { id: string; label: string; kind: string; configured: boolean }[];
   cost: { maxCostPerJob: number; maxCostPerHari: number };
   llm: { supportsImages: boolean; note?: string; model?: string };
@@ -415,6 +428,8 @@ function NewTemplate({ navigate }: { navigate: (to: string) => void }) {
   const [estimate, setEstimate] = useState<{ durationSec: number; cost: number; sceneCount: number; minutes: number; bumped: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [cari, setCari] = useState('');
+  const [kategori, setKategori] = useState('semua');
 
   useEffect(() => {
     api.get<Config>('/config').then((cfg) => {
@@ -481,26 +496,47 @@ function NewTemplate({ navigate }: { navigate: (to: string) => void }) {
         {step === 1 && (
           <div style={{ marginTop: 24 }}>
             <h2>Pilih model</h2>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 16 }}>
+              <input
+                aria-label="Cari model"
+                value={cari}
+                onChange={(e) => setCari(e.target.value)}
+                placeholder="Cari merk atau model, mis. Supra"
+                style={{ flex: '1 1 220px' }}
+              />
+              <div className="nav-pill" role="tablist" aria-label="Kategori">
+                {['semua', 'sport', 'balap', 'modifikasi', 'klasik'].map((k) => (
+                  <button key={k} role="tab" aria-selected={kategori === k} onClick={() => setKategori(k)}>
+                    {k}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="model-grid" style={{ marginTop: 16 }}>
-              {config.themes.map((theme) => (
+              {filterKatalog(config.catalog, cari, kategori).map((m) => (
                 <button
-                  key={theme.id}
+                  key={m.slug}
                   className="model-card"
-                  aria-pressed={model.toLowerCase().includes(theme.id) || (theme.id === 'generic' && model === '')}
-                  onClick={() => setModel(labelFor(theme.id))}
+                  aria-pressed={model === m.model}
+                  onClick={() => setModel(m.model)}
                 >
                   <span className="swatch" aria-hidden="true">
-                    <i style={{ background: theme.palette.primary }} />
-                    <i style={{ background: theme.palette.secondary }} />
-                    <i style={{ background: theme.palette.accent }} />
+                    <i style={{ background: 'var(--orange)' }} />
+                    <i style={{ background: 'var(--ink)' }} />
+                    <i style={{ background: 'var(--krem)' }} />
                   </span>
-                  <strong style={{ fontFamily: 'var(--font-display)' }}>{labelFor(theme.id)}</strong>
+                  <strong style={{ fontFamily: 'var(--font-display)' }}>{m.model}</strong>
                   <span className="muted" style={{ fontSize: '0.8rem' }}>
-                    {theme.mood}
+                    {m.kategori} · {m.tahun} · {m.tenaga}
                   </span>
                 </button>
               ))}
             </div>
+            {filterKatalog(config.catalog, cari, kategori).length === 0 && (
+              <p className="muted" style={{ marginTop: 12 }}>
+                Tidak ada model yang cocok. Tulis sendiri di kolom bawah.
+              </p>
+            )}
             <div className="field" style={{ marginTop: 24 }}>
               <label htmlFor="model-custom">Atau tulis model sendiri</label>
               <input
@@ -639,17 +675,13 @@ function NewTemplate({ navigate }: { navigate: (to: string) => void }) {
   );
 }
 
-function labelFor(themeId: string): string {
-  const map: Record<string, string> = {
-    lamborghini: 'Lamborghini Huracán Evo',
-    mustang: 'Ford Mustang GT',
-    gtr: 'Nissan GT-R',
-    ferrari: 'Ferrari 296 GTB',
-    porsche: 'Porsche 911 GT3',
-    supra: 'Toyota GR Supra',
-    generic: 'Model lain',
-  };
-  return map[themeId] ?? themeId;
+function filterKatalog(catalog: CatalogModel[], cari: string, kategori: string): CatalogModel[] {
+  const key = cari.trim().toLowerCase();
+  return catalog.filter((m) => {
+    if (kategori !== 'semua' && m.kategori !== kategori) return false;
+    if (!key) return true;
+    return `${m.merk} ${m.model} ${m.seri} ${m.tahun}`.toLowerCase().includes(key);
+  });
 }
 
 // ---------------------------------------------------------------- job detail

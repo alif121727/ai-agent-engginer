@@ -603,6 +603,53 @@ await check('foto katalog terbaca meski nama foldernya beda dari slug otomatis',
   assert(shadowed.length === 0, `foto katalog tidak terbaca: ${shadowed.join(', ')}`);
 });
 
+await check('setiap model katalog punya foto di assets/own', async () => {
+  const { loadCatalog } = await import('../src/core/catalog.ts');
+  const fsx = await import('node:fs');
+  const ownRoot = path.join(process.cwd(), 'assets', 'own');
+  const missing = loadCatalog()
+    .models.filter((m) => {
+      const dir = path.join(ownRoot, m.slug);
+      return !fsx.existsSync(dir) || !fsx.readdirSync(dir).some((f) => /\.(jpe?g|png|webp)$/i.test(f));
+    })
+    .map((m) => m.slug);
+  assert(missing.length === 0, `model tanpa foto: ${missing.join(', ')}`);
+});
+
+await check('katalog memuat varian balap dan modifikasi', async () => {
+  const { loadCatalog } = await import('../src/core/catalog.ts');
+  const models = loadCatalog().models;
+  const racing = models.filter((m) => m.kategori === 'balap');
+  const modified = models.filter((m) => m.kategori === 'modifikasi');
+  assert(racing.length >= 2, `varian balap kurang: ${racing.length}`);
+  assert(modified.length >= 1, `varian modifikasi kurang: ${modified.length}`);
+  assert(models.length >= 33, `katalog menyusut: ${models.length}`);
+});
+
+await check('spesifikasi tak bersumber tidak pernah tampil sebagai angka', async () => {
+  const { loadCatalog, specLines } = await import('../src/core/catalog.ts');
+  const models = loadCatalog().models;
+  for (const m of models) {
+    for (const line of specLines(m)) {
+      assert(
+        !line.includes('tidak disebut di sumber'),
+        `${m.slug}: penanda "tidak disebut" bocor ke layar (${line})`,
+      );
+    }
+    // Setiap baris harus menyebut minimal satu angka atau tahun produksi.
+    assert(specLines(m).length >= 2, `${m.slug}: baris spesifikasi terlalu sedikit`);
+  }
+});
+
+await check('setiap angka katalog punya jejak di artikel sumber', async () => {
+  const { loadCatalog } = await import('../src/core/catalog.ts');
+  const models = loadCatalog().models;
+  const noSource = models.filter((m) => !/^https:\/\/en\.wikipedia\.org\/wiki\//.test(m.sumber));
+  assert(noSource.length === 0, `sumber tidak valid: ${noSource.map((m) => m.slug).join(', ')}`);
+  const noTagline = models.filter((m) => !m.tagline || !m.deskripsi);
+  assert(noTagline.length === 0, `tanpa tagline/deskripsi: ${noTagline.map((m) => m.slug).join(', ')}`);
+});
+
 await check('render menulis hasil ke artifacts agar QA bisa membacanya', async () => {
   const { artifactPath } = await import('../src/agents/guard.ts');
   assert(

@@ -540,6 +540,42 @@
    "tagline": "Enzo Ferrari disebut pernah menyebutnya mobil paling cantik.",
    "deskripsi": "Monokok, suspensi independen, dan rem cakram di keempat roda sejak 1961.",
    "sumber": "https://en.wikipedia.org/wiki/Jaguar_E-Type"
+  },
+  {
+   "slug": "toyota-gr-supra-gt4",
+   "merk": "Toyota",
+   "model": "Toyota GR Supra GT4",
+   "seri": "GR Supra GT4 (J29)",
+   "tahun": "2020–sekarang",
+   "kategori": "balap",
+   "mesin": "BMW B58 3.0L turbo inline-six (versi balap)",
+   "tenaga": "435 PS",
+   "torsi": "hingga 660 Nm (GT4 EVO)",
+   "layout": "front-engine, RWD",
+   "berat": "tidak disebut di sumber",
+   "nol100": "tidak disebut di sumber",
+   "vmax": "tidak disebut di sumber",
+   "tagline": "Supra yang kehilangan nomor plat demi trofi kelas GT4.",
+   "deskripsi": "Versi customer racing dari GR Supra: mesin 320 kW (435 PS), transmisi 7-percepatan otomatis, rem Brembo, peredam KW, dan ban balap Pirelli P Zero.",
+   "sumber": "https://en.wikipedia.org/wiki/Toyota_GR_Supra (bagian GR Supra GT4)"
+  },
+  {
+   "slug": "bmw-m4-gt3",
+   "merk": "BMW",
+   "model": "BMW M4 GT3",
+   "seri": "G82 M4 GT3",
+   "tahun": "2022–sekarang",
+   "kategori": "balap",
+   "mesin": "Inline-six 3.0L turbo (versi balap)",
+   "tenaga": "tidak disebut di sumber",
+   "torsi": "tidak disebut di sumber",
+   "layout": "front-engine, RWD",
+   "berat": "tidak disebut di sumber",
+   "nol100": "tidak disebut di sumber",
+   "vmax": "tidak disebut di sumber",
+   "tagline": "M4 yang homologasi FIA GT3: bukan untuk jalan raya, untuk pit lane.",
+   "deskripsi": "Penerus M6 GT3 sejak musim 2022; fender melebar, knalpot keluar di belakang roda depan, dan sayap gooseneck. Versi Evo debut di Dubai 24 Hour 2025.",
+   "sumber": "https://en.wikipedia.org/wiki/BMW_M4 (bagian M4 GT3)"
   }
  ]
 }

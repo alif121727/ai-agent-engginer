@@ -1,0 +1,87 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "name": "berkas-video",
+      "ok": true,
+      "detail": "10.1 MB"
+    },
+    {
+      "name": "terbaca-ffprobe",
+      "ok": true,
+      "detail": "h264 1920x1080 30.0 dtk"
+    },
+    {
+      "name": "durasi-sesuai",
+      "ok": true,
+      "detail": "video 30.0 dtk vs rencana 30.0 dtk"
+    },
+    {
+      "name": "ada-audio",
+      "ok": true,
+      "detail": "codec aac"
+    },
+    {
+      "name": "resolusi",
+      "ok": true,
+      "detail": "1920x1080"
+    },
+    {
+      "name": "tanpa-fallback",
+      "ok": true,
+      "detail": "semua aset nyata"
+    },
+    {
+      "name": "frame-1",
+      "ok": true,
+      "detail": "ketajaman 9"
+    },
+    {
+      "name": "frame-2",
+      "ok": true,
+      "detail": "ketajaman 7"
+    },
+    {
+      "name": "frame-3",
+      "ok": true,
+      "detail": "ketajaman 6"
+    },
+    {
+      "name": "frame-4",
+      "ok": true,
+      "detail": "ketajaman 5"
+    },
+    {
+      "name": "frame-5",
+      "ok": true,
+      "detail": "ketajaman 7"
+    },
+    {
+      "name": "frame-6",
+      "ok": true,
+      "detail": "ketajaman 7"
+    },
+    {
+      "name": "tidak-kosong",
+      "ok": true,
+      "detail": "rata-rata ketajaman 6.8"
+    },
+    {
+      "name": "tidak-beku",
+      "ok": true,
+      "detail": "6 dari 6 frame berbeda"
+    }
+  ],
+  "assets": {
+    "passed": true,
+    "issues": []
+  },
+  "video": {
+    "file": "/workspace/project/ai-agent-engginer/jobs/1b63b95a75c44472a3e98bedf7833c84/video.mp4",
+    "durationSec": 30,
+    "width": 1920,
+    "height": 1080,
+    "codec": "h264"
+  },
+  "checkedAt": "2026-11-19T18:57:17.239Z"
+}

@@ -26,5 +26,19 @@
     "path": "/workspace/project/ai-agent-engginer/jobs/1b63b95a75c44472a3e98bedf7833c84/assets/scene-04.jpg",
     "source": "image-gen-free",
     "provider": "image-gen-free"
+  },
+  {
+    "sceneIndex": 4,
+    "kind": "image",
+    "path": "/workspace/project/ai-agent-engginer/jobs/1b63b95a75c44472a3e98bedf7833c84/assets/scene-05.jpg",
+    "source": "image-gen-free",
+    "provider": "image-gen-free"
+  },
+  {
+    "sceneIndex": 5,
+    "kind": "image",
+    "path": "/workspace/project/ai-agent-engginer/jobs/1b63b95a75c44472a3e98bedf7833c84/assets/scene-06.jpg",
+    "source": "image-gen-free",
+    "provider": "image-gen-free"
   }
 ]

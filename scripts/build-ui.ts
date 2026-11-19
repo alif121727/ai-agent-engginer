@@ -1,6 +1,7 @@
 import { build } from 'esbuild';
 import fs from 'node:fs';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 
 const outdir = path.resolve('public');
 fs.mkdirSync(outdir, { recursive: true });
@@ -21,6 +22,9 @@ await build({
   define: { 'process.env.NODE_ENV': '"production"' },
 });
 
+const appJs = fs.readFileSync(path.join(outdir, 'app.js'));
+const version = createHash('sha256').update(appJs).digest('hex').slice(0, 10);
+
 fs.writeFileSync(
   path.join(outdir, 'index.html'),
   `<!doctype html>
@@ -38,11 +42,11 @@ fs.writeFileSync(
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/tokens.css" />
+    <link rel="stylesheet" href="/tokens.css?v=${version}" />
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/app.js"></script>
+    <script type="module" src="/app.js?v=${version}"></script>
   </body>
 </html>
 `,

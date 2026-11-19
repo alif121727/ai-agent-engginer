@@ -369,7 +369,29 @@ tool('inspect_preview', 'Buat dan periksa preview contact sheet', async (_args, 
     scenes.map((s) => assets.find((a) => a.sceneIndex === s.index)?.path ?? ''),
     sheetPath,
   );
-  return { ...report, preview: sheet, sharpness: report.sharpness };
+  const video = path.join(jobDir(ctx.jobId), 'video.mp4');
+  const probe = ffprobe(video);
+  const expected = scenes.reduce((sum, s) => sum + s.durationSec, 0);
+  const result = {
+    ...report,
+    preview: sheet,
+    sharpness: report.sharpness,
+    video: { ...probe, expectedDurationSec: expected },
+  };
+  writeOwned(ctx, 'qa.json', result);
+  if (!report.passed) {
+    const first = report.issues[0];
+    throw new PermanentError(
+      `QA menolak hasil: ${report.issues.length} masalah, misalnya scene ${first.sceneIndex + 1} ${first.reason}`,
+    );
+  }
+  if (!probe.ok) throw new PermanentError(`QA menolak hasil: video tidak terbaca (${probe.error ?? '?'})`);
+  if (expected && Math.abs((probe.durationSec ?? 0) - expected) > 1.5) {
+    throw new PermanentError(
+      `QA menolak hasil: durasi ${probe.durationSec?.toFixed(1)} dtk, seharusnya ${expected.toFixed(1)} dtk`,
+    );
+  }
+  return result;
 });
 
 tool('request_fix', 'Minta perbaikan ke agen penanggung jawab', async (args, ctx) => {

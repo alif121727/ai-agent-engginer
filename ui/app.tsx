@@ -697,7 +697,7 @@ function JobDetail({ id }: { id: string }) {
             Unduh preview
           </a>
           <button
-            className="btn btn--primary"
+            className="btn btn--ghost"
             onClick={() =>
               api
                 .send(`/publish/${job.id}`, { platform: 'instagram', dryRun: true })
@@ -709,6 +709,41 @@ function JobDetail({ id }: { id: string }) {
           </button>
         </div>
       </section>
+
+      {job.error && (
+        <section className="card card--wide" style={{ borderColor: 'var(--orange)' }}>
+          <p className="label">Perlu tindakan</p>
+          <p style={{ marginTop: 8 }} role="alert">
+            {job.error}
+          </p>
+          <div style={{ display: 'flex', gap: 12, marginTop: 16, flexWrap: 'wrap' }}>
+            <button
+              className="btn btn--primary"
+              onClick={() =>
+                api
+                  .send(`/jobs/${job.id}/retry`, {})
+                  .then(() => load())
+                  .catch((e: Error) => alert(e.message))
+              }
+            >
+              Ulangi tahap yang gagal
+            </button>
+            <button
+              className="btn btn--ghost"
+              onClick={() =>
+                api
+                  .send(`/jobs/${job.id}/retry`, { from: 'aset-visual' })
+                  .then(() => load())
+                  .catch((e: Error) => alert(e.message))
+              }
+            >
+              Ulangi dari aset visual
+            </button>
+          </div>
+        </section>
+      )}
+
+      <AssetPanel model={job.model} />
 
       <section className="card" style={{ gridColumn: 'span 5' }}>
         <p className="label">Tahap agen</p>
@@ -754,6 +789,102 @@ function JobDetail({ id }: { id: string }) {
         </div>
       </section>
     </div>
+  );
+}
+
+// -------------------------------------------------------------- own assets
+
+function AssetPanel({ model }: { model: string }) {
+  const [files, setFiles] = useState<string[]>([]);
+  const [folder, setFolder] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+
+  const load = useCallback(() => {
+    api
+      .get<{ folder: string; files: string[] }>(`/assets/${encodeURIComponent(model)}`)
+      .then((res) => {
+        setFiles(res.files);
+        setFolder(res.folder);
+      })
+      .catch(() => setFiles([]));
+  }, [model]);
+
+  useEffect(load, [load]);
+
+  const upload = async (list: FileList | null) => {
+    if (!list?.length) return;
+    setBusy(true);
+    setNote(null);
+    try {
+      for (const file of Array.from(list)) {
+        const res = await fetch(
+          `/api/assets/${encodeURIComponent(model)}?name=${encodeURIComponent(file.name)}`,
+          { method: 'POST', credentials: 'same-origin', body: file },
+        );
+        if (!res.ok) throw new Error(((await res.json()) as { error?: string }).error ?? `HTTP ${res.status}`);
+      }
+      setNote(`${list.length} berkas tersimpan.`);
+      load();
+    } catch (err) {
+      setNote(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section className="card card--wide">
+      <p className="label">Aset milik sendiri</p>
+      <h2 style={{ marginTop: 8 }}>Foto atau video {model}</h2>
+      <p className="muted" style={{ marginTop: 8 }}>
+        Visual hanya diambil dari berkas nyata. Unggah foto/video kendaraan ini supaya videonya
+        benar-benar model tersebut. Tersimpan di <span className="mono">{folder || 'assets/own/…'}</span>.
+      </p>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 16, flexWrap: 'wrap' }}>
+        <label className="btn btn--primary" style={{ cursor: 'pointer' }}>
+          {busy ? 'Mengunggah…' : 'Pilih berkas'}
+          <input
+            type="file"
+            multiple
+            accept=".jpg,.jpeg,.png,.webp,.mp4,.mov"
+            disabled={busy}
+            onChange={(e) => void upload(e.target.files)}
+            style={{ display: 'none' }}
+          />
+        </label>
+        <span className="muted mono" style={{ fontSize: '0.78rem' }}>
+          {files.length} berkas siap dipakai
+        </span>
+      </div>
+      {note && (
+        <p className="muted" style={{ marginTop: 12 }} role="status">
+          {note}
+        </p>
+      )}
+      {files.length > 0 && (
+        <ul style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 8, listStyle: 'none' }}>
+          {files.map((file) => (
+            <li key={file} style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+              <span className="mono" style={{ flex: 1, fontSize: '0.8rem' }}>
+                {file}
+              </span>
+              <button
+                className="btn btn--ghost"
+                onClick={() =>
+                  api
+                    .send(`/assets/${encodeURIComponent(model)}/${encodeURIComponent(file)}`, undefined, 'DELETE')
+                    .then(load)
+                    .catch((e: Error) => setNote(e.message))
+                }
+              >
+                Hapus
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 

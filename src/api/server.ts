@@ -16,6 +16,7 @@ import {
   listJobs,
   listStages,
   listEvents,
+  resetStage,
   getSetting,
   setSetting,
   updateJob,
@@ -36,6 +37,8 @@ import { rateLimit } from '../auth/rate-limit.ts';
 import { Worker } from '../worker/worker.ts';
 import { loadCapability } from '../pipeline/llm.ts';
 import { publishJob, listPublications } from '../publish/instagram.ts';
+import { userAssetsFor } from '../visuals/types.ts';
+import { clearCheckpoint } from '../pipeline/checkpoint.ts';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -325,6 +328,43 @@ export function createApp(opts: AppOptions = {}) {
     res.json({ ok: true });
   });
 
+  /**
+   * Retry a failed job. `from` rewinds to that stage (and everything after it),
+   * which is what you want after uploading new assets.
+   */
+  app.post('/api/jobs/:id/retry', async (req, res) => {
+    const job = await getJob(req.params.id);
+    if (!job) {
+      res.status(404).json({ error: 'job tidak ditemukan' });
+      return;
+    }
+    if (job.status !== 'failed' && job.status !== 'cancelled') {
+      res.status(409).json({ error: `job berstatus ${job.status}, tidak bisa diulang` });
+      return;
+    }
+    const stages = await listStages(job.id);
+    const from = typeof req.body?.from === 'string' ? req.body.from : null;
+    const startOrd = from ? stages.find((s) => s.name === from)?.ord : undefined;
+    if (from && startOrd === undefined) {
+      res.status(400).json({ error: `tahap ${from} tidak ada` });
+      return;
+    }
+    for (const stage of stages) {
+      const rewind = startOrd !== undefined ? stage.ord >= startOrd : stage.status === 'failed';
+      if (!rewind) continue;
+      await resetStage(stage.id);
+      clearCheckpoint(job.id, stage.name);
+    }
+    await updateJob(job.id, { status: 'queued', error: null, progress: 0 });
+    await recordEvent({
+      jobId: job.id,
+      level: 'info',
+      scope: 'worker',
+      message: 'job diulang oleh pengguna',
+    });
+    res.json({ ok: true, assets: userAssetsFor(job.model, path.join(paths.assets, 'own')).length });
+  });
+
   app.post('/api/jobs/:id/cancel', async (req, res) => {
     await updateJob(req.params.id, { status: 'cancelled' });
     res.json({ ok: true });
@@ -354,6 +394,48 @@ export function createApp(opts: AppOptions = {}) {
       return;
     }
     res.sendFile(String(asset.path));
+  });
+
+  // ---- own assets (upload from the browser, no extra dependency) ----
+  const ownDir = (model: string) =>
+    path.join(paths.assets, 'own', model.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase());
+  const ASSET_EXT = /\.(jpe?g|png|webp|mp4|mov)$/i;
+
+  app.get('/api/assets/:model', async (req, res) => {
+    const dir = ownDir(req.params.model);
+    const files = fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => ASSET_EXT.test(f)) : [];
+    res.json({ model: req.params.model, folder: path.relative(paths.root, dir), files });
+  });
+
+  app.post(
+    '/api/assets/:model',
+    express.raw({ type: '*/*', limit: '200mb' }),
+    async (req, res) => {
+      const name = path.basename(String(req.query.name ?? ''));
+      if (!name || !ASSET_EXT.test(name)) {
+        res.status(400).json({ error: 'nama berkas harus jpg, jpeg, png, webp, mp4, atau mov' });
+        return;
+      }
+      if (!Buffer.isBuffer(req.body) || req.body.length === 0) {
+        res.status(400).json({ error: 'isi berkas kosong' });
+        return;
+      }
+      const dir = ownDir(req.params.model);
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.join(dir, name), req.body);
+      res.status(201).json({ ok: true, folder: path.relative(paths.root, dir), file: name });
+    },
+  );
+
+  app.delete('/api/assets/:model/:name', async (req, res) => {
+    const name = path.basename(req.params.name);
+    const file = path.join(ownDir(req.params.model), name);
+    if (!fs.existsSync(file)) {
+      res.status(404).json({ error: 'berkas tidak ada' });
+      return;
+    }
+    fs.unlinkSync(file);
+    res.json({ ok: true });
   });
 
   app.get('/api/dashboard', async (_req, res) => {
@@ -460,7 +542,8 @@ export function createApp(opts: AppOptions = {}) {
 
   // ---- static UI ----
   const publicDir = paths.publicDir;
-  app.use(express.static(publicDir, { index: 'index.html', maxAge: '1h' }));
+  const staticMaxAge = process.env.NODE_ENV === 'production' ? '1h' : 0;
+  app.use(express.static(publicDir, { index: false, maxAge: staticMaxAge, etag: true }));
   app.use((req, res, next) => {
     if (req.method !== 'GET') return next();
     if (req.path.startsWith('/api')) return next();

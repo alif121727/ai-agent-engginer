@@ -310,3 +310,35 @@ dan 6 pratinjau foto.
 
 **Catatan login.** Username direset ke `admin123` (email `admin@studio.id`),
 karena kredensial yang tercatat sebelumnya sudah tidak cocok dengan DB.
+
+## §9 Job model tanpa foto (Koenigsegg Jesko) + negative prompt provider gratis
+
+**Job.** Model di luar katalog (tanpa folder foto) dirender lewat jalur
+generator gratis. Job `a0ebc7d46d624cefa1e571ba843248fb`: 30 dtk, 6/6 aset
+`image-gen-free`, QA 14/14 lulus, h264 1920x1080 + AAC 48 kHz stereo, 11.6 MB.
+
+**Bug nyata: negative prompt tidak pernah sampai ke provider gratis.**
+`NEGATIVE_PROMPT` hanya dikirim adapter berbayar lewat parameter
+`negative_prompt`; Pollinations tidak punya parameter itu, jadi negatif dibuang
+diam-diam. Perbaikan pertama (menempelkan negatif di *belakang* prompt) ternyata
+**tidak berpengaruh sama sekali** — dibuktikan dengan A/B seed sama: piksel
+100% identik (0 byte berbeda dari 1.769.472), hanya metadata yang beda.
+Penyebabnya provider memotong prompt yang panjang, sehingga ekor prompt hilang.
+Menaruh negatif di **depan** baru mengubah hasil: korelasi turun ke **-0.2465**
+(vs **1.0000** saat di belakang). Kontrol: seed sama + prompt sama dua kali
+menghasilkan gambar identik, dan prompt sangat berbeda berkorelasi 0.3489 —
+jadi memang urutan yang menentukan, bukan cache.
+
+**Jebakan operasional (mahal).** `src/worker/main.ts` adalah proses terpisah.
+Restart API saja tidak memuat kode adapter baru: worker lama (start 17:28) tetap
+memakai kode lama, sehingga dua job pertama menghasilkan aset **md5 identik**
+padahal kode sudah diubah. Setelah worker di-restart (19:12), job ketiga
+menghasilkan aset berbeda (md5 berubah) dan ketajaman naik 6.8 → 8.5.
+**Selalu restart worker, bukan hanya API, setelah mengubah kode pipeline.**
+
+**Rate limit.** Pollinations gratis: 1 gambar / 45 dtk / IP, balasannya
+`HTTP 402 FREE_LIMIT`. Saat menguji A/B manual, beri jeda ≥50 dtk; kalau tidak,
+hasilnya 402 dan mudah salah dibaca sebagai "prompt ditolak".
+
+**Tes.** `npm test`: **56 lulus, 0 gagal**, termasuk tes baru yang mengunci
+urutan (negatif harus di depan).

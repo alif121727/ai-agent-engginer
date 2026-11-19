@@ -2,6 +2,7 @@ export const SCHEMA_SQLITE = `
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
   email TEXT NOT NULL UNIQUE,
+  username TEXT,
   password_hash TEXT NOT NULL,
   role TEXT NOT NULL DEFAULT 'admin',
   created_at TEXT NOT NULL
@@ -98,3 +99,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_pub_fingerprint ON publications(fingerprin
 `;
 
 export const SCHEMA_POSTGRES = SCHEMA_SQLITE.replace(/INTEGER NOT NULL DEFAULT 1/g, 'BOOLEAN NOT NULL DEFAULT TRUE');
+
+/** Columns added after the first release; databases created earlier need them patched in. */
+export const USERNAME_COLUMN = 'username';
+export const USERNAME_INDEX = 'CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username)';

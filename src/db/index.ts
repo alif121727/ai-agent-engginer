@@ -2,7 +2,7 @@ import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import pg from 'pg';
 import { paths, ensureDir } from '../core/fsx.ts';
-import { SCHEMA_SQLITE } from './schema.ts';
+import { SCHEMA_SQLITE, USERNAME_INDEX } from './schema.ts';
 
 export type Row = Record<string, unknown>;
 export type Param = string | number | boolean | null | undefined;
@@ -34,6 +34,11 @@ class SqliteDb implements Db {
     this.#db.exec('PRAGMA journal_mode = WAL;');
     this.#db.exec('PRAGMA foreign_keys = ON;');
     this.#db.exec(SCHEMA_SQLITE);
+    const columns = this.#db.prepare('PRAGMA table_info(users)').all() as { name: string }[];
+    if (!columns.some((c) => c.name === 'username')) {
+      this.#db.exec('ALTER TABLE users ADD COLUMN username TEXT');
+    }
+    this.#db.exec(USERNAME_INDEX);
   }
 
   async all<T extends Row = Row>(sql: string, params: Param[] = []): Promise<T[]> {

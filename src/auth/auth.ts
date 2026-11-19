@@ -22,6 +22,7 @@ export function verifyPassword(password: string, stored: string): boolean {
 export interface User {
   id: string;
   email: string;
+  username: string | null;
   role: string;
 }
 
@@ -30,31 +31,39 @@ export async function userCount(): Promise<number> {
   return Number(row?.c ?? 0);
 }
 
-export async function createUser(email: string, password: string, role = 'admin'): Promise<User> {
+export async function createUser(email: string, password: string, role = 'admin', username?: string): Promise<User> {
   const normalized = email.trim().toLowerCase();
   if (!normalized.includes('@')) throw new Error('Email tidak valid');
   if (password.length < 8) throw new Error('Password minimal 8 karakter');
   const existing = await db().get<{ id: string }>('SELECT id FROM users WHERE email = ?', [normalized]);
   if (existing) throw new Error('Email sudah terdaftar');
+  const handle = username?.trim().toLowerCase() || null;
+  if (handle) {
+    const taken = await db().get<{ id: string }>('SELECT id FROM users WHERE username = ?', [handle]);
+    if (taken) throw new Error('Username sudah dipakai');
+  }
   const id = uuid();
-  await db().run('INSERT INTO users (id, email, password_hash, role, created_at) VALUES (?,?,?,?,?)', [
+  await db().run('INSERT INTO users (id, email, username, password_hash, role, created_at) VALUES (?,?,?,?,?,?)', [
     id,
     normalized,
+    handle,
     hashPassword(password),
     role,
     now(),
   ]);
-  return { id, email: normalized, role };
+  return { id, email: normalized, username: handle, role };
 }
 
-export async function authenticate(email: string, password: string): Promise<User | null> {
-  const row = await db().get<{ id: string; email: string; password_hash: string; role: string }>(
-    'SELECT * FROM users WHERE email = ?',
-    [email.trim().toLowerCase()],
+/** Accepts either the username or the email in the same field. */
+export async function authenticate(login: string, password: string): Promise<User | null> {
+  const key = login.trim().toLowerCase();
+  const row = await db().get<{ id: string; email: string; username: string | null; password_hash: string; role: string }>(
+    'SELECT * FROM users WHERE username = ? OR email = ?',
+    [key, key],
   );
   if (!row) return null;
   if (!verifyPassword(password, row.password_hash)) return null;
-  return { id: row.id, email: row.email, role: row.role };
+  return { id: row.id, email: row.email, username: row.username, role: row.role };
 }
 
 export async function createSession(userId: string): Promise<string> {

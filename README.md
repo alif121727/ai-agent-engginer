@@ -15,7 +15,9 @@ npm run api               # http://localhost:8080
 npm run worker            # proses terpisah, menjalankan tahap agen
 ```
 
-Buka `http://localhost:8080`, buat akun admin pada layar setup pertama.
+Buka `http://localhost:8080` (atau port publik sandbox: `PORT=12000 ./scripts/serve.sh`),
+lalu masuk dengan akun admin. Reset password admin:
+`node --experimental-strip-types scripts/reset-password.ts <email> <password-baru>`.
 
 Docker:
 

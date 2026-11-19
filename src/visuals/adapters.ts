@@ -5,17 +5,23 @@ import { fileFor, userAssetsFor, validateAssetFile, withRetry, downloadToFile } 
 import type { VisualAdapterDef } from '../core/config.ts';
 import { paths } from '../core/fsx.ts';
 
+function localCandidates(req: GenerateRequest): string[] {
+  const own = userAssetsFor(req.model, path.join(paths.assets, 'own'));
+  const ref = req.referenceImage ? [req.referenceImage] : [];
+  return [...ref, ...own];
+}
+
 /** Highest priority: the user's own photos/videos for this model. */
 export function localAdapter(def: VisualAdapterDef): VisualAdapter {
   return {
     id: def.id,
     def,
-    available: () => true,
+    // A model without uploaded photos is the normal case, not an error: report
+    // unavailable so the resolver moves on to the next provider instead of
+    // tripping the fallback chain and skipping every other adapter.
+    available: (req?: GenerateRequest) => !req || localCandidates(req).length > 0,
     async generate(req: GenerateRequest): Promise<GenerateResult> {
-      const candidates = [
-        ...(req.scene.index < (req.referenceImage ? 1 : 0) && req.referenceImage ? [req.referenceImage] : []),
-        ...userAssetsFor(req.model, path.join(paths.assets, 'own')),
-      ];
+      const candidates = localCandidates(req);
       if (!candidates.length) throw new Error('tidak ada aset lokal untuk model ini');
       const chosen = candidates[req.scene.index % candidates.length];
       const ext = path.extname(chosen).toLowerCase();

@@ -24,7 +24,7 @@ export interface GenerateResult {
 export interface VisualAdapter {
   id: string;
   def: VisualAdapterDef;
-  available(): boolean;
+  available(req?: GenerateRequest): boolean;
   generate(req: GenerateRequest): Promise<GenerateResult>;
 }
 

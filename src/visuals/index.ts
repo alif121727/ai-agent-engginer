@@ -55,7 +55,7 @@ export async function resolveSceneAsset(input: {
       attempts.push({ adapter: id, error: `jenis adapter ${def.kind} tidak didukung` });
       return null;
     }
-    if (!adapter.available()) {
+    if (!adapter.available(input.request)) {
       attempts.push({ adapter: id, error: 'belum dikonfigurasi' });
       return null;
     }

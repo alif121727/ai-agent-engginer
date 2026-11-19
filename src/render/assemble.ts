@@ -1,7 +1,8 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { jobDir, writeJsonAtomic } from '../core/fsx.ts';
+import { jobDir } from '../core/fsx.ts';
+import { writeArtifactFile } from '../agents/guard.ts';
 import { loadDefaults, loadThemes } from '../core/config.ts';
 import { pickTheme } from '../core/theme.ts';
 import type { AgentContext } from '../agents/guard.ts';
@@ -289,7 +290,9 @@ export async function assembleVideo(ctx: AgentContext): Promise<RenderResult> {
     throw new Error(`render tidak valid: bitrate ${result.bitrateKbps} kbps terlalu rendah`);
   }
 
-  writeJsonAtomic(path.join(jobDir(ctx.jobId), 'render-result.json'), result);
+  // Must land in artifacts/, which is where readArtifact looks; writing to the
+  // job root made the QA stage report "render.json tidak ada".
+  writeArtifactFile(ctx.jobId, 'render-result.json', result);
   await ctx.setStageProgress(100);
   return result;
 }

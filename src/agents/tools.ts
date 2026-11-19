@@ -322,9 +322,13 @@ async function generateAssets(ctx: AgentContext, wantVideo: boolean): Promise<As
   }
   const missing = scenes.filter((s) => !assets.some((a) => a.sceneIndex === s.index));
   if (missing.length) {
-    const configured = defaults.visualAdapters.filter((id) => {
+    // Report the adapters that were actually attempted, not just keyed ones:
+    // a keyless provider counts as configured.
+    const configured = order.filter((id) => {
       const def = adapters.adapters[id];
-      return def && (!def.envKey || process.env[def.envKey]);
+      if (!def || !def.enabled) return false;
+      if (def.requiresKey) return Boolean(def.envKey && process.env[def.envKey]);
+      return true;
     });
     throw new PermanentError(
       `${missing.length} dari ${scenes.length} scene belum punya aset. ` +

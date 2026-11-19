@@ -51,7 +51,8 @@ def article_text(url: str) -> str:
     `prop=extracts`. Tanpa infobox, audit akan menuduh ratusan angka benar
     sebagai karangan.
     """
-    title = urllib.parse.unquote(url.rsplit("/", 1)[-1])
+    # Sumber boleh menunjuk bagian artikel: ".../Toyota_GR_Supra (bagian GR Supra GT4)".
+    title = re.sub(r"\s*\(bagian[^)]*\)$", "", urllib.parse.unquote(url.rsplit("/", 1)[-1]))
     path = os.path.join(CACHE, re.sub(r"[^A-Za-z0-9_.-]", "_", title) + ".txt")
     if os.path.exists(path):
         return open(path).read()

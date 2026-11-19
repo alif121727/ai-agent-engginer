@@ -123,7 +123,14 @@ export function pollinationsAdapter(def: VisualAdapterDef): VisualAdapter {
     available: () => Boolean(def.enabled && template),
     async generate(req: GenerateRequest): Promise<GenerateResult> {
       const [w, h] = sizeFor(req.aspect);
-      const prompt = encodeURIComponent(req.scene.prompt);
+      // Pollinations has no negative-prompt parameter, so the negatives are
+      // appended to the prompt itself. Without this the free tier never sees
+      // them and the anti-toy cues only ever reach the paid adapter.
+      const prompt = encodeURIComponent(
+        [req.scene.prompt, req.scene.negativePrompt ? `hindari: ${req.scene.negativePrompt}` : '']
+          .filter(Boolean)
+          .join(', '),
+      );
       // A distinct seed per scene keeps successive stills from collapsing into
       // the same composition, which the similarity gate would reject.
       const seed = seedFor(req.model, req.scene.index);

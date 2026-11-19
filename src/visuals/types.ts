@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { ScenePlan, Theme } from '../core/types.ts';
 import type { VisualAdapterDef } from '../core/config.ts';
+import { findModel } from '../core/catalog.ts';
 
 export interface GenerateRequest {
   scene: ScenePlan;
@@ -43,8 +44,20 @@ export function slugifyModel(model: string): string {
     .toLowerCase();
 }
 
+/**
+ * Folder names are curated by hand (e.g. `porsche-911-gt3-rs-992`), so the
+ * catalog slug wins over the mechanical slug. Without this, 12 catalog models
+ * had photos that were never found and every job silently fell back to a
+ * generator.
+ */
+export function assetFolderSlug(model: string): string {
+  const fromCatalog = findModel(model)?.slug;
+  if (fromCatalog) return fromCatalog;
+  return slugifyModel(model);
+}
+
 export function userAssetsFor(model: string, ownRoot: string): string[] {
-  const dir = path.join(ownRoot, slugifyModel(model));
+  const dir = path.join(ownRoot, assetFolderSlug(model));
   if (!fs.existsSync(dir)) return [];
   return fs
     .readdirSync(dir)

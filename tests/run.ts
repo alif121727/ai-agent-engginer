@@ -586,6 +586,23 @@ await check('adapter lokal yang kosong tidak memblokir provider lain', async () 
   assert(triedFree, 'provider gratis harus dicoba setelah local kosong');
 });
 
+await check('foto katalog terbaca meski nama foldernya beda dari slug otomatis', async () => {
+  const { loadCatalog } = await import('../src/core/catalog.ts');
+  const { userAssetsFor } = await import('../src/visuals/types.ts');
+  const fsx = await import('node:fs');
+  const ownRoot = path.join(process.cwd(), 'assets', 'own');
+  // Folder names are curated by hand (`porsche-911-gt3-rs-992`), so resolving
+  // them by slugify(model) alone silently ignored 12 models' photos. Folders
+  // outside the catalog stay valid: a brief may name any model.
+  const photosIn = (dir: string) =>
+    fsx.existsSync(dir) && fsx.readdirSync(dir).some((f) => /\.(jpe?g|png|webp|mp4|mov)$/i.test(f));
+  const shadowed = loadCatalog()
+    .models.filter((m) => photosIn(path.join(ownRoot, m.slug)))
+    .filter((m) => userAssetsFor(m.model, ownRoot).length === 0)
+    .map((m) => m.model);
+  assert(shadowed.length === 0, `foto katalog tidak terbaca: ${shadowed.join(', ')}`);
+});
+
 await check('render menulis hasil ke artifacts agar QA bisa membacanya', async () => {
   const { artifactPath } = await import('../src/agents/guard.ts');
   assert(

@@ -6,7 +6,7 @@ import { loadThemes, loadDefaults, loadAdapters } from '../core/config.ts';
 import { pickTheme } from '../core/theme.ts';
 import { planScenes, estimateCost } from '../pipeline/scenes.ts';
 import { resolveSceneAsset } from '../visuals/index.ts';
-import { slugifyModel } from '../visuals/types.ts';
+import { assetFolderSlug } from '../visuals/types.ts';
 import { sanitizePrompt } from '../visuals/sanitize.ts';
 import { loadVisuals } from '../core/config.ts';
 import { findModel, specLines } from '../core/catalog.ts';
@@ -339,7 +339,7 @@ async function generateAssets(ctx: AgentContext, wantVideo: boolean): Promise<As
     throw new PermanentError(
       `${missing.length} dari ${scenes.length} scene belum punya aset. ` +
         `Adapter siap: ${configured.join(', ') || 'tidak ada'}. ` +
-        `Unggah foto ke assets/own/${slugifyModel(brief.model)}/ ` +
+        `Unggah foto ke assets/own/${assetFolderSlug(brief.model)}/ ` +
         `atau aktifkan generator gratis (image-gen-free) di Pengaturan.`,
     );
   }

@@ -38,7 +38,7 @@ import { Worker } from '../worker/worker.ts';
 import { loadCapability } from '../pipeline/llm.ts';
 import { publishJob, listPublications } from '../publish/instagram.ts';
 import { userAssetsFor } from '../visuals/types.ts';
-import { clearCheckpoint } from '../pipeline/checkpoint.ts';
+import { clearCheckpoint, readArtifactFile } from '../pipeline/checkpoint.ts';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -383,6 +383,16 @@ export function createApp(opts: AppOptions = {}) {
       return;
     }
     res.sendFile(file);
+  });
+
+  app.get('/api/jobs/:id/artifact/:name', async (req, res) => {
+    const name = path.basename(req.params.name);
+    const value = readArtifactFile<unknown>(req.params.id, name);
+    if (value === null) {
+      res.status(404).json({ error: 'artefak tidak ada' });
+      return;
+    }
+    res.json({ name, value });
   });
 
   app.get('/api/jobs/:id/asset/:scene', async (req, res) => {

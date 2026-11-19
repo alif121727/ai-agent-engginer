@@ -207,7 +207,9 @@ export class Worker {
               jobId: job.id,
               level: 'error',
               scope: 'worker',
-              message: `job gagal di tahap ${stage.name} setelah 3 percobaan`,
+              message: outcome.permanent
+                ? `job gagal di tahap ${stage.name}: ${outcome.error ?? 'gagal'}`
+                : `job gagal di tahap ${stage.name} setelah 3 percobaan`,
             });
             return;
           }

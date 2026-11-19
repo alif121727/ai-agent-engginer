@@ -743,6 +743,8 @@ function JobDetail({ id }: { id: string }) {
         </section>
       )}
 
+      <ArtifactPanel jobId={job.id} artifacts={data.artifacts} />
+
       <AssetPanel model={job.model} />
 
       <section className="card" style={{ gridColumn: 'span 5' }}>
@@ -793,6 +795,82 @@ function JobDetail({ id }: { id: string }) {
 }
 
 // -------------------------------------------------------------- own assets
+
+// ------------------------------------------------------------ artifact panel
+
+interface QaReport {
+  passed: boolean;
+  preview?: string;
+  sharpness?: Record<string, number>;
+  issues?: { sceneIndex: number; code: string; reason: string }[];
+  video?: { ok?: boolean; width?: number; height?: number; durationSec?: number; expectedDurationSec?: number };
+}
+
+function ArtifactPanel({ jobId, artifacts }: { jobId: string; artifacts: string[] }) {
+  const [qa, setQa] = useState<QaReport | null>(null);
+  const hasQa = artifacts.includes('qa.json');
+
+  useEffect(() => {
+    if (!hasQa) {
+      setQa(null);
+      return;
+    }
+    api
+      .get<{ value: QaReport }>(`/jobs/${jobId}/artifact/qa.json`)
+      .then((r) => setQa(r.value))
+      .catch(() => setQa(null));
+  }, [jobId, hasQa]);
+
+  return (
+    <section className="card" style={{ gridColumn: 'span 5' }}>
+      <p className="label">Artefak</p>
+      {artifacts.length === 0 ? (
+        <p className="muted" style={{ marginTop: 8 }}>
+          Belum ada artefak.
+        </p>
+      ) : (
+        <ul style={{ marginTop: 12, display: 'grid', gap: 6, listStyle: 'none', padding: 0 }}>
+          {artifacts.map((name) => (
+            <li key={name} style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+              <span>{name}</span>
+              <a
+                className="muted"
+                href={`/api/jobs/${jobId}/artifact/${name}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                lihat
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {qa && (
+        <div style={{ marginTop: 20, borderTop: '1px solid var(--line)', paddingTop: 16 }}>
+          <p className="label">Hasil QA</p>
+          <p style={{ marginTop: 8, color: qa.passed ? 'var(--cream)' : 'var(--orange)' }}>
+            {qa.passed ? 'Lolos' : `Ditolak · ${qa.issues?.length ?? 0} masalah`}
+          </p>
+          {qa.video?.durationSec !== undefined && (
+            <p className="muted" style={{ marginTop: 6, fontSize: 13 }}>
+              {qa.video.width}×{qa.video.height} · {qa.video.durationSec.toFixed(1)} dtk
+            </p>
+          )}
+          {qa.issues && qa.issues.length > 0 && (
+            <ul style={{ marginTop: 10, paddingLeft: 18, fontSize: 13 }}>
+              {qa.issues.slice(0, 5).map((issue) => (
+                <li key={`${issue.sceneIndex}-${issue.code}`} className="muted">
+                  Scene {issue.sceneIndex + 1}: {issue.reason}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
 
 function AssetPanel({ model }: { model: string }) {
   const [files, setFiles] = useState<string[]>([]);

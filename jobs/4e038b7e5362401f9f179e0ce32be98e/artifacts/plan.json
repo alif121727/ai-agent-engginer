@@ -1,0 +1,19 @@
+{
+  "durationSec": 45,
+  "bumped": false,
+  "originalDuration": 45,
+  "themeId": "porsche",
+  "aspect": "16:9",
+  "sceneCount": 7,
+  "sceneKeys": [
+    "hook",
+    "exterior",
+    "features",
+    "interior",
+    "action",
+    "detail_wheel",
+    "cta"
+  ],
+  "costEstimate": 0.42,
+  "createdAt": "2026-11-19T14:50:52.710Z"
+}

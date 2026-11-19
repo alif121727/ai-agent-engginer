@@ -1,0 +1,19 @@
+{
+  "model": "Ferrari 296 GTB",
+  "specs": [
+    {
+      "text": "V6 3.0L twin-turbo hybrid",
+      "source": "brief"
+    },
+    {
+      "text": "830 hp gabungan",
+      "source": "brief"
+    },
+    {
+      "text": "0-100 km/jam 2,9 detik",
+      "source": "brief"
+    }
+  ],
+  "missing": [],
+  "note": "semua angka berasal dari brief, tidak ada yang dikarang"
+}

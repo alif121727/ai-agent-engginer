@@ -1,0 +1,15 @@
+{
+  "model": "Porsche 911 GT3",
+  "specs": [
+    {
+      "text": "V6 3.0L",
+      "source": "brief"
+    },
+    {
+      "text": "830 hp",
+      "source": "brief"
+    }
+  ],
+  "missing": [],
+  "note": "semua angka berasal dari brief, tidak ada yang dikarang"
+}

@@ -1,0 +1,60 @@
+{
+  "loudnessLufs": -14,
+  "music": {
+    "ducking": true,
+    "gain": -18
+  },
+  "sfx": [
+    {
+      "sceneIndex": 0,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 1,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 2,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 3,
+      "bed": "cabin-ambience"
+    },
+    {
+      "sceneIndex": 4,
+      "bed": "engine-rev"
+    },
+    {
+      "sceneIndex": 5,
+      "bed": "studio-room"
+    }
+  ],
+  "subtitles": [
+    {
+      "sceneIndex": 0,
+      "text": "Ferrari 296 GTB. Hibrida balap."
+    },
+    {
+      "sceneIndex": 1,
+      "text": "Ini Ferrari 296 GTB, dilihat dari setiap sudut."
+    },
+    {
+      "sceneIndex": 2,
+      "text": "Salah satu andalannya: V6 3.0L hibrida."
+    },
+    {
+      "sceneIndex": 3,
+      "text": "Masuk ke kabin, semua tersusun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "text": "Di jalan, V6 3.0L hibrida."
+    },
+    {
+      "sceneIndex": 5,
+      "text": "Ferrari 296 GTB. Hibrida balap."
+    }
+  ],
+  "ttsAvailable": false
+}

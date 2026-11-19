@@ -1,0 +1,21 @@
+{
+  "durationSec": 60,
+  "bumped": false,
+  "originalDuration": 60,
+  "themeId": "ferrari",
+  "aspect": "16:9",
+  "sceneCount": 9,
+  "sceneKeys": [
+    "hook",
+    "exterior",
+    "features",
+    "interior",
+    "action",
+    "detail_wheel",
+    "detail_engine",
+    "night",
+    "cta"
+  ],
+  "costEstimate": 0.54,
+  "createdAt": "2026-11-19T13:12:22.167Z"
+}

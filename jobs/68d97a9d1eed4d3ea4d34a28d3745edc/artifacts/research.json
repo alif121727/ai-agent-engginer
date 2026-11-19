@@ -1,0 +1,19 @@
+{
+  "model": "Porsche 911 GT3",
+  "specs": [
+    {
+      "text": "Flat-six 4.0L naturally aspirated",
+      "source": "brief"
+    },
+    {
+      "text": "510 hp pada 8.500 rpm",
+      "source": "brief"
+    },
+    {
+      "text": "Bobot ringan 1.420 kg",
+      "source": "brief"
+    }
+  ],
+  "missing": [],
+  "note": "semua angka berasal dari brief, tidak ada yang dikarang"
+}

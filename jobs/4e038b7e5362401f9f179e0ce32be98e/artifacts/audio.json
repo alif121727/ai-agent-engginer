@@ -1,0 +1,68 @@
+{
+  "loudnessLufs": -14,
+  "music": {
+    "ducking": true,
+    "gain": -18
+  },
+  "sfx": [
+    {
+      "sceneIndex": 0,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 1,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 2,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 3,
+      "bed": "cabin-ambience"
+    },
+    {
+      "sceneIndex": 4,
+      "bed": "engine-rev"
+    },
+    {
+      "sceneIndex": 5,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 6,
+      "bed": "studio-room"
+    }
+  ],
+  "subtitles": [
+    {
+      "sceneIndex": 0,
+      "text": "Porsche 911 GT3. Uji stuck."
+    },
+    {
+      "sceneIndex": 1,
+      "text": "Ini Porsche 911 GT3, dilihat dari setiap sudut."
+    },
+    {
+      "sceneIndex": 2,
+      "text": "Salah satu andalannya: V6 3.0L."
+    },
+    {
+      "sceneIndex": 3,
+      "text": "Masuk ke kabin, semua tersusun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "text": "Di jalan, V6 3.0L."
+    },
+    {
+      "sceneIndex": 5,
+      "text": "830 hp."
+    },
+    {
+      "sceneIndex": 6,
+      "text": "Porsche 911 GT3. Uji stuck."
+    }
+  ],
+  "ttsAvailable": false
+}

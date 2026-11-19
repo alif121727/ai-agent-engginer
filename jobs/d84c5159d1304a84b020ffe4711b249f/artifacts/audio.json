@@ -1,0 +1,84 @@
+{
+  "loudnessLufs": -14,
+  "music": {
+    "ducking": true,
+    "gain": -18
+  },
+  "sfx": [
+    {
+      "sceneIndex": 0,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 1,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 2,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 3,
+      "bed": "cabin-ambience"
+    },
+    {
+      "sceneIndex": 4,
+      "bed": "engine-rev"
+    },
+    {
+      "sceneIndex": 5,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 6,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 7,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 8,
+      "bed": "studio-room"
+    }
+  ],
+  "subtitles": [
+    {
+      "sceneIndex": 0,
+      "text": "Porsche 911 GT3. Mobil ganteng."
+    },
+    {
+      "sceneIndex": 1,
+      "text": "Ini Porsche 911 GT3, dilihat dari setiap sudut."
+    },
+    {
+      "sceneIndex": 2,
+      "text": "Salah satu andalannya: ### 💨 Mesin Boxer 4.0L Naturally Aspirated yang Legendaris."
+    },
+    {
+      "sceneIndex": 3,
+      "text": "Masuk ke kabin, semua tersusun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "text": "Di jalan, Yang membuatnya istimewa adalah kemampuannya untuk berputar hingga **9.000 rpm**. Karakter mesin *high-revving* ini memberikan sensasi dan suara yang semakin memuncak seiring bertambahnya putaran, sebuah pengalaman berkendara yang disebut sebagai \"ode kepada mesin pembakaran\" di era modern.."
+    },
+    {
+      "sceneIndex": 5,
+      "text": "### ⚡ Performa dan Akselerasi."
+    },
+    {
+      "sceneIndex": 6,
+      "text": "Dengan mesin tersebut, 911 GT3 menawarkan performa yang sangat impresif:."
+    },
+    {
+      "sceneIndex": 7,
+      "text": "*   **Akselerasi 0-100 km/jam:** Hanya dalam **3,4 detik** (dengan transmisi PDK).."
+    },
+    {
+      "sceneIndex": 8,
+      "text": "Porsche 911 GT3. Mobil ganteng."
+    }
+  ],
+  "ttsAvailable": false
+}

@@ -1,0 +1,13 @@
+{
+  "file": "/workspace/project/ai-agent-engginer/jobs/44575cdec78f44c2ab6436eca7b7cf6c/video.mp4",
+  "durationSec": 30,
+  "width": 1920,
+  "height": 1080,
+  "fps": 30,
+  "codec": "h264",
+  "scenes": 6,
+  "preview": "/workspace/project/ai-agent-engginer/jobs/44575cdec78f44c2ab6436eca7b7cf6c/preview.jpg",
+  "hasAudio": true,
+  "bitrateKbps": 7245,
+  "transitions": 5
+}

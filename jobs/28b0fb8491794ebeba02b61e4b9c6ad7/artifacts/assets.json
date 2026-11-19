@@ -1,0 +1,65 @@
+[
+  {
+    "sceneIndex": 0,
+    "kind": "image",
+    "path": "/workspace/project/ai-agent-engginer/jobs/28b0fb8491794ebeba02b61e4b9c6ad7/assets/scene-01.png",
+    "source": "/workspace/project/ai-agent-engginer/assets/own/ferrari-296-gtb/foto-0.png",
+    "provider": "local"
+  },
+  {
+    "sceneIndex": 1,
+    "kind": "image",
+    "path": "/workspace/project/ai-agent-engginer/jobs/28b0fb8491794ebeba02b61e4b9c6ad7/assets/scene-02.png",
+    "source": "/workspace/project/ai-agent-engginer/assets/own/ferrari-296-gtb/foto-1.png",
+    "provider": "local"
+  },
+  {
+    "sceneIndex": 2,
+    "kind": "image",
+    "path": "/workspace/project/ai-agent-engginer/jobs/28b0fb8491794ebeba02b61e4b9c6ad7/assets/scene-03.png",
+    "source": "/workspace/project/ai-agent-engginer/assets/own/ferrari-296-gtb/foto-2.png",
+    "provider": "local"
+  },
+  {
+    "sceneIndex": 3,
+    "kind": "image",
+    "path": "/workspace/project/ai-agent-engginer/jobs/28b0fb8491794ebeba02b61e4b9c6ad7/assets/scene-04.png",
+    "source": "/workspace/project/ai-agent-engginer/assets/own/ferrari-296-gtb/foto-3.png",
+    "provider": "local"
+  },
+  {
+    "sceneIndex": 4,
+    "kind": "image",
+    "path": "/workspace/project/ai-agent-engginer/jobs/28b0fb8491794ebeba02b61e4b9c6ad7/assets/scene-05.png",
+    "source": "/workspace/project/ai-agent-engginer/assets/own/ferrari-296-gtb/foto-4.png",
+    "provider": "local"
+  },
+  {
+    "sceneIndex": 5,
+    "kind": "image",
+    "path": "/workspace/project/ai-agent-engginer/jobs/28b0fb8491794ebeba02b61e4b9c6ad7/assets/scene-06.png",
+    "source": "/workspace/project/ai-agent-engginer/assets/own/ferrari-296-gtb/foto-0.png",
+    "provider": "local"
+  },
+  {
+    "sceneIndex": 6,
+    "kind": "image",
+    "path": "/workspace/project/ai-agent-engginer/jobs/28b0fb8491794ebeba02b61e4b9c6ad7/assets/scene-07.png",
+    "source": "/workspace/project/ai-agent-engginer/assets/own/ferrari-296-gtb/foto-1.png",
+    "provider": "local"
+  },
+  {
+    "sceneIndex": 7,
+    "kind": "image",
+    "path": "/workspace/project/ai-agent-engginer/jobs/28b0fb8491794ebeba02b61e4b9c6ad7/assets/scene-08.png",
+    "source": "/workspace/project/ai-agent-engginer/assets/own/ferrari-296-gtb/foto-2.png",
+    "provider": "local"
+  },
+  {
+    "sceneIndex": 8,
+    "kind": "image",
+    "path": "/workspace/project/ai-agent-engginer/jobs/28b0fb8491794ebeba02b61e4b9c6ad7/assets/scene-09.png",
+    "source": "/workspace/project/ai-agent-engginer/assets/own/ferrari-296-gtb/foto-3.png",
+    "provider": "local"
+  }
+]

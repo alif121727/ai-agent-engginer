@@ -1,0 +1,68 @@
+{
+  "loudnessLufs": -14,
+  "music": {
+    "ducking": true,
+    "gain": -18
+  },
+  "sfx": [
+    {
+      "sceneIndex": 0,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 1,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 2,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 3,
+      "bed": "cabin-ambience"
+    },
+    {
+      "sceneIndex": 4,
+      "bed": "engine-rev"
+    },
+    {
+      "sceneIndex": 5,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 6,
+      "bed": "studio-room"
+    }
+  ],
+  "subtitles": [
+    {
+      "sceneIndex": 0,
+      "text": "Porsche Taycan Turbo S. Listrik tanpa kompromi."
+    },
+    {
+      "sceneIndex": 1,
+      "text": "Ini Porsche Taycan Turbo S, 2019–sekarang. Mesin dua motor listrik sinkron AC."
+    },
+    {
+      "sceneIndex": 2,
+      "text": "Salah satu andalannya: 800V arsitektur."
+    },
+    {
+      "sceneIndex": 3,
+      "text": "Kabin Porsche Taycan Turbo S, semua tersusun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "text": "Di jalan, 761 PS overboost (560 kW), nol sampai seratus 2,8 dtk."
+    },
+    {
+      "sceneIndex": 5,
+      "text": "0–100 km/jam 2,8 dtk · top speed 260 km/jam."
+    },
+    {
+      "sceneIndex": 6,
+      "text": "Porsche Taycan Turbo S. Listrik tanpa kompromi."
+    }
+  ],
+  "ttsAvailable": false
+}

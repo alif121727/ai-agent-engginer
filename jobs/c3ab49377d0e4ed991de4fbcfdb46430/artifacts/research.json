@@ -1,0 +1,53 @@
+{
+  "model": "Porsche Taycan Turbo S",
+  "catalog": {
+    "merk": "Porsche",
+    "seri": "Taycan Turbo S",
+    "tahun": "2019–sekarang",
+    "kategori": "sport",
+    "mesin": "dua motor listrik sinkron AC",
+    "tenaga": "761 PS overboost (560 kW)",
+    "torsi": "1.050 Nm",
+    "layout": "dual-motor, AWD",
+    "berat": "2.295 kg",
+    "nol100": "2,8 dtk",
+    "vmax": "260 km/jam",
+    "sumber": "https://en.wikipedia.org/wiki/Porsche_Taycan"
+  },
+  "specs": [
+    {
+      "text": "761 hp overboost",
+      "source": "brief"
+    },
+    {
+      "text": "0-100 km/j 2.8 dtk",
+      "source": "brief"
+    },
+    {
+      "text": "800V arsitektur",
+      "source": "brief"
+    },
+    {
+      "text": "dua motor listrik sinkron AC · 761 PS overboost (560 kW)",
+      "source": "katalog"
+    },
+    {
+      "text": "Torsi 1.050 Nm · dual-motor, AWD",
+      "source": "katalog"
+    },
+    {
+      "text": "0–100 km/jam 2,8 dtk · top speed 260 km/jam",
+      "source": "katalog"
+    },
+    {
+      "text": "Berat 2.295 kg · produksi 2019–sekarang",
+      "source": "katalog"
+    },
+    {
+      "text": "Arsitektur 800 volt: tenaga penuh bertahan lebih lama, isi ulang lebih cepat.",
+      "source": "katalog"
+    }
+  ],
+  "missing": [],
+  "note": "angka dari brief didahulukan; sisanya dari katalog yang bersumber Wikipedia"
+}

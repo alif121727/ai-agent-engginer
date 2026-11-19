@@ -1,0 +1,33 @@
+{
+  "passed": true,
+  "issues": [],
+  "hashes": {
+    "0": "6000008b87e7edff",
+    "1": "001e7f7ef41102de",
+    "2": "0818fefefe700000",
+    "3": "fefcfc5e0f02c0e0",
+    "4": "0f3f3f7878f00387",
+    "5": "00dfff1e0e81c1f0"
+  },
+  "sharpness": {
+    "0": 20,
+    "1": 23,
+    "2": 23,
+    "3": 23,
+    "4": 24,
+    "5": 24
+  },
+  "checkedAt": "2026-11-19T15:13:11.505Z",
+  "preview": "/workspace/project/ai-agent-engginer/jobs/bf2d231e45a947029860a1fa95767261/preview.jpg",
+  "video": {
+    "ok": true,
+    "width": 1920,
+    "height": 1080,
+    "durationSec": 30,
+    "codec": "h264",
+    "hasAudio": true,
+    "audioCodec": "aac",
+    "fps": 30,
+    "expectedDurationSec": 30
+  }
+}

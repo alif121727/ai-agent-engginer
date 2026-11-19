@@ -1,0 +1,60 @@
+{
+  "loudnessLufs": -14,
+  "music": {
+    "ducking": true,
+    "gain": -18
+  },
+  "sfx": [
+    {
+      "sceneIndex": 0,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 1,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 2,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 3,
+      "bed": "cabin-ambience"
+    },
+    {
+      "sceneIndex": 4,
+      "bed": "engine-rev"
+    },
+    {
+      "sceneIndex": 5,
+      "bed": "studio-room"
+    }
+  ],
+  "subtitles": [
+    {
+      "sceneIndex": 0,
+      "text": "Lamborghini Huracan STO. Aero balap untuk jalan raya."
+    },
+    {
+      "sceneIndex": 1,
+      "text": "Ini Lamborghini Huracan STO, 2021–2024. Mesin V10 5.2L naturally aspirated (DGF)."
+    },
+    {
+      "sceneIndex": 2,
+      "text": "Salah satu andalannya: Aero cofango ringan."
+    },
+    {
+      "sceneIndex": 3,
+      "text": "Kabin Lamborghini STO (Super Trofeo Omologata), semua tersusun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "text": "Di jalan, 640 PS, nol sampai seratus 3,0 dtk."
+    },
+    {
+      "sceneIndex": 5,
+      "text": "Lamborghini Huracan STO. Aero balap untuk jalan raya."
+    }
+  ],
+  "ttsAvailable": false
+}

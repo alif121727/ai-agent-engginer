@@ -1,0 +1,41 @@
+{
+  "model": "Porsche 911 GT3",
+  "tagline": "",
+  "lines": [
+    {
+      "sceneIndex": 0,
+      "onScreenText": "Porsche 911 GT3",
+      "voiceover": "Porsche 911 GT3."
+    },
+    {
+      "sceneIndex": 1,
+      "onScreenText": "Porsche 911 GT3",
+      "voiceover": "Ini Porsche 911 GT3, dilihat dari setiap sudut."
+    },
+    {
+      "sceneIndex": 2,
+      "onScreenText": "4.0L flat-six",
+      "voiceover": "Salah satu andalannya: 4.0L flat-six."
+    },
+    {
+      "sceneIndex": 3,
+      "onScreenText": "",
+      "voiceover": "Masuk ke kabin, semua tersusun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "onScreenText": "",
+      "voiceover": "Di jalan, 4.0L flat-six."
+    },
+    {
+      "sceneIndex": 5,
+      "onScreenText": "",
+      "voiceover": "4.0L flat-six."
+    },
+    {
+      "sceneIndex": 6,
+      "onScreenText": "Porsche 911 GT3",
+      "voiceover": "Porsche 911 GT3."
+    }
+  ]
+}

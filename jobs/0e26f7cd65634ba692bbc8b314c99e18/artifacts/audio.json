@@ -1,0 +1,60 @@
+{
+  "loudnessLufs": -14,
+  "music": {
+    "ducking": true,
+    "gain": -18
+  },
+  "sfx": [
+    {
+      "sceneIndex": 0,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 1,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 2,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 3,
+      "bed": "cabin-ambience"
+    },
+    {
+      "sceneIndex": 4,
+      "bed": "engine-rev"
+    },
+    {
+      "sceneIndex": 5,
+      "bed": "studio-room"
+    }
+  ],
+  "subtitles": [
+    {
+      "sceneIndex": 0,
+      "text": "Ferrari 296 GTB. Hibrida yang masih menyimpan murka balap."
+    },
+    {
+      "sceneIndex": 1,
+      "text": "Ini Ferrari 296 GTB, 2022–2025. Mesin V6 3.0L twin-turbo 120° (F163 BC) + motor listrik."
+    },
+    {
+      "sceneIndex": 2,
+      "text": "Salah satu andalannya: 0–100 km/jam 2,9 dtk · top speed >330 km/jam."
+    },
+    {
+      "sceneIndex": 3,
+      "text": "Kabin Ferrari 296 GTB (F171), semua tersusun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "text": "Di jalan, 830 PS (663 PS mesin + 167 PS listrik), nol sampai seratus 2,9 dtk."
+    },
+    {
+      "sceneIndex": 5,
+      "text": "Ferrari 296 GTB. Hibrida yang masih menyimpan murka balap."
+    }
+  ],
+  "ttsAvailable": false
+}

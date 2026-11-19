@@ -2,7 +2,13 @@ node_modules/
 .env
 data/*.db
 data/*.db-*
-jobs/
+# Job outputs: keep the small text artifacts (script, storyboard, QA report)
+# under version control so a lost sandbox loses no creative work, but never
+# commit the rendered videos, stills, or clips.
+jobs/**
+!jobs/*/
+!jobs/*/artifacts/
+!jobs/*/artifacts/**
 cache/
 public/app.js
 public/app.js.map

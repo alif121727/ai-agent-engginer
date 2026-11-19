@@ -1,0 +1,41 @@
+{
+  "model": "Porsche 911 GT3",
+  "tagline": "Presisi di setiap tikungan",
+  "lines": [
+    {
+      "sceneIndex": 0,
+      "onScreenText": "Presisi di setiap tikungan",
+      "voiceover": "Porsche 911 GT3. Presisi di setiap tikungan."
+    },
+    {
+      "sceneIndex": 1,
+      "onScreenText": "Porsche 911 GT3",
+      "voiceover": "Ini Porsche 911 GT3, dilihat dari setiap sudut."
+    },
+    {
+      "sceneIndex": 2,
+      "onScreenText": "Flat-six 4.0L naturally aspirated",
+      "voiceover": "Salah satu andalannya: Bobot ringan 1.420 kg."
+    },
+    {
+      "sceneIndex": 3,
+      "onScreenText": "510 hp pada 8.500 rpm",
+      "voiceover": "Masuk ke kabin, semua tersusun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "onScreenText": "Bobot ringan 1.420 kg",
+      "voiceover": "Di jalan, 510 hp pada 8.500 rpm."
+    },
+    {
+      "sceneIndex": 5,
+      "onScreenText": "",
+      "voiceover": "Bobot ringan 1.420 kg."
+    },
+    {
+      "sceneIndex": 6,
+      "onScreenText": "Porsche 911 GT3 — Presisi di setiap tikungan",
+      "voiceover": "Porsche 911 GT3. Presisi di setiap tikungan."
+    }
+  ]
+}

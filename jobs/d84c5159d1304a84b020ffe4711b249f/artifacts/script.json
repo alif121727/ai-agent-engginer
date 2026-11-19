@@ -1,0 +1,51 @@
+{
+  "model": "Porsche 911 GT3",
+  "tagline": "Mobil ganteng",
+  "lines": [
+    {
+      "sceneIndex": 0,
+      "onScreenText": "Mobil ganteng",
+      "voiceover": "Porsche 911 GT3. Mobil ganteng."
+    },
+    {
+      "sceneIndex": 1,
+      "onScreenText": "Porsche 911 GT3",
+      "voiceover": "Ini Porsche 911 GT3, dilihat dari setiap sudut."
+    },
+    {
+      "sceneIndex": 2,
+      "onScreenText": "### 🏁 Warisan Balap yang Murni",
+      "voiceover": "Salah satu andalannya: ### 💨 Mesin Boxer 4.0L Naturally Aspirated yang Legendaris."
+    },
+    {
+      "sceneIndex": 3,
+      "onScreenText": "Sejak diperkenalkan pada tahun 1999, Porsche 911 GT3 telah menjadi simbol kombinasi sempurna antara akar balap sejati dan kegunaan sehari-hari. Filosofinya adalah menghadirkan performa sirkuit yang murni ke jalan raya, dan ini adalah inti dari setiap generasinya.",
+      "voiceover": "Masuk ke kabin, semua tersusun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "onScreenText": "### 💨 Mesin Boxer 4.0L Naturally Aspirated yang Legendaris",
+      "voiceover": "Di jalan, Yang membuatnya istimewa adalah kemampuannya untuk berputar hingga **9.000 rpm**. Karakter mesin *high-revving* ini memberikan sensasi dan suara yang semakin memuncak seiring bertambahnya putaran, sebuah pengalaman berkendara yang disebut sebagai \"ode kepada mesin pembakaran\" di era modern.."
+    },
+    {
+      "sceneIndex": 5,
+      "onScreenText": "",
+      "voiceover": "### ⚡ Performa dan Akselerasi."
+    },
+    {
+      "sceneIndex": 6,
+      "onScreenText": "",
+      "voiceover": "Dengan mesin tersebut, 911 GT3 menawarkan performa yang sangat impresif:."
+    },
+    {
+      "sceneIndex": 7,
+      "onScreenText": "",
+      "voiceover": "*   **Akselerasi 0-100 km/jam:** Hanya dalam **3,4 detik** (dengan transmisi PDK).."
+    },
+    {
+      "sceneIndex": 8,
+      "onScreenText": "Porsche 911 GT3 — Mobil ganteng",
+      "voiceover": "Porsche 911 GT3. Mobil ganteng."
+    }
+  ]
+}

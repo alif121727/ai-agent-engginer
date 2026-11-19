@@ -89,7 +89,7 @@ export async function sessionUser(token: string | undefined): Promise<User | nul
     await db().run('DELETE FROM sessions WHERE id = ?', [token]);
     return null;
   }
-  const user = await db().get<User>('SELECT id, email, role FROM users WHERE id = ?', [row.user_id]);
+  const user = await db().get<User>('SELECT id, email, username, role FROM users WHERE id = ?', [row.user_id]);
   return user ?? null;
 }
 

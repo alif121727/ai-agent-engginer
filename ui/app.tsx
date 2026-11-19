@@ -119,11 +119,15 @@ function Header({
   navigate,
   connection,
   onNew,
+  user,
+  onLogout,
 }: {
   route: string;
   navigate: (to: string) => void;
   connection: Connection;
   onNew: () => void;
+  user: { email: string; username: string | null };
+  onLogout: () => void;
 }) {
   const links = [
     ['/', 'Dashboard'],
@@ -145,6 +149,12 @@ function Header({
       </nav>
       <div style={{ marginLeft: 'auto', display: 'flex', gap: 12, alignItems: 'center' }}>
         <StatusChip status={connection} />
+        <span className="label" title={user.email}>
+          {user.username ?? user.email}
+        </span>
+        <button className="btn btn--ghost" onClick={onLogout}>
+          Keluar
+        </button>
         <button className="btn btn--primary" onClick={onNew}>
           Template baru <span aria-hidden="true">→</span>
         </button>
@@ -1212,7 +1222,7 @@ function Schedule() {
 
 function Auth({ onDone }: { onDone: () => void }) {
   const [needsSetup, setNeedsSetup] = useState<boolean | null>(null);
-  const [email, setEmail] = useState('');
+  const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
@@ -1223,8 +1233,8 @@ function Auth({ onDone }: { onDone: () => void }) {
   const submit = async () => {
     setError('');
     try {
-      if (needsSetup) await api.send('/setup', { email, password });
-      else await api.send('/login', { email, password });
+      if (needsSetup) await api.send('/setup', { email: login, password, username: login.split('@')[0] });
+      else await api.send('/login', { email: login, password });
       onDone();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'gagal');
@@ -1237,8 +1247,8 @@ function Auth({ onDone }: { onDone: () => void }) {
         <p className="label">{needsSetup ? 'Setup pertama' : 'Masuk'}</p>
         <h1 style={{ marginTop: 12, fontSize: '2rem' }}>STUDIO<span style={{ color: 'var(--orange)' }}>/</span>OTOMOTIF</h1>
         <div className="field" style={{ marginTop: 24 }}>
-          <label htmlFor="email">Email</label>
-          <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" />
+          <label htmlFor="login">{needsSetup ? 'Email' : 'Username atau email'}</label>
+          <input id="login" type="text" value={login} onChange={(e) => setLogin(e.target.value)} autoComplete="username" />
         </div>
         <div className="field">
           <label htmlFor="password">Password</label>
@@ -1255,7 +1265,7 @@ function Auth({ onDone }: { onDone: () => void }) {
             {error}
           </p>
         )}
-        <button className="btn btn--primary" onClick={submit} disabled={!email || !password}>
+        <button className="btn btn--primary" onClick={submit} disabled={!login || !password}>
           {needsSetup ? 'Buat akun admin' : 'Masuk'}
         </button>
       </section>
@@ -1268,12 +1278,12 @@ function Auth({ onDone }: { onDone: () => void }) {
 function App() {
   const [route, navigate] = useRoute();
   const [connection, setConnection] = useState<Connection>('ONLINE');
-  const [user, setUser] = useState<{ email: string } | null>(null);
+  const [user, setUser] = useState<{ email: string; username: string | null } | null>(null);
   const [checking, setChecking] = useState(true);
 
   const refreshMe = useCallback(() => {
     api
-      .get<{ user: { email: string } | null }>('/me')
+      .get<{ user: { email: string; username: string | null } | null }>('/me')
       .then((d) => setUser(d.user))
       .catch(() => setUser(null))
       .finally(() => setChecking(false));
@@ -1308,7 +1318,17 @@ function App() {
 
   return (
     <div className="shell">
-      <Header route={route} navigate={navigate} connection={connection} onNew={() => navigate('/template-baru')} />
+      <Header
+        route={route}
+        navigate={navigate}
+        connection={connection}
+        onNew={() => navigate('/template-baru')}
+        user={user}
+        onLogout={async () => {
+          await api.send('/logout', {}).catch(() => {});
+          setUser(null);
+        }}
+      />
       <div className="ruler" aria-hidden="true" />
       <OfflineBanner connection={connection} />
       {route === '/' && <Dashboard navigate={navigate} connection={connection} />}

@@ -103,13 +103,19 @@ export function createApp(opts: AppOptions = {}) {
       res.status(409).json({ error: 'setup sudah dilakukan' });
       return;
     }
-    const parsed = z.object({ email: z.string().email(), password: z.string().min(8) }).safeParse(req.body);
+    const parsed = z
+      .object({
+        email: z.string().email(),
+        password: z.string().min(8),
+        username: z.string().trim().min(3).max(32).optional(),
+      })
+      .safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: 'email/password tidak valid (password minimal 8 karakter)' });
       return;
     }
     try {
-      const user = await createUser(parsed.data.email, parsed.data.password);
+      const user = await createUser(parsed.data.email, parsed.data.password, 'admin', parsed.data.username);
       const token = await createSession(user.id);
       res.setHeader('Set-Cookie', cookieHeader(token));
       res.json({ user });
@@ -125,12 +131,12 @@ export function createApp(opts: AppOptions = {}) {
     }
     const parsed = z.object({ email: z.string(), password: z.string() }).safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'email/password wajib' });
+      res.status(400).json({ error: 'username/email dan password wajib' });
       return;
     }
     const user = await authenticate(parsed.data.email, parsed.data.password);
     if (!user) {
-      res.status(401).json({ error: 'email atau password salah' });
+      res.status(401).json({ error: 'username/email atau password salah' });
       return;
     }
     await purgeExpiredSessions();

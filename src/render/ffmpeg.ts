@@ -8,6 +8,9 @@ export interface ProbeInfo {
   height?: number;
   durationSec?: number;
   codec?: string;
+  hasAudio?: boolean;
+  audioCodec?: string;
+  fps?: number;
   error?: string;
 }
 
@@ -22,15 +25,27 @@ export function ffprobe(file: string): ProbeInfo {
   try {
     const json = JSON.parse(res.stdout) as {
       format?: { duration?: string };
-      streams?: { codec_type?: string; width?: number; height?: number; codec_name?: string }[];
+      streams?: {
+        codec_type?: string;
+        width?: number;
+        height?: number;
+        codec_name?: string;
+        avg_frame_rate?: string;
+      }[];
     };
     const video = json.streams?.find((s) => s.codec_type === 'video');
+    const audio = json.streams?.find((s) => s.codec_type === 'audio');
+    const fpsRaw = video?.avg_frame_rate?.split('/');
+    const fps = fpsRaw && Number(fpsRaw[1]) ? Number(fpsRaw[0]) / Number(fpsRaw[1]) : undefined;
     return {
       ok: Boolean(video),
       width: video?.width,
       height: video?.height,
       durationSec: json.format?.duration ? Number(json.format.duration) : undefined,
       codec: video?.codec_name,
+      hasAudio: Boolean(audio),
+      audioCodec: audio?.codec_name,
+      fps: fps && Number.isFinite(fps) ? Math.round(fps) : undefined,
     };
   } catch {
     return { ok: false, error: 'output ffprobe tidak bisa dibaca' };
@@ -77,6 +92,15 @@ export function frameSharpness(file: string, atSec = 1): number {
     }
   }
   return Math.round(sum / ((SHARP_W - 2) * (SHARP_H - 2)));
+}
+
+/** Dump one frame of a video to a JPEG for QA inspection. */
+export function extractFrame(file: string, atSec: number, outFile: string): boolean {
+  const res = spawnSync('ffmpeg', [
+    '-v', 'error', '-y', '-ss', String(Math.max(0, atSec)), '-i', file,
+    '-frames:v', '1', '-q:v', '2', outFile,
+  ]);
+  return res.status === 0 && fs.existsSync(outFile) && fs.statSync(outFile).size > 1000;
 }
 
 /** 64-bit average hash, used to prove consecutive scenes differ. */

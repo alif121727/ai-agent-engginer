@@ -7,6 +7,7 @@ import { pickTheme } from '../core/theme.ts';
 import type { AgentContext } from '../agents/guard.ts';
 import type { AssetRecord, ScenePlan, Theme } from '../core/types.ts';
 import { ffprobe, contactSheet } from './ffmpeg.ts';
+import { buildMusicBed, muxAudio } from './audio.ts';
 
 export interface RenderResult {
   file: string;
@@ -170,11 +171,21 @@ export async function assembleVideo(ctx: AgentContext): Promise<RenderResult> {
     const asset = byScene.get(scene.index)!;
     const clip = path.join(clipsDir, `scene-${String(scene.index + 1).padStart(2, '0')}.mp4`);
     clipPaths.push(clip);
-    if (fs.existsSync(clip) && (ffprobe(clip).durationSec ?? 0) > 0.5) continue;
 
     const font = fontFile();
     const text = scene.onScreenText ? escapeDrawText(scene.onScreenText) : '';
-    const frames = Math.max(2, Math.round(scene.duration * fps));
+    // Each cross-fade eats XFADE_SEC of total runtime, so every clip except the
+    // last is rendered that much longer. Without this a 30s brief renders 27.5s.
+    const isLast = scene.index === scenes[scenes.length - 1].index;
+    const clipDuration = scene.duration + (isLast ? 0 : XFADE_SEC);
+
+    if (fs.existsSync(clip)) {
+      const cached = ffprobe(clip).durationSec ?? 0;
+      if (Math.abs(cached - clipDuration) <= 0.15) continue;
+      fs.rmSync(clip, { force: true });
+    }
+
+    const frames = Math.max(2, Math.round(clipDuration * fps));
     const move = cameraMoveFor(scene);
     const filters = [
       // Overscan first: zoompan needs room to move, otherwise the crop window
@@ -195,8 +206,8 @@ export async function assembleVideo(ctx: AgentContext): Promise<RenderResult> {
     filters.push('format=yuv420p');
 
     const inputArgs = asset.kind === 'video'
-      ? ['-stream_loop', '-1', '-i', asset.path, '-t', String(scene.duration)]
-      : ['-loop', '1', '-i', asset.path, '-t', String(scene.duration)];
+      ? ['-stream_loop', '-1', '-i', asset.path, '-t', String(clipDuration)]
+      : ['-loop', '1', '-i', asset.path, '-t', String(clipDuration)];
 
     const args = [
       '-v', 'error', '-y',
@@ -221,7 +232,25 @@ export async function assembleVideo(ctx: AgentContext): Promise<RenderResult> {
   }
 
   const outFile = path.join(jobDir(ctx.jobId), 'video.mp4');
-  const transitions = await joinClips(clipPaths, outFile, fps, width, height);
+  const silentFile = path.join(jobDir(ctx.jobId), 'video-silent.mp4');
+  const transitions = await joinClips(clipPaths, silentFile, fps, width, height);
+
+  // Audio is part of "done": a silent mp4 reads as an unfinished render.
+  const expectedDuration = scenes.reduce((sum, s) => sum + s.duration, 0);
+  const music = buildMusicBed({
+    jobId: ctx.jobId,
+    durationSec: expectedDuration,
+    theme,
+    model: brief.model ?? '',
+  });
+  const withAudio = music
+    ? muxAudio(silentFile, music, outFile, defaults.render.loudnessLufs)
+    : false;
+  if (!withAudio) {
+    fs.copyFileSync(silentFile, outFile);
+    await ctx.log('warn', 'musik latar gagal dibuat, video dirender tanpa audio');
+  }
+  fs.rmSync(silentFile, { force: true });
 
   const probe = ffprobe(outFile);
   if (!probe.ok) throw new Error('hasil render tidak lolos ffprobe');
@@ -241,13 +270,15 @@ export async function assembleVideo(ctx: AgentContext): Promise<RenderResult> {
     codec: probe.codec ?? 'h264',
     scenes: scenes.length,
     preview,
-    hasAudio: false,
+    hasAudio: withAudio,
     bitrateKbps: Math.round(((fs.statSync(outFile).size * 8) / Math.max(1, probe.durationSec ?? 1)) / 1000),
     transitions,
   };
 
   // The render stage owns this check so a broken file never reaches QA with a
   // misleading "ketajaman 0" message.
+  // Cross-fades legitimately shorten the timeline by up to XFADE_SEC per cut;
+  // the per-clip compensation keeps that under a frame or two in practice.
   const durationDrift = Math.abs(result.durationSec - expected);
   if (durationDrift > 1.5) {
     throw new Error(
@@ -287,15 +318,19 @@ async function joinClips(
   clips.forEach((_, i) => {
     filters.push(`[${i}:v]settb=AVTB,fps=${fps},format=yuv420p[v${i}]`);
   });
+  // Offsets must be derived from the real clip durations (which include the
+  // xfade compensation), otherwise the last transitions land on black frames.
   let lastLabel = 'v0';
-  let offset = durations[0] - XFADE_SEC;
+  let accumulated = durations[0];
+  let offset = accumulated - XFADE_SEC;
   for (let i = 1; i < clips.length; i++) {
     const label = i === clips.length - 1 ? 'vout' : `x${i}`;
     filters.push(
       `[${lastLabel}][v${i}]xfade=transition=fade:duration=${XFADE_SEC}:offset=${Math.max(0.1, offset).toFixed(3)}[${label}]`,
     );
     lastLabel = label;
-    offset += durations[i] - XFADE_SEC;
+    accumulated += durations[i] - XFADE_SEC;
+    offset = accumulated - XFADE_SEC;
   }
   filters.push(`[${lastLabel}]scale=${width}:${height},format=yuv420p[final]`);
 

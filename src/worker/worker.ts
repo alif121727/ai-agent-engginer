@@ -200,9 +200,17 @@ export class Worker {
         if (!outcome.ok) {
           const stages = await listStages(job.id);
           const current = stages.find((s) => s.id === stage.id);
+          // Report real progress: a stage that dies on its first attempt leaves
+          // progress at 0%, which users read as "stuck" instead of "failed".
+          const doneCount = stages.filter((s) => s.status === 'done').length;
+          const failedProgress = Math.round((doneCount / Math.max(1, stages.length)) * 100);
           if (outcome.permanent || (current?.attempts ?? 0) >= 3) {
             await setStageStatus(stage.id, 'failed', { message: outcome.error ?? 'gagal' });
-            await updateJob(job.id, { status: 'failed', error: outcome.error ?? 'tahap gagal' });
+            await updateJob(job.id, {
+              status: 'failed',
+              error: outcome.error ?? 'tahap gagal',
+              progress: failedProgress,
+            });
             await recordEvent({
               jobId: job.id,
               level: 'error',

@@ -224,21 +224,33 @@ function buildPrompt(input: {
   ].join(', ');
 }
 
+/**
+ * Captions must stay short enough to read in two seconds, so long spec lines
+ * are cut at the first separator rather than wrapped.
+ */
+function shorten(text: string, max = 42): string {
+  const clean = text.split(/·|\(/)[0].trim();
+  if (clean.length <= max) return clean;
+  return clean.slice(0, max - 1).trimEnd() + '…';
+}
+
 function onScreenTextFor(key: string, brief: Brief, advantages: string[]): string {
   const tagline = brief.tagline?.trim();
   switch (key) {
     case 'hook':
-      return tagline || brief.model;
+      return tagline ? shorten(tagline, 46) : brief.model;
     case 'exterior':
       return brief.model;
     case 'features':
-      return advantages[0] ?? '';
+      return advantages[0] ? shorten(advantages[0]) : '';
+    case 'detail_engine':
+      return advantages[0] ? shorten(advantages[0]) : '';
     case 'interior':
-      return advantages[1] ?? '';
+      return advantages[1] ? shorten(advantages[1]) : '';
     case 'action':
-      return advantages[2] ?? '';
+      return advantages[2] ? shorten(advantages[2]) : '';
     case 'cta':
-      return tagline ? `${brief.model} — ${tagline}` : brief.model;
+      return brief.model;
     default:
       return '';
   }

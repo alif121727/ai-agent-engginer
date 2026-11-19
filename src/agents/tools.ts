@@ -6,11 +6,16 @@ import { loadThemes, loadDefaults, loadAdapters } from '../core/config.ts';
 import { pickTheme } from '../core/theme.ts';
 import { planScenes, estimateCost } from '../pipeline/scenes.ts';
 import { resolveSceneAsset } from '../visuals/index.ts';
+import { slugifyModel } from '../visuals/types.ts';
+import { sanitizePrompt } from '../visuals/sanitize.ts';
+import { loadVisuals } from '../core/config.ts';
+import { findModel, specLines } from '../core/catalog.ts';
 import type { AssetRecord, Brief, ScenePlan } from '../core/types.ts';
 import { resolveDuration } from '../core/brief.ts';
 import { jobDir } from '../core/fsx.ts';
 import { checkAssets } from '../pipeline/quality.ts';
-import { ffprobe, contactSheet, frameSharpness } from '../render/ffmpeg.ts';
+import { ffprobe, contactSheet, frameSharpness, extractFrame } from '../render/ffmpeg.ts';
+import type { RenderResult } from '../render/assemble.ts';
 import { markSceneDone, readSceneCheckpoint, markStageComplete } from '../pipeline/checkpoint.ts';
 
 const registry = new Map<string, Tool>();
@@ -99,13 +104,38 @@ tool('read_themes', 'Baca tema video yang tersedia', async (_args) => {
   return themes.themes;
 });
 
-tool('write_research', 'Tulis data riset dari brief', async (_args, ctx) => {
+tool('write_research', 'Tulis data riset dari brief dan katalog', async (_args, ctx) => {
   const brief = ctx.brief as unknown as Brief;
+  const fromBrief = (brief.keunggulan ?? []).map((item) => ({ text: item, source: 'brief' }));
+  // The catalog only fills gaps; anything the user typed wins.
+  const entry = findModel(brief.model);
+  const fromCatalog = entry
+    ? specLines(entry)
+        .filter((line) => !fromBrief.some((b) => b.text === line))
+        .map((text) => ({ text, source: 'katalog' }))
+    : [];
+  const specs = [...fromBrief, ...fromCatalog];
   const research = {
     model: brief.model,
-    specs: (brief.keunggulan ?? []).map((item) => ({ text: item, source: 'brief' })),
-    missing: (brief.keunggulan ?? []).length === 0 ? ['keunggulan kosong di brief'] : [],
-    note: 'semua angka berasal dari brief, tidak ada yang dikarang',
+    catalog: entry
+      ? {
+          merk: entry.merk,
+          seri: entry.seri,
+          tahun: entry.tahun,
+          kategori: entry.kategori,
+          mesin: entry.mesin,
+          tenaga: entry.tenaga,
+          torsi: entry.torsi,
+          layout: entry.layout,
+          berat: entry.berat,
+          nol100: entry.nol100,
+          vmax: entry.vmax,
+          sumber: entry.sumber,
+        }
+      : null,
+    specs,
+    missing: specs.length === 0 ? ['tidak ada data teknis untuk model ini'] : [],
+    note: 'angka dari brief didahulukan; sisanya dari katalog yang bersumber Wikipedia',
   };
   writeOwned(ctx, 'research.json', research);
   return research;
@@ -124,39 +154,78 @@ tool('write_script', 'Tulis narasi dan teks layar', async (_args, ctx) => {
   const theme = pickTheme(brief.model, themes.themes, themes.defaultTheme);
   const scenes = planScenes({ brief, durationSec, theme, aspect: brief.rasio ?? '16:9' });
   const specs = research?.specs ?? [];
+  const entry = findModel(brief.model);
+  const detail = entry
+    ? {
+        merk: entry.merk,
+        seri: entry.seri,
+        tahun: entry.tahun,
+        mesin: entry.mesin,
+        tenaga: entry.tenaga,
+        nol100: entry.nol100,
+        vmax: entry.vmax,
+        layout: entry.layout,
+      }
+    : null;
   const script = {
     model: brief.model,
     tagline: brief.tagline ?? '',
     lines: scenes.map((scene, i) => ({
       sceneIndex: scene.index,
       onScreenText: scene.onScreenText,
-      voiceover: voiceoverFor(scene.key, brief, specs, i),
+      voiceover: voiceoverFor(scene.key, brief, specs, i, detail),
     })),
   };
   writeOwned(ctx, 'script.json', script);
   return script;
 });
 
+interface ModelDetail {
+  merk: string;
+  seri: string;
+  tahun: string;
+  mesin: string;
+  tenaga: string;
+  nol100: string;
+  vmax: string;
+  layout: string;
+}
+
+/**
+ * The brief alone often has no technical data, so the catalog supplies the
+ * engine/year/series facts. Narration stays short because each line has to fit
+ * the scene duration.
+ */
 function voiceoverFor(
   key: string,
   brief: Brief,
   specs: { text: string }[],
   index: number,
+  detail: ModelDetail | null,
 ): string {
   const spec = specs[index % Math.max(1, specs.length)]?.text ?? '';
+  const intro = detail ? `${detail.merk} ${detail.seri}, ${detail.tahun}` : brief.model;
   switch (key) {
     case 'hook':
-      return brief.tagline ? `${brief.model}. ${brief.tagline}.` : `${brief.model}.`;
+      return brief.tagline ? `${brief.model}. ${brief.tagline}` : `${brief.model}. ${intro}.`;
     case 'exterior':
-      return `Ini ${brief.model}, dilihat dari setiap sudut.`;
+      return detail
+        ? `Ini ${brief.model}, ${detail.tahun}. Mesin ${detail.mesin}.`
+        : `Ini ${brief.model}, dilihat dari setiap sudut.`;
     case 'features':
       return spec ? `Salah satu andalannya: ${spec}.` : `Detail ${brief.model} yang membuatnya berbeda.`;
+    case 'detail_engine':
+      return detail ? `Jantungnya ${detail.mesin}, ${detail.tenaga}.` : spec || `Ruang mesin ${brief.model}.`;
     case 'interior':
-      return `Masuk ke kabin, semua tersusun untuk pengemudi.`;
+      return detail ? `Kabin ${detail.merk} ${detail.seri}, semua tersusun untuk pengemudi.` : `Masuk ke kabin, semua tersusun untuk pengemudi.`;
     case 'action':
-      return spec ? `Di jalan, ${spec}.` : `Saat jalanan terbuka, karakter aslinya terlihat.`;
+      return detail
+        ? `Di jalan, ${detail.tenaga}, nol sampai seratus ${detail.nol100}.`
+        : spec
+          ? `Di jalan, ${spec}.`
+          : `Saat jalanan terbuka, karakter aslinya terlihat.`;
     case 'cta':
-      return brief.tagline ? `${brief.model}. ${brief.tagline}.` : `${brief.model}.`;
+      return brief.tagline ? `${brief.model}. ${brief.tagline}` : `${brief.model}.`;
     default:
       return spec ? `${spec}.` : `Detail ${brief.model}.`;
   }
@@ -208,9 +277,10 @@ async function generateAssets(ctx: AgentContext, wantVideo: boolean): Promise<As
   // Only keep records whose scene is still checkpointed; a rewind regenerates the rest.
   const assets: AssetRecord[] = existing.filter((a) => done.has(a.sceneIndex));
 
+  const visuals = loadVisuals();
   const order = wantVideo
-    ? ['local', 'video-gen', 'image-gen', 'stock-api']
-    : defaults.visualAdapters;
+    ? visuals.order.filter((id) => id !== 'stock-api').concat('stock-api')
+    : visuals.order;
 
   for (const scene of scenes) {
     if (done.has(scene.index)) continue;
@@ -219,8 +289,18 @@ async function generateAssets(ctx: AgentContext, wantVideo: boolean): Promise<As
     const { result, attempts } = await resolveSceneAsset({
       order,
       defs: adapters.adapters,
-      request: { scene, theme, model: brief.model, aspect: brief.rasio ?? '16:9', outDir },
+      fallback: visuals.fallback,
+      request: {
+        scene: { ...scene, prompt: sanitizePrompt(scene.prompt, brief.model) },
+        theme,
+        model: brief.model,
+        aspect: brief.rasio ?? '16:9',
+        outDir,
+      },
     });
+    if (attempts.length) {
+      await ctx.log('warn', `scene ${scene.index + 1}: ${attempts.length} adapter dicoba`, { attempts });
+    }
     if (!result) {
       await ctx.log('warn', `scene ${scene.index + 1} tidak mendapat aset realistis`, {
         attempts,
@@ -247,10 +327,10 @@ async function generateAssets(ctx: AgentContext, wantVideo: boolean): Promise<As
       return def && (!def.envKey || process.env[def.envKey]);
     });
     throw new PermanentError(
-      `${missing.length} dari ${scenes.length} scene belum punya aset realistis. ` +
+      `${missing.length} dari ${scenes.length} scene belum punya aset. ` +
         `Adapter siap: ${configured.join(', ') || 'tidak ada'}. ` +
-        `Unggah foto ke assets/own/${brief.model.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase()}/ ` +
-        `atau set kunci API generator di Pengaturan.`,
+        `Unggah foto ke assets/own/${slugifyModel(brief.model)}/ ` +
+        `atau aktifkan generator gratis (image-gen-free) di Pengaturan.`,
     );
   }
   markStageComplete(ctx.jobId, 'aset-visual');
@@ -400,9 +480,125 @@ tool('request_fix', 'Minta perbaikan ke agen penanggung jawab', async (args, ctx
   return { requested: true };
 });
 
-tool('approve_job', 'Setujui hasil akhir', async (_args, ctx) => {
-  await ctx.log('info', 'QA menyetujui hasil');
-  return { approved: true };
+/**
+ * QA is a gate, not a rubber stamp: the previous version approved every job
+ * unconditionally, which is why broken renders reached "done" and why qa.json
+ * was sometimes missing entirely.
+ */
+tool('approve_job', 'Verifikasi hasil akhir lalu setujui atau tolak', async (_args, ctx) => {
+  const render = ctx.readArtifact<RenderResult>('render.json');
+  const assets = ctx.readArtifact<AssetRecord[]>('assets.json') ?? [];
+  const scenes = scenesFrom(ctx);
+  const defaults = loadDefaults();
+  const checks: { name: string; ok: boolean; detail: string }[] = [];
+
+  if (!render) {
+    throw new PermanentError('QA ditolak: render.json tidak ada, video belum pernah dirender');
+  }
+
+  const fileOk = fs.existsSync(render.file) && fs.statSync(render.file).size > 100_000;
+  checks.push({
+    name: 'berkas-video',
+    ok: fileOk,
+    detail: fileOk ? `${(fs.statSync(render.file).size / 1e6).toFixed(1)} MB` : 'berkas tidak ada atau terlalu kecil',
+  });
+
+  const probe = ffprobe(render.file);
+  checks.push({
+    name: 'terbaca-ffprobe',
+    ok: probe.ok && (probe.durationSec ?? 0) > 1,
+    detail: probe.ok ? `${probe.codec} ${probe.width}x${probe.height} ${probe.durationSec?.toFixed(1)} dtk` : probe.error ?? 'gagal',
+  });
+
+  const expected = scenes.reduce((sum, s) => sum + s.duration, 0);
+  const drift = Math.abs((probe.durationSec ?? 0) - expected);
+  checks.push({
+    name: 'durasi-sesuai',
+    ok: drift <= 2,
+    detail: `video ${(probe.durationSec ?? 0).toFixed(1)} dtk vs rencana ${expected.toFixed(1)} dtk`,
+  });
+
+  checks.push({
+    name: 'ada-audio',
+    ok: Boolean(probe.hasAudio),
+    detail: probe.hasAudio ? `codec ${probe.audioCodec}` : 'video tanpa trek audio',
+  });
+
+  const resolutionOk = (probe.width ?? 0) >= 720 && (probe.height ?? 0) >= 720;
+  checks.push({
+    name: 'resolusi',
+    ok: resolutionOk,
+    detail: `${probe.width}x${probe.height}`,
+  });
+
+  const withFallback = assets.filter((a) => a.fallback);
+  checks.push({
+    name: 'tanpa-fallback',
+    ok: withFallback.length === 0,
+    detail: withFallback.length ? `${withFallback.length} aset fallback` : 'semua aset nyata',
+  });
+
+  // Real frames from the finished video, not the source stills: this catches a
+  // render that produced black or frozen output.
+  const frameDir = path.join(jobDir(ctx.jobId), 'qa-frames');
+  fs.mkdirSync(frameDir, { recursive: true });
+  const sampled = Math.min(6, Math.max(2, scenes.length));
+  const sharpness: number[] = [];
+  for (let i = 0; i < sampled; i++) {
+    const at = ((probe.durationSec ?? 2) * (i + 0.5)) / sampled;
+    const frame = path.join(frameDir, `frame-${i + 1}.jpg`);
+    const ok = extractFrame(render.file, at, frame);
+    if (!ok) {
+      checks.push({ name: `frame-${i + 1}`, ok: false, detail: 'gagal ambil frame' });
+      continue;
+    }
+    const sharp = frameSharpness(frame, 0);
+    sharpness.push(sharp);
+    checks.push({ name: `frame-${i + 1}`, ok: sharp >= defaults.quality.minSharpness, detail: `ketajaman ${sharp}` });
+  }
+  const avgSharp = sharpness.length ? sharpness.reduce((a, b) => a + b, 0) / sharpness.length : 0;
+  checks.push({
+    name: 'tidak-kosong',
+    ok: avgSharp > 0,
+    detail: `rata-rata ketajaman ${avgSharp.toFixed(1)}`,
+  });
+
+  const assetReport = checkAssets({
+    scenes,
+    assets,
+    options: {
+      minWidth: defaults.quality.minWidth,
+      minHeight: defaults.quality.minHeight,
+      minSharpness: defaults.quality.minSharpness,
+      sceneHashDistance: defaults.quality.sceneHashDistance,
+      forbidTextInImage: defaults.quality.forbidTextInImage,
+      mode: 'final',
+    },
+  });
+
+  const failed = checks.filter((c) => !c.ok);
+  const report = {
+    passed: failed.length === 0,
+    checks,
+    assets: { passed: assetReport.passed, issues: assetReport.issues },
+    video: {
+      file: render.file,
+      durationSec: probe.durationSec ?? 0,
+      width: probe.width ?? 0,
+      height: probe.height ?? 0,
+      codec: probe.codec ?? '',
+    },
+    checkedAt: new Date().toISOString(),
+  };
+  writeOwned(ctx, 'qa.json', report);
+
+  if (failed.length) {
+    throw new PermanentError(
+      `QA menolak hasil: ${failed.map((f) => `${f.name} (${f.detail})`).join('; ')}`,
+    );
+  }
+  await ctx.log('info', 'QA menyetujui hasil', { checks: checks.length });
+  return report;
 });
 
 export { artifactPath, frameSharpness };

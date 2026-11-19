@@ -147,13 +147,14 @@ export function pollinationsAdapter(def: VisualAdapterDef): VisualAdapter {
 }
 
 /**
- * Pollinations has no negative-prompt parameter, so the negatives are appended
- * to the prompt text. Without this the free tier never sees them and the
- * anti-toy cues only ever reach the paid adapter.
+ * Pollinations has no negative-prompt parameter, so the negatives go into the
+ * prompt text itself. They must come FIRST: the provider truncates long
+ * prompts, and appending them measurably changed nothing (identical pixels),
+ * while prefixing them does change the render.
  */
 export function freeTierPrompt(scene: { prompt: string; negativePrompt?: string }): string {
   const negatives = scene.negativePrompt?.trim();
-  return [scene.prompt, negatives ? `hindari: ${negatives}` : ''].filter(Boolean).join(', ');
+  return [negatives ? `hindari: ${negatives}` : '', scene.prompt].filter(Boolean).join(', ');
 }
 
 /** Stable but scene-specific seed, so retries reproduce and scenes differ. */

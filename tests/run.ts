@@ -479,8 +479,10 @@ await check('provider gambar gratis menerima negative prompt', async () => {
   const { freeTierPrompt } = await import('../src/visuals/adapters.ts');
   const { NEGATIVE_PROMPT } = await import('../src/pipeline/scenes.ts');
   const withNeg = freeTierPrompt({ prompt: 'fotografi otomotif', negativePrompt: NEGATIVE_PROMPT });
-  assert(withNeg.startsWith('fotografi otomotif'), 'prompt asli harus tetap di depan');
-  assert(withNeg.includes('hindari:'), 'negatif harus ikut terkirim');
+  // Order matters: the provider truncates long prompts, so negatives appended
+  // at the end are silently dropped (verified: byte-identical renders).
+  assert(withNeg.startsWith('hindari:'), 'negatif harus di DEPAN agar tidak terpotong');
+  assert(withNeg.endsWith('fotografi otomotif'), 'prompt asli tetap ikut, di belakang');
   // The anti-toy cues are the ones that only reached the paid adapter before.
   for (const cue of ['kartun', 'kulit plastik', 'warna terlalu jenuh']) {
     assert(withNeg.includes(cue), `negatif "${cue}" harus terkirim ke provider gratis`);

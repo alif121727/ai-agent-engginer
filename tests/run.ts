@@ -5,6 +5,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import { spawnSync } from 'node:child_process';
 import { openDb, closeDb } from '../src/db/index.ts';
 import { createJob, createStages, getJob, listStages, setStageStatus, nextPendingStage, dailyCost, addDailyCost } from '../src/db/repo.ts';
 import { parseBrief, resolveDuration, BriefError } from '../src/core/brief.ts';
@@ -17,7 +18,8 @@ import { assertGuardRejects } from '../src/agents/runner.ts';
 import { checkAssets } from '../src/pipeline/quality.ts';
 import { createApp } from '../src/api/server.ts';
 import { fingerprintFor } from '../src/publish/instagram.ts';
-import { readCheckpoint, writeCheckpoint, markSceneDone, readSceneCheckpoint, isStageComplete } from '../src/pipeline/checkpoint.ts';
+import { readCheckpoint, writeCheckpoint, markSceneDone, readSceneCheckpoint, isStageComplete, clearCheckpoint } from '../src/pipeline/checkpoint.ts';
+import { frameSharpness, perceptualHash } from '../src/render/ffmpeg.ts';
 
 let passed = 0;
 const failures: string[] = [];
@@ -279,7 +281,7 @@ await check('quality gate menolak aset fallback', () => {
     options: {
       minWidth: 1280,
       minHeight: 720,
-      minSharpness: 60,
+      minSharpness: 8,
       sceneHashDistance: 4,
       forbidTextInImage: true,
       mode: 'final',
@@ -296,13 +298,34 @@ await check('quality gate melaporkan scene tanpa aset', () => {
     options: {
       minWidth: 1280,
       minHeight: 720,
-      minSharpness: 60,
+      minSharpness: 8,
       sceneHashDistance: 4,
       forbidTextInImage: false,
       mode: 'draft',
     },
   });
   assert(report.issues[0]?.code === 'missing', 'harus melaporkan missing');
+});
+
+await check('rewind menghapus checkpoint tahap yang diulang', () => {
+  const jobId = 'job-rewind';
+  markSceneDone(jobId, 'aset-visual', 0);
+  writeCheckpoint(jobId, 'aset-visual', { sceneIndex: 1, done: [0] }, 'done');
+  assert(isStageComplete(jobId, 'aset-visual'), 'harus selesai sebelum rewind');
+  clearCheckpoint(jobId, 'aset-visual');
+  assert(!isStageComplete(jobId, 'aset-visual'), 'checkpoint harus hilang setelah rewind');
+  assert(readSceneCheckpoint(jobId, 'aset-visual').done.length === 0, 'progres scene harus kosong');
+});
+
+await check('ketajaman gambar statis terbaca (bukan 0 karena -ss)', () => {
+  const png = path.join(tmpRoot, 'statis.png');
+  const res = spawnSync('ffmpeg', [
+    '-v', 'error', '-y', '-f', 'lavfi', '-i', 'mandelbrot=size=640x360', '-frames:v', '1', png,
+  ]);
+  assert(res.status === 0 && fs.existsSync(png), 'gagal membuat gambar uji');
+  const sharp = frameSharpness(png);
+  assert(sharp > 0, `ketajaman gambar statis ${sharp}, seharusnya > 0`);
+  assert(perceptualHash(png) !== '0'.repeat(16), 'hash gambar statis tidak boleh nol');
 });
 
 await check('fingerprint publish stabil dan unik per platform', () => {
@@ -424,6 +447,58 @@ await check('API mengembalikan 404 untuk job tak dikenal', async () => {
     const cookie = (login.headers.get('set-cookie') ?? '').split(';')[0];
     const res = await fetch(`http://127.0.0.1:${port}/api/jobs/tidak-ada`, { headers: { cookie } });
     assert(res.status === 404, `status ${res.status}`);
+  } finally {
+    server.close();
+  }
+});
+
+await check('API menolak unggah berkas dengan ekstensi asing', async () => {
+  const { app } = createApp({ startWorker: false });
+  const server = app.listen(0);
+  const port = (server.address() as { port: number }).port;
+  const base = `http://127.0.0.1:${port}`;
+  try {
+    const login = await fetch(`${base}/api/login`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email: 'uji@studio.id', password: 'rahasia123' }),
+    });
+    const cookie = (login.headers.get('set-cookie') ?? '').split(';')[0];
+    const bad = await fetch(`${base}/api/assets/Ferrari%20296%20GTB?name=jahat.sh`, {
+      method: 'POST',
+      headers: { cookie, 'content-type': 'application/octet-stream' },
+      body: 'x',
+    });
+    assert(bad.status === 400, `unggah .sh harus 400, dapat ${bad.status}`);
+  } finally {
+    server.close();
+  }
+});
+
+await check('API mengembalikan 409 saat mengulang job yang masih jalan', async () => {
+  const { app } = createApp({ startWorker: false });
+  const server = app.listen(0);
+  const port = (server.address() as { port: number }).port;
+  const base = `http://127.0.0.1:${port}`;
+  try {
+    const login = await fetch(`${base}/api/login`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email: 'uji@studio.id', password: 'rahasia123' }),
+    });
+    const cookie = (login.headers.get('set-cookie') ?? '').split(';')[0];
+    const created = await fetch(`${base}/api/jobs`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({ brief: { model: 'Porsche 911 GT3', durasi: 30 } }),
+    });
+    const { job } = (await created.json()) as { job: { id: string } };
+    const retry = await fetch(`${base}/api/jobs/${job.id}/retry`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', cookie },
+      body: '{}',
+    });
+    assert(retry.status === 409, `job queued tidak boleh diulang, dapat ${retry.status}`);
   } finally {
     server.close();
   }

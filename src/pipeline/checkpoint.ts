@@ -9,6 +9,10 @@ export interface StageCheckpoint<T = unknown> {
   data: T;
 }
 
+/**
+ * Checkpoints are keyed by stage name (`aset-visual`), not by the artifact the
+ * stage writes (`assets`), otherwise a rewind silently keeps the old progress.
+ */
 export function checkpointFile(jobId: string, stage: string): string {
   return path.join(jobDir(jobId), 'checkpoints', `${stage}.json`);
 }

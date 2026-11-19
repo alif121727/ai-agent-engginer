@@ -203,9 +203,10 @@ async function generateAssets(ctx: AgentContext, wantVideo: boolean): Promise<As
   const themes = loadThemes();
   const theme = pickTheme(brief.model, themes.themes, themes.defaultTheme);
   const outDir = path.join(jobDir(ctx.jobId), 'assets');
-  const done = new Set(readSceneCheckpoint(ctx.jobId, 'assets').done);
+  const done = new Set(readSceneCheckpoint(ctx.jobId, 'aset-visual').done);
   const existing = ctx.readArtifact<AssetRecord[]>('assets.json') ?? [];
-  const assets: AssetRecord[] = [...existing];
+  // Only keep records whose scene is still checkpointed; a rewind regenerates the rest.
+  const assets: AssetRecord[] = existing.filter((a) => done.has(a.sceneIndex));
 
   const order = wantVideo
     ? ['local', 'video-gen', 'image-gen', 'stock-api']
@@ -236,7 +237,7 @@ async function generateAssets(ctx: AgentContext, wantVideo: boolean): Promise<As
     };
     assets.push(record);
     writeOwned(ctx, 'assets.json', assets);
-    markSceneDone(ctx.jobId, 'assets', scene.index);
+    markSceneDone(ctx.jobId, 'aset-visual', scene.index);
     await ctx.setStageProgress(Math.round(((done.size + 1) / scenes.length) * 100));
   }
   const missing = scenes.filter((s) => !assets.some((a) => a.sceneIndex === s.index));
@@ -252,7 +253,7 @@ async function generateAssets(ctx: AgentContext, wantVideo: boolean): Promise<As
         `atau set kunci API generator di Pengaturan.`,
     );
   }
-  markStageComplete(ctx.jobId, 'assets');
+  markStageComplete(ctx.jobId, 'aset-visual');
   return assets;
 }
 
@@ -371,7 +372,7 @@ tool('inspect_preview', 'Buat dan periksa preview contact sheet', async (_args, 
   );
   const video = path.join(jobDir(ctx.jobId), 'video.mp4');
   const probe = ffprobe(video);
-  const expected = scenes.reduce((sum, s) => sum + s.durationSec, 0);
+  const expected = scenes.reduce((sum, s) => sum + s.duration, 0);
   const result = {
     ...report,
     preview: sheet,

@@ -34,7 +34,7 @@
   "quality": {
     "minWidth": 1280,
     "minHeight": 720,
-    "minSharpness": 60,
+    "minSharpness": 8,
     "maxRegenerations": 3,
     "sceneHashDistance": 4,
     "forbidTextInImage": true

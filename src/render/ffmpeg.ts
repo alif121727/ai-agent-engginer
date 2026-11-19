@@ -42,34 +42,48 @@ export function ffmpegAvailable(): boolean {
   return res.status === 0;
 }
 
+// Downscaling to 160x90 erases the detail this metric measures, so sample at
+// 480x270: real photos score ~18-26, a sigma-6 blur scores ~2, flat art scores 0.
+const SHARP_W = 480;
+const SHARP_H = 270;
+
+const IMAGE_EXT = /\.(jpe?g|png|webp|bmp|tiff?)$/i;
+
+/**
+ * Still images have no timeline, so `-ss` yields zero frames. Seek only for
+ * videos and always take the first frame of an image.
+ */
+function seekArgs(file: string, atSec: number): string[] {
+  if (IMAGE_EXT.test(file)) return ['-i', file];
+  return ['-ss', String(atSec), '-i', file];
+}
+
 /** Laplacian-ish sharpness proxy from a single grey frame dump. */
 export function frameSharpness(file: string, atSec = 1): number {
   const tmp = path.join('/tmp', `sharp-${process.pid}-${Date.now()}.raw`);
   const res = spawnSync('ffmpeg', [
-    '-v', 'error', '-y', '-ss', String(atSec), '-i', file,
-    '-frames:v', '1', '-vf', 'scale=160:90,format=gray', '-f', 'rawvideo', tmp,
+    '-v', 'error', '-y', ...seekArgs(file, atSec),
+    '-frames:v', '1', '-vf', `scale=${SHARP_W}:${SHARP_H},format=gray`, '-f', 'rawvideo', tmp,
   ]);
   if (res.status !== 0 || !fs.existsSync(tmp)) return 0;
   const buf = fs.readFileSync(tmp);
   fs.rmSync(tmp, { force: true });
-  if (buf.length < 160 * 90) return 0;
+  if (buf.length < SHARP_W * SHARP_H) return 0;
   let sum = 0;
-  for (let y = 1; y < 89; y++) {
-    for (let x = 1; x < 159; x++) {
-      const c = buf[y * 160 + x];
-      const l = buf[y * 160 + x - 1];
-      const u = buf[(y - 1) * 160 + x];
-      sum += Math.abs(c - l) + Math.abs(c - u);
+  for (let y = 1; y < SHARP_H - 1; y++) {
+    for (let x = 1; x < SHARP_W - 1; x++) {
+      const c = buf[y * SHARP_W + x];
+      sum += Math.abs(c - buf[y * SHARP_W + x - 1]) + Math.abs(c - buf[(y - 1) * SHARP_W + x]);
     }
   }
-  return Math.round(sum / (159 * 89));
+  return Math.round(sum / ((SHARP_W - 2) * (SHARP_H - 2)));
 }
 
 /** 64-bit average hash, used to prove consecutive scenes differ. */
 export function perceptualHash(file: string, atSec = 0.5): string {
   const tmp = path.join('/tmp', `hash-${process.pid}-${Date.now()}.raw`);
   const res = spawnSync('ffmpeg', [
-    '-v', 'error', '-y', '-ss', String(atSec), '-i', file,
+    '-v', 'error', '-y', ...seekArgs(file, atSec),
     '-frames:v', '1', '-vf', 'scale=8:8,format=gray', '-f', 'rawvideo', tmp,
   ]);
   if (res.status !== 0 || !fs.existsSync(tmp)) return '0'.repeat(16);
@@ -102,7 +116,7 @@ export function detectText(file: string, atSec = 1): { hasText: boolean; text: s
   if (res.status !== 0) return { hasText: false, text: 'ocr-tidak-tersedia' };
   const tmp = path.join('/tmp', `ocr-${process.pid}-${Date.now()}`);
   const grab = spawnSync('ffmpeg', [
-    '-v', 'error', '-y', '-ss', String(atSec), '-i', file, '-frames:v', '1', `${tmp}.png`,
+    '-v', 'error', '-y', ...seekArgs(file, atSec), '-frames:v', '1', `${tmp}.png`,
   ]);
   if (grab.status !== 0) return { hasText: false, text: '' };
   const ocr = spawnSync('tesseract', [`${tmp}.png`, 'stdout'], { encoding: 'utf8' });

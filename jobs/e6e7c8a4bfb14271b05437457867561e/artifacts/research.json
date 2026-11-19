@@ -1,0 +1,93 @@
+{
+  "model": "Subaru Impreza 22B STi",
+  "catalog": {
+    "merk": "Subaru",
+    "seri": "22B STi (GC8)",
+    "tahun": "1998",
+    "kategori": "klasik",
+    "mesin": "flat-4 2.2L turbo (EJ22)",
+    "tenaga": "280 PS",
+    "torsi": "363 Nm",
+    "layout": "front-engine, AWD",
+    "berat": "1.270 kg",
+    "nol100": "4,7 dtk",
+    "vmax": "±240 km/jam",
+    "sumber": "https://en.wikipedia.org/wiki/Subaru_Impreza"
+  },
+  "specs": [
+    {
+      "text": "🏆 Lahir dari Kemenangan Reli Dunia",
+      "source": "brief"
+    },
+    {
+      "text": "Keunggulan utama 22B STi terletak pada DNA balapnya. Mobil ini dibuat untuk merayakan tiga gelar juara dunia berturut-turut Subaru di kejuaraan World Rally Championship (WRC), terutama bersama legenda reli Colin McRae. Desainnya merupakan reproduksi jalan raya dari \"Impreza World Rally Car 97\", membuatnya tampil dan terasa seperti mobil reli sungguhan yang legal untuk dikendarai di jalanan.",
+      "source": "brief"
+    },
+    {
+      "text": "💨 Mesin Boxer 2.2L yang Istimewa dan \"Underrated\"",
+      "source": "brief"
+    },
+    {
+      "text": "Jantung pacu 22B STi adalah mesin EJ22 berkapasitas 2.2 liter, hasil dari peningkatan bore (diameter silinder) dari mesin standar. Mesin ini dibangun dengan komponen performa tinggi seperti piston tempa (forged), blok closed-deck yang lebih kuat, dan katup eksos berisi sodium untuk ketahanan panas.",
+      "source": "brief"
+    },
+    {
+      "text": "Yang paling menarik, mesin ini secara resmi bertenaga 280 PS (276 hp) dan torsi 363 Nm. Namun, angka ini sangat underrated karena adanya kesepakatan antarprodusen mobil Jepang saat itu yang membatasi tenaga maksimal di 280 PS. Diyakini tenaga sebenarnya mendekati 300 hp atau bahkan lebih. Yang terpenting, mesin ini dirancang untuk memberikan torsi puncak yang datar dan melimpah sejak putaran rendah (2.800–5.200 rpm), membuat akselerasi di berbagai kondisi menjadi sangat responsif.",
+      "source": "brief"
+    },
+    {
+      "text": "⚡ Performa dan Handling Setingkat Mobil Reli",
+      "source": "brief"
+    },
+    {
+      "text": "Akselerasi Kilat: Dengan transmisi manual 5-percepatan dan penggerak semua roda (AWD), 22B STi mampu berakselerasi dari 0-100 km/jam dalam waktu sekitar 4-5 detik (beberapa sumber menyebut 3,9 detik).",
+      "source": "brief"
+    },
+    {
+      "text": "Sasis dan Suspensi Kelas Balap: Mobil ini adalah salah satu yang pertama menggunakan peredam Bilstein tipe \"upside down\" dan pegas Eibach yang disetel khusus, memberikan cengkeraman dan umpan balik setingkat mobil WRC.",
+      "source": "brief"
+    },
+    {
+      "text": "Setir Super Cepat: Rasio setirnya sangat tajam, yaitu 13:1 (dijuluki Super Quick Steering), jauh lebih langsung dibandingkan Impreza biasa, membuat manuver terasa instan.",
+      "source": "brief"
+    },
+    {
+      "text": "🎨 Desain Ikonik dan Langka",
+      "source": "brief"
+    },
+    {
+      "text": "Secara visual, 22B STi tidak bisa disalahartikan. Ciri khasnya adalah bodi yang jauh lebih lebar (80 mm lebih lebar) dengan blister fender di depan dan belakang yang agresif. Dipadukan dengan warna legendaris Sonic Blue Mica dan velg emas BBS forged berukuran 17 inci, tampilannya sangat memikat.",
+      "source": "brief"
+    },
+    {
+      "text": "Kelangkaannya juga menjadi keunggulan tersendiri. Hanya 400 unit yang diproduksi untuk pasar Jepang, dan dilaporkan terjual habis dalam hitungan jam hingga hari. Ditambah lagi 25 unit untuk ekspor, menjadikannya salah satu mobil Jepang paling langka dan mahal, dengan harga yang kini bisa mencapai ratusan ribu poundsterling.",
+      "source": "brief"
+    },
+    {
+      "text": "Singkatnya, Subaru Impreza 22B STi adalah puncak dari filosofi performa Subaru: sebuah mobil reli yang dapat dinikmati di jalan raya, dengan kombinasi sempurna antara tenaga melimpah, handling presisi, desain ikonik, dan warisan balap yang tak terbantahkan.",
+      "source": "brief"
+    },
+    {
+      "text": "flat-4 2.2L turbo (EJ22) · 280 PS",
+      "source": "katalog"
+    },
+    {
+      "text": "Torsi 363 Nm · front-engine, AWD",
+      "source": "katalog"
+    },
+    {
+      "text": "0–100 km/jam 4,7 dtk · top speed ±240 km/jam",
+      "source": "katalog"
+    },
+    {
+      "text": "Berat 1.270 kg · produksi 1998",
+      "source": "katalog"
+    },
+    {
+      "text": "Perayaan tiga gelar WRC berturut-turut, dengan bodi lebar dan roda 17 inci.",
+      "source": "katalog"
+    }
+  ],
+  "missing": [],
+  "note": "angka dari brief didahulukan; sisanya dari katalog yang bersumber Wikipedia"
+}

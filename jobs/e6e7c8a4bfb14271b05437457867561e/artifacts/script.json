@@ -1,0 +1,41 @@
+{
+  "model": "Subaru Impreza 22B STi",
+  "tagline": "subaru 1",
+  "lines": [
+    {
+      "sceneIndex": 0,
+      "onScreenText": "subaru 1",
+      "voiceover": "Subaru Impreza 22B STi. subaru 1"
+    },
+    {
+      "sceneIndex": 1,
+      "onScreenText": "Subaru Impreza 22B STi",
+      "voiceover": "Ini Subaru Impreza 22B STi, 1998. Mesin flat-4 2.2L turbo (EJ22)."
+    },
+    {
+      "sceneIndex": 2,
+      "onScreenText": "🏆 Lahir dari Kemenangan Reli Dunia",
+      "voiceover": "Salah satu andalannya: 💨 Mesin Boxer 2.2L yang Istimewa dan \"Underrated\"."
+    },
+    {
+      "sceneIndex": 3,
+      "onScreenText": "Keunggulan utama 22B STi terletak pada DN…",
+      "voiceover": "Kabin Subaru 22B STi (GC8), semua tersusun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "onScreenText": "💨 Mesin Boxer 2.2L yang Istimewa dan \"Un…",
+      "voiceover": "Di jalan, 280 PS, nol sampai seratus 4,7 dtk."
+    },
+    {
+      "sceneIndex": 5,
+      "onScreenText": "",
+      "voiceover": "⚡ Performa dan Handling Setingkat Mobil Reli."
+    },
+    {
+      "sceneIndex": 6,
+      "onScreenText": "Subaru Impreza 22B STi",
+      "voiceover": "Subaru Impreza 22B STi. subaru 1"
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "loudnessLufs": -14,
+  "music": {
+    "ducking": true,
+    "gain": -18
+  },
+  "sfx": [
+    {
+      "sceneIndex": 0,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 1,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 2,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 3,
+      "bed": "cabin-ambience"
+    },
+    {
+      "sceneIndex": 4,
+      "bed": "engine-rev"
+    },
+    {
+      "sceneIndex": 5,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 6,
+      "bed": "studio-room"
+    }
+  ],
+  "subtitles": [
+    {
+      "sceneIndex": 0,
+      "text": "Subaru Impreza 22B STi. subaru 1"
+    },
+    {
+      "sceneIndex": 1,
+      "text": "Ini Subaru Impreza 22B STi, 1998. Mesin flat-4 2.2L turbo (EJ22)."
+    },
+    {
+      "sceneIndex": 2,
+      "text": "Salah satu andalannya: 💨 Mesin Boxer 2.2L yang Istimewa dan \"Underrated\"."
+    },
+    {
+      "sceneIndex": 3,
+      "text": "Kabin Subaru 22B STi (GC8), semua tersusun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "text": "Di jalan, 280 PS, nol sampai seratus 4,7 dtk."
+    },
+    {
+      "sceneIndex": 5,
+      "text": "⚡ Performa dan Handling Setingkat Mobil Reli."
+    },
+    {
+      "sceneIndex": 6,
+      "text": "Subaru Impreza 22B STi. subaru 1"
+    }
+  ],
+  "ttsAvailable": false
+}

@@ -19,3 +19,4 @@ docs/ui/*.png
 # Galeri statis: biner besar, jangan masuk git
 netlify-site/video/
 netlify-site/thumb/
+netlify-site.zip

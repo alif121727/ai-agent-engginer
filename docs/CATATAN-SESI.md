@@ -342,3 +342,32 @@ hasilnya 402 dan mudah salah dibaca sebagai "prompt ditolak".
 
 **Tes.** `npm test`: **56 lulus, 0 gagal**, termasuk tes baru yang mengunci
 urutan (negatif harus di depan).
+
+## §10 Galeri statis untuk Netlify
+
+**Keputusan.** Aplikasi penuh **tidak bisa** jalan di Netlify: butuh proses Node
+(`src/api/main.ts` + `src/worker/main.ts`), SQLite, dan `ffmpeg`. Dibuktikan,
+bukan diasumsikan: `public/` disajikan sebagai situs statis murni, halaman login
+tampil, tetapi `POST /api/login` balas **404** sehingga login tidak pernah
+berhasil. Netlify hanya menyajikan berkas.
+
+**Yang dibuat.** `netlify-site/` — galeri statis 8 video, tanpa build:
+- `index.html` memakai `public/tokens.css` apa adanya (hitam/oranye/krem,
+  Space Grotesk + JetBrains Mono), jadi rupa galeri sama dengan aplikasi.
+- Spesifikasi tiap kartu diambil dari `artifacts/research.json` `catalog`
+  (angka padat), **bukan** dari prosa `specs` yang bisa berupa paragraf panjang
+  beremoji (kasus Subaru 22B).
+- Model di luar katalog (Koenigsegg Jesko) ditandai "di luar katalog" dan
+  kategori/tahunnya dikosongkan — **tidak dikarang**.
+- Video dikompres 720p CRF 27 + faststart: 211 MB → **35 MB**, sumber 1080p
+  tetap utuh di `jobs/<id>/video.mp4`.
+
+**Jebakan.** Dua job (`68d97a9d1eed`, `d0ba64ab6372`) lulus QA tetapi bitrate-nya
+hanya ~50 kbps (0.2–0.3 MB untuk 30–45 dtk). QA tidak memeriksa bitrate, hanya
+ketajaman/kebekuan/audio. Keduanya **dikeluarkan** dari galeri.
+
+**Jangan masuk git.** `netlify-site/video/`, `netlify-site/thumb/`, dan
+`netlify-site.zip` ada di `.gitignore`. Autopush sempat mem-commit zip 36 MB;
+dikeluarkan dengan `git rm --cached`.
+
+**Cara unggah.** Lihat `docs/DEPLOY-GALERI-NETLIFY.md`.

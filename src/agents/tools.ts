@@ -18,6 +18,8 @@ import { ffprobe, contactSheet, frameSharpness, extractFrame } from '../render/f
 import type { RenderResult } from '../render/assemble.ts';
 import { markSceneDone, readSceneCheckpoint, markStageComplete } from '../pipeline/checkpoint.ts';
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 const registry = new Map<string, Tool>();
 
 export function tool(name: string, description: string, run: Tool['run']): void {
@@ -278,6 +280,7 @@ async function generateAssets(ctx: AgentContext, wantVideo: boolean): Promise<As
   const assets: AssetRecord[] = existing.filter((a) => done.has(a.sceneIndex));
 
   const visuals = loadVisuals();
+  const paceMs = Number(process.env.VISUAL_PACE_MS ?? 4000);
   const order = wantVideo
     ? visuals.order.filter((id) => id !== 'stock-api').concat('stock-api')
     : visuals.order;
@@ -318,7 +321,10 @@ async function generateAssets(ctx: AgentContext, wantVideo: boolean): Promise<As
     assets.push(record);
     writeOwned(ctx, 'assets.json', assets);
     markSceneDone(ctx.jobId, 'aset-visual', scene.index);
-    await ctx.setStageProgress(Math.round(((done.size + 1) / scenes.length) * 100));
+    await ctx.setStageProgress(Math.round((assets.length / scenes.length) * 100));
+    // Keyless providers rate-limit hard; spacing requests keeps a 6-scene job
+    // from tripping 402 halfway through.
+    if (result.provider !== 'local') await sleep(paceMs);
   }
   const missing = scenes.filter((s) => !assets.some((a) => a.sceneIndex === s.index));
   if (missing.length) {

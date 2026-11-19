@@ -124,10 +124,14 @@ export function pollinationsAdapter(def: VisualAdapterDef): VisualAdapter {
     async generate(req: GenerateRequest): Promise<GenerateResult> {
       const [w, h] = sizeFor(req.aspect);
       const prompt = encodeURIComponent(req.scene.prompt);
+      // A distinct seed per scene keeps successive stills from collapsing into
+      // the same composition, which the similarity gate would reject.
+      const seed = seedFor(req.model, req.scene.index);
       const url = template
         .replace('{prompt}', prompt)
         .replace('{width}', String(w))
-        .replace('{height}', String(h));
+        .replace('{height}', String(h))
+        .concat(template.includes('{seed}') ? '' : `&seed=${seed}`);
       const out = fileFor(req.outDir, req.scene.index, 'jpg');
       const minBytes = def.minBytes ?? 20_000;
       await withRetry(def.id, def.maxRetries ?? 2, def.cooldownMs ?? 10_000, async () => {
@@ -142,6 +146,12 @@ export function pollinationsAdapter(def: VisualAdapterDef): VisualAdapter {
   };
 }
 
+/** Stable but scene-specific seed, so retries reproduce and scenes differ. */
+function seedFor(model: string, index: number): number {
+  let hash = 0;
+  for (const ch of `${model}:${index}`) hash = (hash * 31 + ch.charCodeAt(0)) % 1_000_000;
+  return hash;
+}
 /** Lanczos-upscales in place when a provider returns a smaller image than asked. */
 function upscaleToMinimum(file: string, width: number, height: number): void {
   const probe = ffprobe(file);

@@ -10,7 +10,7 @@
   "perProvider": {
     "video-gen": { "timeoutMs": 120000, "maxRetries": 2, "cooldownMs": 15000 },
     "image-gen": { "timeoutMs": 60000, "maxRetries": 2, "cooldownMs": 10000 },
-    "image-gen-free": { "timeoutMs": 90000, "maxRetries": 2, "cooldownMs": 8000 },
+    "image-gen-free": { "timeoutMs": 90000, "maxRetries": 4, "cooldownMs": 25000 },
     "stock-api": { "timeoutMs": 20000, "maxRetries": 1, "cooldownMs": 5000 }
   },
   "adapters": {
@@ -56,8 +56,8 @@
       "requiresKey": false,
       "urlTemplate": "https://image.pollinations.ai/prompt/{prompt}?width={width}&height={height}&nologo=true&model=flux",
       "timeoutMs": 90000,
-      "maxRetries": 2,
-      "cooldownMs": 8000,
+      "maxRetries": 4,
+      "cooldownMs": 25000,
       "minBytes": 20000,
       "description": "Tanpa API key, untuk mode uji. Ada rate limit; hasil bisa lebih lambat dari provider berbayar."
     },

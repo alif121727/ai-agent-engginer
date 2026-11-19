@@ -1,0 +1,44 @@
+[
+  {
+    "sceneIndex": 0,
+    "kind": "image",
+    "path": "/workspace/project/ai-agent-engginer/jobs/a0ebc7d46d624cefa1e571ba843248fb/assets/scene-01.jpg",
+    "source": "image-gen-free",
+    "provider": "image-gen-free"
+  },
+  {
+    "sceneIndex": 1,
+    "kind": "image",
+    "path": "/workspace/project/ai-agent-engginer/jobs/a0ebc7d46d624cefa1e571ba843248fb/assets/scene-02.jpg",
+    "source": "image-gen-free",
+    "provider": "image-gen-free"
+  },
+  {
+    "sceneIndex": 2,
+    "kind": "image",
+    "path": "/workspace/project/ai-agent-engginer/jobs/a0ebc7d46d624cefa1e571ba843248fb/assets/scene-03.jpg",
+    "source": "image-gen-free",
+    "provider": "image-gen-free"
+  },
+  {
+    "sceneIndex": 3,
+    "kind": "image",
+    "path": "/workspace/project/ai-agent-engginer/jobs/a0ebc7d46d624cefa1e571ba843248fb/assets/scene-04.jpg",
+    "source": "image-gen-free",
+    "provider": "image-gen-free"
+  },
+  {
+    "sceneIndex": 4,
+    "kind": "image",
+    "path": "/workspace/project/ai-agent-engginer/jobs/a0ebc7d46d624cefa1e571ba843248fb/assets/scene-05.jpg",
+    "source": "image-gen-free",
+    "provider": "image-gen-free"
+  },
+  {
+    "sceneIndex": 5,
+    "kind": "image",
+    "path": "/workspace/project/ai-agent-engginer/jobs/a0ebc7d46d624cefa1e571ba843248fb/assets/scene-06.jpg",
+    "source": "image-gen-free",
+    "provider": "image-gen-free"
+  }
+]

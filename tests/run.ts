@@ -603,6 +603,41 @@ await check('foto katalog terbaca meski nama foldernya beda dari slug otomatis',
   assert(shadowed.length === 0, `foto katalog tidak terbaca: ${shadowed.join(', ')}`);
 });
 
+await check('API menyajikan katalog agar model bisa dipilih di web', async () => {
+  const { app } = createApp({ startWorker: false });
+  const server = app.listen(0);
+  const port = (server.address() as { port: number }).port;
+  const base = `http://127.0.0.1:${port}`;
+  try {
+    await fetch(`${base}/api/setup`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email: 'uji@studio.id', password: 'rahasia123' }),
+    });
+    const login = await fetch(`${base}/api/login`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email: 'uji@studio.id', password: 'rahasia123' }),
+    });
+    const cookie = (login.headers.get('set-cookie') ?? '').split(';')[0];
+    const res = await fetch(`${base}/api/config`, { headers: { cookie } });
+    assert(res.status === 200, `config ${res.status}`);
+    const cfg = (await res.json()) as {
+      catalog: { slug: string; model: string; kategori: string }[];
+    };
+    assert(Array.isArray(cfg.catalog), 'config harus memuat catalog');
+    assert(cfg.catalog.length >= 33, `katalog di API cuma ${cfg.catalog.length} model`);
+    const racing = cfg.catalog.filter((m) => m.kategori === 'balap').length;
+    assert(racing >= 2, `varian balap tidak sampai ke API: ${racing}`);
+    assert(
+      cfg.catalog.every((m) => m.slug && m.model),
+      'setiap entri katalog harus punya slug dan nama',
+    );
+  } finally {
+    server.close();
+  }
+});
+
 await check('setiap model katalog punya foto di assets/own', async () => {
   const { loadCatalog } = await import('../src/core/catalog.ts');
   const fsx = await import('node:fs');

@@ -527,7 +527,7 @@ function NewTemplate({ navigate }: { navigate: (to: string) => void }) {
                   </span>
                   <strong style={{ fontFamily: 'var(--font-display)' }}>{m.model}</strong>
                   <span className="muted" style={{ fontSize: '0.8rem' }}>
-                    {m.kategori} · {m.tahun} · {m.tenaga}
+                    {ringkasModel(m)}
                   </span>
                 </button>
               ))}
@@ -673,6 +673,13 @@ function NewTemplate({ navigate }: { navigate: (to: string) => void }) {
       </section>
     </div>
   );
+}
+
+// Tenaga yang tidak ada di artikel sumber ditandai di data, bukan di layar.
+function ringkasModel(m: CatalogModel): string {
+  const parts = [m.kategori, m.tahun];
+  if (m.tenaga && !m.tenaga.includes('tidak disebut')) parts.push(m.tenaga);
+  return parts.join(' · ');
 }
 
 function filterKatalog(catalog: CatalogModel[], cari: string, kategori: string): CatalogModel[] {

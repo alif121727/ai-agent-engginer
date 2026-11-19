@@ -9,7 +9,7 @@
   "scripts": {
     "api": "node --experimental-strip-types src/api/main.ts",
     "worker": "node --experimental-strip-types src/worker/main.ts",
-    "web": "node --experimental-strip-types src/web/main.ts",
+    "web": "node --experimental-strip-types src/api/main.ts",
     "build:ui": "node --experimental-strip-types scripts/build-ui.ts",
     "test": "node --experimental-strip-types tests/run.ts",
     "llm-check": "node --experimental-strip-types scripts/llm-capability.ts"

@@ -32,6 +32,7 @@ export interface Defaults {
     minWidth: number;
     minHeight: number;
     minSharpness: number;
+    minSharpnessGenerated?: number;
     maxRegenerations: number;
     sceneHashDistance: number;
     forbidTextInImage: boolean;

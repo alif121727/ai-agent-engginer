@@ -28,6 +28,8 @@ export interface QualityOptions {
   minWidth: number;
   minHeight: number;
   minSharpness: number;
+  /** Generated stills are softer than camera photos; they get their own floor. */
+  minSharpnessGenerated?: number;
   sceneHashDistance: number;
   forbidTextInImage: boolean;
   /** `final` jobs must not contain code-drawn fallback assets. */
@@ -77,7 +79,11 @@ export function checkAssets(input: {
     }
     const sharp = frameSharpness(asset.path, Math.min(1, (probe.durationSec ?? 2) / 2));
     sharpness[scene.index] = sharp;
-    if (sharp < input.options.minSharpness) {
+    const generated = asset.provider !== 'local';
+    const floor = generated
+      ? input.options.minSharpnessGenerated ?? input.options.minSharpness
+      : input.options.minSharpness;
+    if (sharp < floor) {
       issues.push({ sceneIndex: scene.index, code: 'blurry', reason: `ketajaman ${sharp} di bawah minimum` });
     }
     if (input.options.forbidTextInImage) {

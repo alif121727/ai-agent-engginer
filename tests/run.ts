@@ -555,6 +555,45 @@ await check('API mengembalikan 409 saat mengulang job yang masih jalan', async (
   }
 });
 
+// --- fallback chain ------------------------------------------------------
+await check('adapter lokal yang kosong tidak memblokir provider lain', async () => {
+  const { resolveSceneAsset } = await import('../src/visuals/index.ts');
+  const outcome = await resolveSceneAsset({
+    order: ['local', 'image-gen-free'],
+    defs: {
+      local: { id: 'local', kind: 'local', enabled: true, requiresKey: false } as never,
+      'image-gen-free': {
+        id: 'image-gen-free',
+        kind: 'image-gen',
+        enabled: true,
+        requiresKey: false,
+        urlTemplate: 'http://127.0.0.1:1/{prompt}?w={width}',
+        maxRetries: 0,
+        timeoutMs: 200,
+      } as never,
+    },
+    request: {
+      scene: { index: 0, key: 'hero', prompt: 'x', duration: 4, start: 0, onScreenText: '' } as never,
+      theme: { id: 'generic', grade: { contrast: 1, saturation: 1, temperature: 0 } } as never,
+      model: 'Model Tanpa Foto',
+      aspect: '16:9',
+      outDir: path.join(tmpRoot, 'nofallback'),
+    },
+  });
+  // The free provider is unreachable here, so the chain must still *reach* it:
+  // the failure has to come from the network attempt, not from `local`.
+  const triedFree = outcome.attempts.some((a) => a.adapter === 'image-gen-free');
+  assert(triedFree, 'provider gratis harus dicoba setelah local kosong');
+});
+
+await check('render menulis hasil ke artifacts agar QA bisa membacanya', async () => {
+  const { artifactPath } = await import('../src/agents/guard.ts');
+  assert(
+    artifactPath('job-x', 'render-result.json').endsWith(path.join('artifacts', 'render-result.json')),
+    'render-result harus berada di artifacts/',
+  );
+});
+
 await closeDb();
 fs.rmSync(tmpRoot, { recursive: true, force: true });
 

@@ -177,6 +177,9 @@ export function planScenes(input: {
         lens: spec.lens,
         aspect: input.aspect,
         mood: input.brief.gaya ?? input.theme.mood,
+        location: locationFor(spec.key, input.theme),
+        angle: COMPOSITION[spec.key.split('_')[0]] ?? 'three-quarter front',
+        variant: index,
       }),
       negativePrompt: NEGATIVE_PROMPT,
       onScreenText: onScreenTextFor(spec.key, input.brief, advantages),
@@ -203,6 +206,24 @@ function locationFor(key: string, theme: Theme): string {
   }
 }
 
+/**
+ * Generated stills share the same subject, so without an explicit per-scene
+ * angle and location the images collapse into near-duplicates and the
+ * similarity gate rejects them. Each key gets a distinct camera position.
+ */
+const COMPOSITION: Record<string, string> = {
+  hook: 'extreme low angle, dramatic silhouette, wet asphalt reflection',
+  exterior: 'three-quarter front, full body in frame, wide environment',
+  features: 'side profile, badge and trim in focus, shallow background',
+  interior: 'cockpit view from passenger seat, dashboard and wheel in focus',
+  action: 'rear three-quarter, motion blur background, low tracking angle',
+  detail_wheel: 'macro close-up of forged wheel and brake caliper',
+  detail_engine: 'top-down engine bay, open hood, mechanical detail',
+  night: 'night street, neon reflections, long exposure light trails',
+  lifestyle: 'driver hand on wheel, blurred cabin background, no visible face',
+  cta: 'hero front view, centred, studio backdrop, clean floor reflection',
+};
+
 function buildPrompt(input: {
   theme: Theme;
   model: string;
@@ -211,11 +232,16 @@ function buildPrompt(input: {
   lens: string;
   aspect: string;
   mood: string;
+  location: string;
+  angle: string;
+  variant: number;
 }): string {
   return [
     `fotografi otomotif realistis dari ${input.theme.descriptor}`,
     `model: ${input.model}`,
+    `lokasi: ${input.location}`,
     `jenis shot: ${input.shot}`,
+    `komposisi: ${input.angle}`,
     `kamera: ${input.camera}, lensa ${input.lens}`,
     `pencahayaan: ${input.theme.lighting}`,
     `suasana: ${input.mood}`,

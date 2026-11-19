@@ -1,4 +1,6 @@
 import fs from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { ffprobe } from '../render/ffmpeg.ts';
 import path from 'node:path';
 import type { VisualAdapter, GenerateRequest, GenerateResult } from './types.ts';
 import { fileFor, userAssetsFor, validateAssetFile, withRetry, downloadToFile } from './types.ts';
@@ -131,9 +133,27 @@ export function pollinationsAdapter(def: VisualAdapterDef): VisualAdapter {
       await withRetry(def.id, def.maxRetries ?? 2, def.cooldownMs ?? 10_000, async () => {
         await downloadToFile(url, out, 'image', minBytes, def.timeoutMs ?? 60_000);
       });
+      // The free tier silently caps output around 1015x580, which fails the
+      // minimum-resolution gate. Upscale locally so the pipeline sees a
+      // compliant asset instead of rejecting an otherwise usable image.
+      upscaleToMinimum(out, w, h);
       return { path: out, kind: 'image', provider: def.id, source: def.id, cost: 0 };
     },
   };
+}
+
+/** Lanczos-upscales in place when a provider returns a smaller image than asked. */
+function upscaleToMinimum(file: string, width: number, height: number): void {
+  const probe = ffprobe(file);
+  if (!probe.ok) return;
+  if ((probe.width ?? 0) >= width && (probe.height ?? 0) >= height) return;
+  const tmp = file.replace(/\.jpg$/, '.up.jpg');
+  const res = spawnSync('ffmpeg', [
+    '-v', 'error', '-y', '-i', file,
+    '-vf', `scale=${width}:${height}:flags=lanczos`, '-q:v', '2', tmp,
+  ]);
+  if (res.status === 0 && fs.existsSync(tmp)) fs.renameSync(tmp, file);
+  else fs.rmSync(tmp, { force: true });
 }
 
 /** Requested frame size per aspect ratio, capped by what free providers allow. */

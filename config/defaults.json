@@ -35,6 +35,7 @@
     "minWidth": 1280,
     "minHeight": 720,
     "minSharpness": 8,
+    "minSharpnessGenerated": 5,
     "maxRegenerations": 3,
     "sceneHashDistance": 4,
     "forbidTextInImage": true

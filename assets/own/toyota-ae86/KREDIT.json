@@ -1,0 +1,46 @@
+{
+ "query": "Toyota AE86",
+ "sumber": "Wikimedia Commons",
+ "foto": [
+  {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8f/1984_Toyota_AE86.jpg/1920px-1984_Toyota_AE86.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "width": 1600,
+   "license": "CC BY-SA 4.0",
+   "artist": "DestinationFearFan",
+   "file": "foto-1.jpg",
+   "title": "File:1984 Toyota AE86.jpg"
+  },
+  {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7c/Green_AE86_1986_Levin_Coupe.jpg/1920px-Green_AE86_1986_Levin_Coupe.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "width": 1600,
+   "license": "CC0",
+   "artist": "SoulNaber",
+   "file": "foto-2.jpg",
+   "title": "File:Green AE86 1986 Levin Coupe.jpg"
+  },
+  {
+   "url": "https://upload.wikimedia.org/wikipedia/commons/1/1b/New_stock_ae86_coupe.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+   "width": 1600,
+   "license": "Public domain",
+   "artist": "Jeff lange at English Wikipedia",
+   "file": "foto-3.jpg",
+   "title": "File:New stock ae86 coupe.jpg"
+  },
+  {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/91/Racing_car_in_Tokyo_area%2C_probably_Toyota_AE86.jpg/1920px-Racing_car_in_Tokyo_area%2C_probably_Toyota_AE86.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "width": 1600,
+   "license": "CC0",
+   "artist": "Syced",
+   "file": "foto-4.jpg",
+   "title": "File:Racing car in Tokyo area, probably Toyota AE86.jpg"
+  },
+  {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bb/Racing_car_in_Tokyo_area%2C_probably_Toyota_AE86_2.jpg/1920px-Racing_car_in_Tokyo_area%2C_probably_Toyota_AE86_2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "width": 1600,
+   "license": "CC0",
+   "artist": "Syced",
+   "file": "foto-5.jpg",
+   "title": "File:Racing car in Tokyo area, probably Toyota AE86 2.jpg"
+  }
+ ]
+}

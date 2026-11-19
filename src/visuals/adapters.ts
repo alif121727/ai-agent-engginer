@@ -123,7 +123,7 @@ export function pollinationsAdapter(def: VisualAdapterDef): VisualAdapter {
     available: () => Boolean(def.enabled && template),
     async generate(req: GenerateRequest): Promise<GenerateResult> {
       const [w, h] = sizeFor(req.aspect);
-      const prompt = encodeURIComponent(req.prompt);
+      const prompt = encodeURIComponent(req.scene.prompt);
       const url = template
         .replace('{prompt}', prompt)
         .replace('{width}', String(w))

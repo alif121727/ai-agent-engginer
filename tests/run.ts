@@ -475,6 +475,20 @@ await check('API menolak unggah berkas dengan ekstensi asing', async () => {
   }
 });
 
+await check('provider gambar gratis menerima negative prompt', async () => {
+  const { freeTierPrompt } = await import('../src/visuals/adapters.ts');
+  const { NEGATIVE_PROMPT } = await import('../src/pipeline/scenes.ts');
+  const withNeg = freeTierPrompt({ prompt: 'fotografi otomotif', negativePrompt: NEGATIVE_PROMPT });
+  assert(withNeg.startsWith('fotografi otomotif'), 'prompt asli harus tetap di depan');
+  assert(withNeg.includes('hindari:'), 'negatif harus ikut terkirim');
+  // The anti-toy cues are the ones that only reached the paid adapter before.
+  for (const cue of ['kartun', 'kulit plastik', 'warna terlalu jenuh']) {
+    assert(withNeg.includes(cue), `negatif "${cue}" harus terkirim ke provider gratis`);
+  }
+  const withoutNeg = freeTierPrompt({ prompt: 'fotografi otomotif' });
+  assert(withoutNeg === 'fotografi otomotif', 'tanpa negatif prompt tidak boleh berubah');
+});
+
 await check('unggahan aset model katalog masuk ke folder yang dibaca pipeline', async () => {
   const { app } = createApp({ startWorker: false });
   const { assetFolderSlug, userAssetsFor } = await import('../src/visuals/types.ts');

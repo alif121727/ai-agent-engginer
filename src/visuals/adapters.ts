@@ -123,14 +123,7 @@ export function pollinationsAdapter(def: VisualAdapterDef): VisualAdapter {
     available: () => Boolean(def.enabled && template),
     async generate(req: GenerateRequest): Promise<GenerateResult> {
       const [w, h] = sizeFor(req.aspect);
-      // Pollinations has no negative-prompt parameter, so the negatives are
-      // appended to the prompt itself. Without this the free tier never sees
-      // them and the anti-toy cues only ever reach the paid adapter.
-      const prompt = encodeURIComponent(
-        [req.scene.prompt, req.scene.negativePrompt ? `hindari: ${req.scene.negativePrompt}` : '']
-          .filter(Boolean)
-          .join(', '),
-      );
+      const prompt = encodeURIComponent(freeTierPrompt(req.scene));
       // A distinct seed per scene keeps successive stills from collapsing into
       // the same composition, which the similarity gate would reject.
       const seed = seedFor(req.model, req.scene.index);
@@ -151,6 +144,16 @@ export function pollinationsAdapter(def: VisualAdapterDef): VisualAdapter {
       return { path: out, kind: 'image', provider: def.id, source: def.id, cost: 0 };
     },
   };
+}
+
+/**
+ * Pollinations has no negative-prompt parameter, so the negatives are appended
+ * to the prompt text. Without this the free tier never sees them and the
+ * anti-toy cues only ever reach the paid adapter.
+ */
+export function freeTierPrompt(scene: { prompt: string; negativePrompt?: string }): string {
+  const negatives = scene.negativePrompt?.trim();
+  return [scene.prompt, negatives ? `hindari: ${negatives}` : ''].filter(Boolean).join(', ');
 }
 
 /** Stable but scene-specific seed, so retries reproduce and scenes differ. */

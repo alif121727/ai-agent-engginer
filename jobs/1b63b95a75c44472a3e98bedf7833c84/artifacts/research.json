@@ -1,0 +1,24 @@
+{
+  "model": "Koenigsegg Jesko",
+  "catalog": null,
+  "specs": [
+    {
+      "text": "V8 twin-turbo 5.0L · 1.600 PS (E85)",
+      "source": "brief"
+    },
+    {
+      "text": "Torsi 1.500 Nm · 9-speed Light Speed Transmission",
+      "source": "brief"
+    },
+    {
+      "text": "Berat 1.420 kg · downforce 1.400 kg",
+      "source": "brief"
+    },
+    {
+      "text": "0–400 km/jam lalu berhenti dalam 27,83 dtk",
+      "source": "brief"
+    }
+  ],
+  "missing": [],
+  "note": "angka dari brief didahulukan; sisanya dari katalog yang bersumber Wikipedia"
+}

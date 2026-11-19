@@ -543,8 +543,22 @@ function NewTemplate({ navigate }: { navigate: (to: string) => void }) {
                 id="model-custom"
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
-                placeholder="Ferrari 296 GTB"
+                placeholder="Ferrari 296 GTB, r34, hachiroku…"
               />
+              {(() => {
+                const m = modelTerdeteksi(config.catalog, model);
+                if (!model.trim()) return null;
+                return m ? (
+                  <p className="muted" style={{ fontSize: '0.82rem', marginTop: 8 }}>
+                    Terdeteksi: <strong style={{ color: 'var(--orange)' }}>{m.model}</strong> — foto{' '}
+                    {m.slug} dan suara mesinnya ({m.mesin.split('(')[0].trim()}) akan dipakai.
+                  </p>
+                ) : (
+                  <p className="muted" style={{ fontSize: '0.82rem', marginTop: 8 }}>
+                    Model belum ada di katalog. Foto tidak tersedia, jadi visual akan dibuat generator.
+                  </p>
+                );
+              })()}
             </div>
             <div className="field">
               <label htmlFor="tagline">Tagline (opsional)</label>
@@ -682,13 +696,63 @@ function ringkasModel(m: CatalogModel): string {
   return parts.join(' · ');
 }
 
+function norm(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+/** Mirrors the server matcher so the UI agrees with what will actually render. */
+function cocokSkor(m: CatalogModel, cari: string): number {
+  const q = norm(cari);
+  if (!q) return 0;
+  const qc = q.replace(/ /g, '');
+  const fields = [m.model, m.seri, `${m.merk} ${m.model}`, m.slug.replace(/-/g, ' ')];
+  let best = 0;
+  for (const f of fields) {
+    const n = norm(f);
+    const nc = n.replace(/ /g, '');
+    if (!nc) continue;
+    if (nc === qc) best = Math.max(best, 1);
+    else if (nc.startsWith(qc)) best = Math.max(best, 0.9);
+    else if (nc.includes(qc)) best = Math.max(best, 0.8);
+    else {
+      const qt = q.split(' ');
+      const nt = n.split(' ');
+      const hit = qt.filter((t) => nt.some((x) => x === t || x.startsWith(t) || t.startsWith(x))).length;
+      if (hit) best = Math.max(best, 0.7 * (hit / qt.length));
+    }
+  }
+  return best;
+}
+
 function filterKatalog(catalog: CatalogModel[], cari: string, kategori: string): CatalogModel[] {
-  const key = cari.trim().toLowerCase();
-  return catalog.filter((m) => {
-    if (kategori !== 'semua' && m.kategori !== kategori) return false;
-    if (!key) return true;
-    return `${m.merk} ${m.model} ${m.seri} ${m.tahun}`.toLowerCase().includes(key);
-  });
+  const key = cari.trim();
+  const filtered = catalog.filter((m) => kategori === 'semua' || m.kategori === kategori);
+  if (!key) return filtered;
+  return filtered
+    .map((m) => ({ m, skor: cocokSkor(m, key) }))
+    .filter((x) => x.skor >= 0.55)
+    .sort((a, b) => b.skor - a.skor)
+    .map((x) => x.m);
+}
+
+/**
+ * What the typed text resolves to. The picker only fills a text field, so
+ * without this the user cannot tell whether "r34" will use the R34 photos and
+ * its engine note, or silently fall back to a generator.
+ */
+function modelTerdeteksi(catalog: CatalogModel[], input: string): CatalogModel | null {
+  const key = input.trim();
+  if (!key) return null;
+  const hit = catalog
+    .map((m) => ({ m, skor: cocokSkor(m, key) }))
+    .filter((x) => x.skor >= 0.7)
+    .sort((a, b) => b.skor - a.skor)[0];
+  return hit?.m ?? null;
 }
 
 // ---------------------------------------------------------------- job detail

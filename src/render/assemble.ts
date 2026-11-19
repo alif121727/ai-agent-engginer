@@ -8,7 +8,8 @@ import { pickTheme } from '../core/theme.ts';
 import type { AgentContext } from '../agents/guard.ts';
 import type { AssetRecord, ScenePlan, Theme } from '../core/types.ts';
 import { ffprobe, contactSheet } from './ffmpeg.ts';
-import { buildMusicBed, muxAudio } from './audio.ts';
+import { buildMusicBed, buildEngineTrack, muxAudio } from './audio.ts';
+import { describeProfile } from './engine.ts';
 
 export interface RenderResult {
   file: string;
@@ -93,24 +94,27 @@ function cameraMoveFor(scene: ScenePlan): CameraMove {
  */
 function cameraFilter(move: CameraMove, frames: number, width: number, height: number, fps: number): string {
   const total = Math.max(2, frames);
+  // Linear motion reads as a mechanical zoom; an ease-in-out curve is what
+  // makes a still photograph feel like a camera operator moved it.
+  const e = `(0.5-0.5*cos(PI*on/${total}))`;
   const z = {
-    'push-in': `min(1+0.14*on/${total},1.14)`,
-    'pull-out': `max(1.14-0.14*on/${total},1.0)`,
-    orbit: `min(1.06+0.10*on/${total},1.16)`,
-    'speed-ramp': `min(1.0+0.22*on/${total},1.22)`,
+    'push-in': `min(1+0.14*${e},1.14)`,
+    'pull-out': `max(1.14-0.14*${e},1.0)`,
+    orbit: `min(1.06+0.10*${e},1.16)`,
+    'speed-ramp': `min(1.0+0.22*${e},1.22)`,
     'pan-right': '1.12',
     'pan-left': '1.12',
     'tilt-up': '1.12',
   }[move];
   const x = {
-    'pan-right': `(iw-iw/zoom)*(on/${total})`,
-    'pan-left': `(iw-iw/zoom)*(1-on/${total})`,
+    'pan-right': `(iw-iw/zoom)*${e}`,
+    'pan-left': `(iw-iw/zoom)*(1-${e})`,
     orbit: `(iw-iw/zoom)*(0.5+0.35*sin(on/${total}*PI))`,
     'speed-ramp': `(iw-iw/zoom)*0.5`,
     'tilt-up': `(iw-iw/zoom)*0.5`,
   }[move as string] ?? '(iw-iw/zoom)/2';
   const y = {
-    'tilt-up': `(ih-ih/zoom)*(1-on/${total})`,
+    'tilt-up': `(ih-ih/zoom)*(1-${e})`,
     'speed-ramp': `(ih-ih/zoom)*0.5`,
     'pan-right': `(ih-ih/zoom)*0.5`,
     'pan-left': `(ih-ih/zoom)*0.5`,
@@ -120,16 +124,31 @@ function cameraFilter(move: CameraMove, frames: number, width: number, height: n
   );
 }
 
+/**
+ * Film-like grade. The old chain was contrast + vignette + a hard unsharp,
+ * which is what made stills look like processed JPEGs: over-sharpened edges,
+ * flat midtones and no grain structure. S-curve, gentle local contrast, fine
+ * animated grain and a barely-there chromatic fringe read as shot footage.
+ */
 function gradeFilters(theme: Theme): string[] {
   const contrast = (1 + (theme.grade.contrast - 1) * 0.6).toFixed(3);
   const saturation = (1 + (theme.grade.saturation - 1) * 0.6).toFixed(3);
   const warm = theme.grade.temperature > 0;
   return [
-    `eq=contrast=${contrast}:saturation=${saturation}:gamma=0.98`,
-    warm ? 'colorbalance=rs=0.04:gs=0.01:bs=-0.04' : 'colorbalance=rs=-0.03:bs=0.05',
-    'vignette=PI/5',
-    'noise=alls=2:allf=t+u',
-    'unsharp=5:5:0.35:5:5:0.0',
+    `eq=contrast=${contrast}:saturation=${saturation}:gamma=0.99`,
+    // Filmic S-curve: lift the toe, roll off the shoulder, keep midtones open.
+    'curves=preset=medium_contrast',
+    warm ? 'colorbalance=rs=0.05:gs=0.015:bs=-0.05:rh=0.03:bh=-0.03' : 'colorbalance=rs=-0.04:bs=0.06:rh=-0.02:bh=0.02',
+    // Deband before grain: smoothing afterwards would erase the grain that
+    // gives the frame its film texture.
+    'deband=1thr=0.02:2thr=0.02:3thr=0.02',
+    // Local contrast at a wide radius adds depth without haloing.
+    'unsharp=7:7:0.28:7:7:0.0',
+    // Sub-pixel channel offset mimics lens dispersion on high-contrast edges.
+    'rgbashift=rh=1:bh=-1',
+    'vignette=PI/4.5',
+    // Grain must move per frame or it looks like a dirty sensor.
+    'noise=alls=3:allf=t',
   ];
 }
 
@@ -191,9 +210,9 @@ export async function assembleVideo(ctx: AgentContext): Promise<RenderResult> {
     const filters = [
       // Overscan first: zoompan needs room to move, otherwise the crop window
       // hits the edge and the frame jitters.
-      `scale=${Math.round(width * 1.15)}:${Math.round(height * 1.15)}:force_original_aspect_ratio=increase`,
+      `scale=${Math.round(width * 1.15)}:${Math.round(height * 1.15)}:force_original_aspect_ratio=increase:flags=lanczos`,
       `crop=${Math.round(width * 1.15)}:${Math.round(height * 1.15)}`,
-      `scale=${width * 2}:${height * 2}`,
+      `scale=${width * 2}:${height * 2}:flags=lanczos`,
       cameraFilter(move, frames, width, height, fps),
       ...gradeFilters(theme),
     ];
@@ -238,18 +257,27 @@ export async function assembleVideo(ctx: AgentContext): Promise<RenderResult> {
 
   // Audio is part of "done": a silent mp4 reads as an unfinished render.
   const expectedDuration = scenes.reduce((sum, s) => sum + s.duration, 0);
+  const engine = buildEngineTrack({
+    jobId: ctx.jobId,
+    durationSec: expectedDuration,
+    model: brief.model ?? '',
+    scenes,
+  });
+  if (engine) {
+    await ctx.log('info', `suara mesin: ${describeProfile(engine.profile)}`);
+  }
   const music = buildMusicBed({
     jobId: ctx.jobId,
     durationSec: expectedDuration,
     theme,
     model: brief.model ?? '',
   });
-  const withAudio = music
-    ? muxAudio(silentFile, music, outFile, defaults.render.loudnessLufs)
+  const withAudio = engine || music
+    ? muxAudio(silentFile, music, outFile, defaults.render.loudnessLufs, engine?.file ?? null)
     : false;
   if (!withAudio) {
     fs.copyFileSync(silentFile, outFile);
-    await ctx.log('warn', 'musik latar gagal dibuat, video dirender tanpa audio');
+    await ctx.log('warn', 'audio gagal dibuat, video dirender tanpa suara');
   }
   fs.rmSync(silentFile, { force: true });
 

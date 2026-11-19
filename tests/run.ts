@@ -693,6 +693,111 @@ await check('render menulis hasil ke artifacts agar QA bisa membacanya', async (
   );
 });
 
+// ------------------------------------------------ pencarian model otomatis
+
+await check('pencarian model menerima nama panggilan, bukan hanya nama persis', async () => {
+  const { findModel, searchModels } = await import('../src/core/catalog.ts');
+  const cases: [string, string][] = [
+    ['r34', 'nissan-skyline-r34-gtr'],
+    ['hachiroku', 'toyota-ae86'],
+    ['gullwing', 'mercedes-300sl-gullwing'],
+    ['rx7', 'mazda-rx7-fd'],
+    ['22b', 'subaru-impreza-22b'],
+    ['z-tune', 'nissan-r34-gtr-z-tune'],
+    ['supra', 'toyota-gr-supra'],
+    ['M4', 'bmw-m4-competition-g82'],
+  ];
+  for (const [q, slug] of cases) {
+    assert(findModel(q)?.slug === slug, `"${q}" seharusnya ${slug}, dapat ${findModel(q)?.slug ?? 'null'}`);
+  }
+  // A car that is not in the catalog must stay unresolved, never borrow
+  // another model's photos or engine note.
+  assert(findModel('Tesla Model 3') === undefined, 'model di luar katalog harus tetap tak dikenal');
+  assert(searchModels('xyzzy').length === 0, 'kata acak tidak boleh menghasilkan kandidat');
+});
+
+await check('setiap model katalog bisa ditemukan dari namanya sendiri', async () => {
+  const { loadCatalog, findModel } = await import('../src/core/catalog.ts');
+  for (const m of loadCatalog().models) {
+    const hit = findModel(m.model);
+    assert(hit?.slug === m.slug, `nama "${m.model}" tidak resolve ke ${m.slug}`);
+  }
+});
+
+// ------------------------------------------------------- suara per model
+
+await check('profil suara mesin berbeda antar model', async () => {
+  const { engineProfileFor } = await import('../src/render/engine.ts');
+  const mustang = engineProfileFor('Ford Mustang Fastback');
+  const ae86 = engineProfileFor('Toyota AE86');
+  const gt3 = engineProfileFor('Porsche 911 GT3 RS');
+  const taycan = engineProfileFor('Porsche Taycan Turbo S');
+
+  assert(mustang.layout === 'V8' && mustang.cylinders === 8, `Mustang harus V8, dapat ${mustang.layout}`);
+  assert(ae86.layout === 'I4' && ae86.cylinders === 4, `AE86 harus I4, dapat ${ae86.layout}`);
+  assert(gt3.layout === 'flat-6', `GT3 RS harus flat-6, dapat ${gt3.layout}`);
+  assert(taycan.aspiration === 'electric', 'Taycan harus terdeteksi listrik');
+  assert(mustang.rasp > gt3.rasp - 0.01, 'V8 harus lebih kasar dari flat-6');
+  assert(new Set([mustang.label, ae86.label, gt3.label]).size === 3, 'label mesin harus unik per model');
+});
+
+await check('profil mesin tidak mengarang: kosong untuk model di luar katalog', async () => {
+  const { engineProfileFor } = await import('../src/render/engine.ts');
+  const p = engineProfileFor('Mobil Antah Berantah');
+  assert(p.label === 'Mobil Antah Berantah', 'model tak dikenal memakai profil generik, bukan milik mobil lain');
+});
+
+await check('suara mesin benar-benar disintesis dan berbeda per model', async () => {
+  const { buildEngineTrack } = await import('../src/render/audio.ts');
+  const scenes = [
+    { index: 0, key: 'hook', start: 0, duration: 2 },
+    { index: 1, key: 'action', start: 2, duration: 2 },
+  ] as unknown as Parameters<typeof buildEngineTrack>[0]['scenes'];
+  const models = ['Ford Mustang Fastback', 'Toyota AE86', 'Porsche Taycan Turbo S'];
+  const hashes = new Set<string>();
+  for (const model of models) {
+    const r = buildEngineTrack({ jobId: `uji-${model.split(' ').pop()}`, durationSec: 4, model, scenes });
+    assert(r !== null, `gagal membuat suara mesin untuk ${model}`);
+    assert(fs.existsSync(r!.file) && fs.statSync(r!.file).size > 10000, `berkas suara ${model} kosong`);
+    hashes.add(fs.readFileSync(r!.file).toString('base64').slice(0, 4000));
+  }
+  assert(hashes.size === models.length, 'suara tiap model harus berbeda, bukan file yang sama');
+});
+
+await check('campuran mesin + musik menghasilkan audio stereo 48 kHz', async () => {
+  const { buildMusicBed, buildEngineTrack, muxAudio } = await import('../src/render/audio.ts');
+  const { loadThemes } = await import('../src/core/config.ts');
+  const { ffprobe } = await import('../src/render/ffmpeg.ts');
+  const themes = loadThemes();
+  const theme = Object.values(themes.themes)[0];
+  const job = 'uji-mux';
+  const silent = path.join('jobs', job, 'video-silent.mp4');
+  fs.mkdirSync(path.dirname(silent), { recursive: true });
+  const made = spawnSync(
+    'ffmpeg',
+    ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'testsrc2=size=320x180:rate=15:duration=3',
+     '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', silent],
+    { encoding: 'utf8' },
+  );
+  assert(made.status === 0, 'gagal membuat video uji');
+  const engine = buildEngineTrack({ jobId: job, durationSec: 3, model: 'Toyota AE86', scenes: [] });
+  const music = buildMusicBed({ jobId: job, durationSec: 3, theme, model: 'Toyota AE86' });
+  assert(engine !== null && music !== null, 'gagal menyiapkan trek audio');
+  const out = path.join('jobs', job, 'video.mp4');
+  const ok = muxAudio(silent, music, out, -14, engine!.file);
+  assert(ok, 'muxAudio gagal menggabungkan mesin dan musik');
+  const probe = ffprobe(out);
+  assert(probe.ok && (probe.durationSec ?? 0) > 2.5, 'video hasil mux tidak valid');
+  const channels = spawnSync(
+    'ffprobe',
+    ['-v', 'error', '-select_streams', 'a:0', '-show_entries', 'stream=channels,sample_rate',
+     '-of', 'csv=p=0', out],
+    { encoding: 'utf8' },
+  );
+  assert(channels.stdout.includes('48000'), `sample rate harus 48000, dapat ${channels.stdout.trim()}`);
+  fs.rmSync(path.join('jobs', job), { recursive: true, force: true });
+});
+
 await closeDb();
 fs.rmSync(tmpRoot, { recursive: true, force: true });
 

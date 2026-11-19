@@ -1,0 +1,36 @@
+{
+  "model": "Nissan Skyline GT-R R34 Nismo Z-tune",
+  "tagline": "Legenda RB26 yang tidak pernah pudar",
+  "lines": [
+    {
+      "sceneIndex": 0,
+      "onScreenText": "Legenda RB26 yang tidak pernah pudar",
+      "voiceover": "Nissan Skyline GT-R R34 Nismo Z-tune. Legenda RB26 yang tidak pernah pudar"
+    },
+    {
+      "sceneIndex": 1,
+      "onScreenText": "Nissan Skyline GT-R R34 Nismo Z-tune",
+      "voiceover": "Ini Nissan Skyline GT-R R34 Nismo Z-tune, 2005 (19 unit). Mesin Inline-six 2.8L twin-turbo RB26DETT (stroker Nismo)."
+    },
+    {
+      "sceneIndex": 2,
+      "onScreenText": "Inline-six 2.8L twin-turbo RB26DETT",
+      "voiceover": "Salah satu andalannya: Hanya 19 unit diproduksi."
+    },
+    {
+      "sceneIndex": 3,
+      "onScreenText": "500 PS @ 7.600 rpm",
+      "voiceover": "Kabin Nissan R34 Z-tune (Z2), semua tersusun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "onScreenText": "Hanya 19 unit diproduksi",
+      "voiceover": "Di jalan, 500 PS @ 7.600 rpm, nol sampai seratus tidak disebut di sumber."
+    },
+    {
+      "sceneIndex": 5,
+      "onScreenText": "Nissan Skyline GT-R R34 Nismo Z-tune",
+      "voiceover": "Nissan Skyline GT-R R34 Nismo Z-tune. Legenda RB26 yang tidak pernah pudar"
+    }
+  ]
+}

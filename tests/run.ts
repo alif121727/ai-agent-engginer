@@ -693,6 +693,45 @@ await check('render menulis hasil ke artifacts agar QA bisa membacanya', async (
   );
 });
 
+await check('setiap alias katalog dikenali sebagai model yang benar', async () => {
+  const { loadCatalog, findModel, aliasesFor } = await import('../src/core/catalog.ts');
+  const salah: string[] = [];
+  for (const m of loadCatalog().models) {
+    for (const alias of aliasesFor(m.slug)) {
+      const hit = findModel(alias);
+      if (hit?.slug !== m.slug) salah.push(`${alias} -> ${hit?.slug ?? 'kosong'} (harusnya ${m.slug})`);
+    }
+  }
+  assert(salah.length === 0, `alias salah arah: ${salah.join('; ')}`);
+});
+
+await check('dua worker tidak bisa mengklaim job yang sama', async () => {
+  const { createJob, claimNextJob } = await import('../src/db/repo.ts');
+  // Drain whatever earlier checks left queued so the new job is the only
+  // candidate and the assertion below is unambiguous.
+  while (await claimNextJob()) {
+    /* kosongkan antrean */
+  }
+  const job = await createJob({
+    briefSlug: 'uji-klaim',
+    title: 'Uji Klaim',
+    model: 'Uji Klaim',
+    themeId: 'generic',
+    mode: 'draft',
+    durationSec: 30,
+    aspect: '16:9',
+    preset: '9-orang',
+    brief: { model: 'Uji Klaim', durasi: 30, rasio: '16:9', keunggulan: [] } as never,
+    costEstimate: 0,
+  });
+  // Fired together on purpose: this is the interleaving two polling workers
+  // produce, and both used to come back with the same job.
+  const results = await Promise.all([claimNextJob(), claimNextJob(), claimNextJob(), claimNextJob()]);
+  const ids = results.map((r) => r?.id).filter((id): id is string => Boolean(id));
+  assert(new Set(ids).size === ids.length, `ada job diklaim dua kali: ${ids.join(', ')}`);
+  assert(ids.includes(job.id), 'job baru tidak pernah terklaim');
+});
+
 // ------------------------------------------------ pencarian model otomatis
 
 await check('pencarian model menerima nama panggilan, bukan hanya nama persis', async () => {

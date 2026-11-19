@@ -205,3 +205,60 @@ Skrip sudah diarahkan ke sana; port diatur lewat `PORT`.
 terpasang; ini bukan regresi — build nyata memakai esbuild (`npm run build:ui`)
 dan lolos. Bila memeriksa UI manual, ganti query `?v=` di URL karena browser
 meng-cache `app.js` dengan keras.
+
+---
+
+## 10. Sesi 4 — jawaban "kemana chat pembuatan studio AI"
+
+Riwayat percakapan **tidak bisa dipulihkan**: chat terikat pada sandbox, dan
+sandbox lama sudah hilang. Yang permanen adalah repo. Karena itu dokumen ini
+memang dibuat sebagai pengganti riwayat chat — semua keputusan, akar masalah,
+dan bukti verifikasi ada di sini.
+
+Selama menjawab, tiga bug nyata ditemukan dan diperbaiki.
+
+### 10.1 Dua worker bisa mengklaim job yang sama
+
+`claimNextJob()` membaca baris `queued`, lalu `UPDATE ... WHERE status='queued'`,
+lalu memeriksa status lewat `getJob()`. Dua worker yang poll bersamaan sama-sama
+membaca baris yang sama, dan keduanya melihat `running` — sehingga keduanya
+menjalankan job yang sama di folder yang sama. Ini yang membuat `scene-06.jpg`
+sempat hanya 48 byte (dua proses menulis file yang sama, satu terbunuh).
+
+Perbaikan: `db().run()` sekarang mengembalikan jumlah baris yang berubah, dan
+`claimNextJob()` memakai hasil `UPDATE` sebagai klaim atomik — hanya worker
+yang `changes === 1` yang menjalankan job.
+
+Bukti: tes "dua worker tidak bisa mengklaim job yang sama" menjalankan empat
+`claimNextJob()` serentak. Dengan kode lama tes gagal (`job diklaim dua kali:
+23d4fe4d…` empat kali); dengan kode baru lulus.
+
+### 10.2 Halaman Template baru blank
+
+`/api/config` mengirim `catalog` tanpa field `mesin`, padahal UI memanggil
+`m.mesin.split('(')`. Satu field hilang membuat React melempar dan seluruh
+halaman kosong — bukan pesan error, hanya layar putih.
+
+Perbaikan: `mesin` dikirim oleh API, dan UI memakai `mesin?` opsional sehingga
+katalog yang belum punya data mesin tetap tampil.
+
+### 10.3 Hint "Terdeteksi" bertentangan dengan mesin pencarian
+
+UI punya salinan logika skor sendiri dan tidak tahu alias (`r34`, `hachiroku`,
+`gullwing`). Akibatnya mengetik "r34" menampilkan "Model belum ada di katalog"
+padahal job-nya akan memakai foto R34. Server sendiri sudah mengenali alias itu.
+
+Perbaikan: `aliasesFor()` diekspor dari `src/core/catalog.ts`, dikirim sebagai
+`alias` di `/api/config`, dan dipakai UI. Ditambah tes yang memastikan setiap
+alias katalog mengarah ke model yang benar.
+
+**Verifikasi.** `npm test`: **54 lulus, 0 gagal**. Di browser: 33 kartu tampil,
+klik kartu R34 menampilkan "Terdeteksi: Nissan Skyline GT-R R34 Nismo Z-tune —
+foto nissan-r34-gtr-z-tune dan suara mesinnya (Inline-six 2.8L twin-turbo
+RB26DETT) akan dipakai". Foto untuk enam nama panggilan diverifikasi terurai ke
+folder yang benar (`r34`→6 foto, `hachiroku`→5, `22b`→6, `gullwing`→3).
+
+**Prompt visual diperkuat.** `buildPrompt()` kini menyebut medium fotografi
+kongkret (full frame, lensa prime, f/1.8, ISO 100, RAW) dan `NEGATIVE_PROMPT`
+ditambah artefak yang membuat mobil hasil generator terlihat seperti mainan
+(warna terlalu jenuh, kulit plastik, roda mengambang, bayangan ganda).

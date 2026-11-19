@@ -1,0 +1,53 @@
+{
+  "model": "Nissan Skyline GT-R R34 Nismo Z-tune",
+  "catalog": {
+    "merk": "Nissan",
+    "seri": "R34 Z-tune (Z2)",
+    "tahun": "2005 (19 unit)",
+    "kategori": "modifikasi",
+    "mesin": "Inline-six 2.8L twin-turbo RB26DETT (stroker Nismo)",
+    "tenaga": "500 PS @ 7.600 rpm",
+    "torsi": "540 Nm",
+    "layout": "front-engine, AWD",
+    "berat": "tidak disebut di sumber",
+    "nol100": "tidak disebut di sumber",
+    "vmax": "tidak disebut di sumber",
+    "sumber": "https://en.wikipedia.org/wiki/Nissan_Skyline_GT-R (bagian Z-tune)"
+  },
+  "specs": [
+    {
+      "text": "Inline-six 2.8L twin-turbo RB26DETT",
+      "source": "brief"
+    },
+    {
+      "text": "500 PS @ 7.600 rpm",
+      "source": "brief"
+    },
+    {
+      "text": "Hanya 19 unit diproduksi",
+      "source": "brief"
+    },
+    {
+      "text": "AWD ATTESA E-TS",
+      "source": "brief"
+    },
+    {
+      "text": "Inline-six 2.8L twin-turbo RB26DETT (stroker Nismo) · 500 PS @ 7.600 rpm",
+      "source": "katalog"
+    },
+    {
+      "text": "Torsi 540 Nm · front-engine, AWD",
+      "source": "katalog"
+    },
+    {
+      "text": "Produksi 2005 (19 unit)",
+      "source": "katalog"
+    },
+    {
+      "text": "Prototipe Z1 600 PS memenangi Tuners' Battle Nismo Festival 2000; versi produksi Z2 diturunkan ke 500 PS agar lolos emisi, dengan blok diperkuat dan crankshaft stroker 2,8 L.",
+      "source": "katalog"
+    }
+  ],
+  "missing": [],
+  "note": "angka dari brief didahulukan; sisanya dari katalog yang bersumber Wikipedia"
+}

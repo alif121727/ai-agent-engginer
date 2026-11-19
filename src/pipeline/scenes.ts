@@ -109,6 +109,17 @@ export const NEGATIVE_PROMPT = [
   'ilustrasi',
   'render 3d polos',
   'mobil fiktif',
+  // These are the specific artefacts that make a generated car look like a toy.
+  'lukisan digital',
+  'warna terlalu jenuh',
+  'kulit plastik',
+  'permukaan berminyak',
+  'blur berlebih',
+  'distorsi perspektif',
+  'roda mengambang',
+  'bayangan ganda',
+  'badan mobil bengkok',
+  'teks melayang',
 ].join(', ');
 
 export function buildSceneList(durationSec: number): SceneSpec[] {
@@ -246,7 +257,13 @@ function buildPrompt(input: {
     `pencahayaan: ${input.theme.lighting}`,
     `suasana: ${input.mood}`,
     'depth of field dangkal, pantulan cat mengilap, material realistis, detail velg tajam',
-    'foto jurnalistik otomotif, sensor full frame, warna akurat, tidak ada teks',
+    // Concrete photographic cues pull generators away from the plastic,
+    // over-saturated look; naming the medium works better than "realistic".
+    'difoto dengan kamera full frame, lensa prime, f/1.8, ISO 100, RAW tanpa filter',
+    'cahaya alami dengan bayangan lembut, refleksi lingkungan pada bodi',
+    'tekstur cat metalik, jahitan interior terlihat, karet ban berdebu halus',
+    'foto jurnalistik otomotif, warna akurat, tidak ada teks, tidak ada watermark',
+    'tidak ada logo merek, tidak ada tulisan pada bodi',
   ].join(', ');
 }
 

@@ -105,18 +105,23 @@ export async function updateJob(id: string, patch: Partial<Job>): Promise<void> 
 }
 
 /** Atomically claim one queued job. Returns undefined when the queue is empty. */
+/**
+ * The UPDATE is the claim. Two workers polling at once both read the same
+ * `queued` row, so only the worker whose UPDATE changed a row may run the job;
+ * the loser retries with the next candidate. Checking the status afterwards
+ * instead would let both proceed and interleave writes in the same job folder.
+ */
 export async function claimNextJob(): Promise<Job | undefined> {
   for (let attempt = 0; attempt < 5; attempt++) {
     const candidate = await db().get<Job>(
       `SELECT * FROM jobs WHERE status = 'queued' ORDER BY created_at ASC LIMIT 1`,
     );
     if (!candidate) return undefined;
-    await db().run(
+    const changed = await db().run(
       `UPDATE jobs SET status = 'running', updated_at = ? WHERE id = ? AND status = 'queued'`,
       [now(), candidate.id],
     );
-    const claimed = await getJob(candidate.id);
-    if (claimed?.status === 'running') return claimed;
+    if (changed === 1) return getJob(candidate.id);
   }
   return undefined;
 }

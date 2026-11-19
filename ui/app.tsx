@@ -46,6 +46,8 @@ interface CatalogModel {
   seri: string;
   tahun: string;
   kategori: string;
+  mesin?: string;
+  alias?: string[];
   tenaga: string;
   torsi: string;
   tagline: string;
@@ -551,7 +553,8 @@ function NewTemplate({ navigate }: { navigate: (to: string) => void }) {
                 return m ? (
                   <p className="muted" style={{ fontSize: '0.82rem', marginTop: 8 }}>
                     Terdeteksi: <strong style={{ color: 'var(--orange)' }}>{m.model}</strong> — foto{' '}
-                    {m.slug} dan suara mesinnya ({m.mesin.split('(')[0].trim()}) akan dipakai.
+                    {m.slug}
+                    {m.mesin ? ` dan suara mesinnya (${m.mesin.split('(')[0].trim()})` : ''} akan dipakai.
                   </p>
                 ) : (
                   <p className="muted" style={{ fontSize: '0.82rem', marginTop: 8 }}>
@@ -710,7 +713,9 @@ function cocokSkor(m: CatalogModel, cari: string): number {
   const q = norm(cari);
   if (!q) return 0;
   const qc = q.replace(/ /g, '');
-  const fields = [m.model, m.seri, `${m.merk} ${m.model}`, m.slug.replace(/-/g, ' ')];
+  // Aliases are what the server search matches on, so the hint here agrees
+  // with the model that actually supplies the photos and engine sound.
+  const fields = [m.model, m.seri, `${m.merk} ${m.model}`, m.slug.replace(/-/g, ' '), ...(m.alias ?? [])];
   let best = 0;
   for (const f of fields) {
     const n = norm(f);

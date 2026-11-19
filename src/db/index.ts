@@ -11,7 +11,8 @@ export interface Db {
   kind: 'sqlite' | 'postgres';
   all<T extends Row = Row>(sql: string, params?: Param[]): Promise<T[]>;
   get<T extends Row = Row>(sql: string, params?: Param[]): Promise<T | undefined>;
-  run(sql: string, params?: Param[]): Promise<void>;
+  /** Resolves with the number of rows actually changed. */
+  run(sql: string, params?: Param[]): Promise<number>;
   exec(sql: string): Promise<void>;
   close(): Promise<void>;
 }
@@ -49,8 +50,9 @@ class SqliteDb implements Db {
     return this.#db.prepare(sql).get(...normalize(params)) as T | undefined;
   }
 
-  async run(sql: string, params: Param[] = []): Promise<void> {
-    this.#db.prepare(sql).run(...normalize(params));
+  async run(sql: string, params: Param[] = []): Promise<number> {
+    const result = this.#db.prepare(sql).run(...normalize(params));
+    return Number(result.changes ?? 0);
   }
 
   async exec(sql: string): Promise<void> {
@@ -85,8 +87,9 @@ class PostgresDb implements Db {
     return rows[0];
   }
 
-  async run(sql: string, params: Param[] = []): Promise<void> {
-    await this.#pool.query(toPg(sql), normalize(params));
+  async run(sql: string, params: Param[] = []): Promise<number> {
+    const result = await this.#pool.query(toPg(sql), normalize(params));
+    return result.rowCount ?? 0;
   }
 
   async exec(sql: string): Promise<void> {

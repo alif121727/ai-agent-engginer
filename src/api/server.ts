@@ -7,7 +7,7 @@ import { bus, currentConnection, recordEvent, wireBus } from '../core/bus.ts';
 import { loadDefaults, loadAgents, loadAdapters, loadThemes } from '../core/config.ts';
 import { parseBrief, resolveDuration, BriefError } from '../core/brief.ts';
 import { pickTheme } from '../core/theme.ts';
-import { loadCatalog } from '../core/catalog.ts';
+import { loadCatalog, aliasesFor } from '../core/catalog.ts';
 import { planScenes, estimateCost } from '../pipeline/scenes.ts';
 import { paths, slugify, jobDir } from '../core/fsx.ts';
 import {
@@ -186,9 +186,11 @@ export function createApp(opts: AppOptions = {}) {
         seri: m.seri,
         tahun: m.tahun,
         kategori: m.kategori,
+        mesin: m.mesin,
         tenaga: m.tenaga,
         torsi: m.torsi,
         tagline: m.tagline,
+        alias: aliasesFor(m.slug),
       })),
       adapters: Object.values(adapters.adapters).map((a) => ({
         id: a.id,

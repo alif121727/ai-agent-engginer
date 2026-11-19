@@ -59,6 +59,11 @@ const ALIASES: Record<string, string[]> = {
   'porsche-911-gt3-rs-992': ['gt3', 'gt3 rs', '992'],
 };
 
+/** Nicknames the search accepts, so the UI can match exactly like the server. */
+export function aliasesFor(slug: string): string[] {
+  return ALIASES[slug] ?? [];
+}
+
 export interface ModelMatch {
   model: CatalogModel;
   /** 0..1; 1 means the query named the model exactly. */

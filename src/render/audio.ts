@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { jobDir } from '../core/fsx.ts';
 import type { ScenePlan, Theme } from '../core/types.ts';
-import { engineProfileFor, describeProfile, type EngineProfile } from './engine.ts';
+import { engineProfileFor, type EngineProfile } from './engine.ts';
 
 /**
  * Music is synthesised with ffmpeg instead of shipped as a binary asset: the

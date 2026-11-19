@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { VisualAdapter, GenerateRequest, GenerateResult } from './types.ts';
-import { fileFor, userAssetsFor } from './types.ts';
+import { fileFor, userAssetsFor, validateAssetFile, withRetry, downloadToFile } from './types.ts';
 import type { VisualAdapterDef } from '../core/config.ts';
 import { paths } from '../core/fsx.ts';
 
@@ -100,6 +100,46 @@ export function videoGenAdapter(def: VisualAdapterDef): VisualAdapter {
       return { path: out, kind: 'video', provider: def.id, source: 'video-gen', cost: 0 };
     },
   };
+}
+
+/**
+ * Keyless text-to-image provider. Used as the free fallback so a model with no
+ * local photos can still be rendered without any code-drawn placeholder.
+ * The URL comes from config, so swapping the provider needs no code change.
+ */
+export function pollinationsAdapter(def: VisualAdapterDef): VisualAdapter {
+  const template = def.urlTemplate ?? 'https://image.pollinations.ai/prompt/{prompt}?width={width}&height={height}&nologo=true';
+  return {
+    id: def.id,
+    def,
+    available: () => Boolean(def.enabled && template),
+    async generate(req: GenerateRequest): Promise<GenerateResult> {
+      const [w, h] = sizeFor(req.aspect);
+      const prompt = encodeURIComponent(req.prompt);
+      const url = template
+        .replace('{prompt}', prompt)
+        .replace('{width}', String(w))
+        .replace('{height}', String(h));
+      const out = fileFor(req.outDir, req.scene.index, 'jpg');
+      const minBytes = def.minBytes ?? 20_000;
+      await withRetry(def.id, def.maxRetries ?? 2, def.cooldownMs ?? 10_000, async () => {
+        await downloadToFile(url, out, 'image', minBytes, def.timeoutMs ?? 60_000);
+      });
+      return { path: out, kind: 'image', provider: def.id, source: def.id, cost: 0 };
+    },
+  };
+}
+
+/** Requested frame size per aspect ratio, capped by what free providers allow. */
+function sizeFor(aspect: string): [number, number] {
+  switch (aspect) {
+    case '9:16':
+      return [1024, 1792];
+    case '1:1':
+      return [1024, 1024];
+    default:
+      return [1792, 1024];
+  }
 }
 
 export function stockAdapter(def: VisualAdapterDef): VisualAdapter {

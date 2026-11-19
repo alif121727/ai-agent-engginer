@@ -1,4 +1,18 @@
 {
+  "order": ["local", "video-gen", "image-gen", "image-gen-free", "stock-api"],
+  "fallback": {
+    "local": ["video-gen", "image-gen", "image-gen-free", "stock-api"],
+    "video-gen": ["image-gen", "image-gen-free", "stock-api"],
+    "image-gen": ["image-gen-free", "stock-api"],
+    "image-gen-free": ["stock-api"],
+    "stock-api": []
+  },
+  "perProvider": {
+    "video-gen": { "timeoutMs": 120000, "maxRetries": 2, "cooldownMs": 15000 },
+    "image-gen": { "timeoutMs": 60000, "maxRetries": 2, "cooldownMs": 10000 },
+    "image-gen-free": { "timeoutMs": 90000, "maxRetries": 2, "cooldownMs": 8000 },
+    "stock-api": { "timeoutMs": 20000, "maxRetries": 1, "cooldownMs": 5000 }
+  },
   "adapters": {
     "local": {
       "id": "local",
@@ -6,7 +20,7 @@
       "kind": "local",
       "enabled": true,
       "requiresKey": false,
-      "description": "Foto/video di assets/own/<model>/ atau kolom referensi template. Prioritas tertinggi karena paling akurat."
+      "description": "Foto/video di assets/own/<slug-model>/ atau kolom referensi template. Prioritas tertinggi karena paling akurat."
     },
     "video-gen": {
       "id": "video-gen",
@@ -16,17 +30,36 @@
       "requiresKey": true,
       "envKey": "VIDEO_PROVIDER_API_KEY",
       "model": "provider-default-i2v",
+      "timeoutMs": 120000,
+      "maxRetries": 2,
+      "minBytes": 500000,
       "description": "Animasikan keyframe fotorealistik jadi klip 3-5 detik. Dipakai kalau kunci tersedia."
     },
     "image-gen": {
       "id": "image-gen",
-      "label": "Generator gambar",
+      "label": "Generator gambar berbayar",
       "kind": "image-gen",
       "enabled": true,
       "requiresKey": true,
       "envKey": "IMAGE_PROVIDER_API_KEY",
       "model": "provider-default-t2i",
-      "description": "Keyframe fotorealistik per scene. Kalau video-gen tidak ada, animasi memakai gerak kamera Remotion."
+      "timeoutMs": 60000,
+      "maxRetries": 2,
+      "minBytes": 20000,
+      "description": "Keyframe fotorealistik per scene. Butuh IMAGE_PROVIDER_URL + IMAGE_PROVIDER_API_KEY."
+    },
+    "image-gen-free": {
+      "id": "image-gen-free",
+      "label": "Generator gambar gratis (Pollinations)",
+      "kind": "image-gen",
+      "enabled": true,
+      "requiresKey": false,
+      "urlTemplate": "https://image.pollinations.ai/prompt/{prompt}?width={width}&height={height}&nologo=true&model=flux",
+      "timeoutMs": 90000,
+      "maxRetries": 2,
+      "cooldownMs": 8000,
+      "minBytes": 20000,
+      "description": "Tanpa API key, untuk mode uji. Ada rate limit; hasil bisa lebih lambat dari provider berbayar."
     },
     "stock-api": {
       "id": "stock-api",

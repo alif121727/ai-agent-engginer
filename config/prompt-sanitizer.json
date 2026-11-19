@@ -1,0 +1,41 @@
+{
+  "brands": {
+    "ferrari": "Italian mid-engine sports car",
+    "lamborghini": "Italian wedge-shaped supercar",
+    "porsche": "German rear-engine sports car",
+    "mclaren": "British mid-engine supercar",
+    "mercedes-amg": "German front-engine grand tourer",
+    "mercedes-benz": "German luxury sports car",
+    "mercedes": "German luxury sports car",
+    "bmw": "German performance coupe",
+    "audi": "German mid-engine supercar",
+    "nissan": "Japanese performance coupe",
+    "datsun": "Japanese classic sports coupe",
+    "toyota": "Japanese sports coupe",
+    "honda": "Japanese mid-engine sports car",
+    "ford": "American performance car",
+    "chevrolet": "American mid-engine sports car",
+    "corvette": "American mid-engine sports car",
+    "mustang": "American fastback muscle car",
+    "supra": "Japanese turbocharged coupe",
+    "skyline": "Japanese all-wheel-drive performance coupe",
+    "gt-r": "Japanese all-wheel-drive performance coupe",
+    "mazda": "Japanese rotary sports coupe",
+    "subaru": "Japanese turbocharged rally sedan",
+    "lancia": "Italian rally coupe",
+    "jaguar": "British classic grand tourer",
+    "countach": "1970s wedge-shaped supercar",
+    "f40": "1980s twin-turbo supercar",
+    "nsx": "Japanese hybrid mid-engine supercar",
+    "taycan": "German electric sports sedan",
+    "ae86": "1980s Japanese rear-drive hatchback",
+    "22b": "1990s Japanese rally coupe",
+    "e-type": "1960s British classic grand tourer"
+  },
+  "stripPatterns": [
+    "\\b(19|20)\\d{2}\\b",
+    "\\b[A-Z]{1,3}-?\\d{2,4}\\b",
+    "\\b(GTB|GTS|STO|LT|RS|GT3|Turbo S|Type S|Competition|Nismo|Pista|Black Series)\\b"
+  ],
+  "forbidden": ["logo", "badge", "plate number", "license plate", "emblem", "wordmark"]
+}

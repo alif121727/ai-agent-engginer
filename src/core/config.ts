@@ -55,6 +55,33 @@ export interface VisualAdapterDef {
   model?: string;
   creditsFile?: string;
   description?: string;
+  /** Static endpoint for keyless providers (e.g. pollinations). */
+  endpoint?: string;
+  /** `{prompt}` and `{width}`/`{height}` are substituted per scene. */
+  urlTemplate?: string;
+  timeoutMs?: number;
+  maxRetries?: number;
+  cooldownMs?: number;
+  minBytes?: number;
+}
+
+export interface VisualsConfig {
+  order: string[];
+  fallback: Record<string, string[]>;
+  perProvider: Record<string, { timeoutMs: number; maxRetries: number; cooldownMs: number }>;
+  adapters: Record<string, VisualAdapterDef>;
+}
+
+export function loadVisuals(): VisualsConfig {
+  const raw = readJson<Partial<VisualsConfig>>(path.join(paths.config, 'visuals.json'), {});
+  const adapters = raw.adapters ?? {};
+  const order = raw.order?.length ? raw.order : loadDefaults().visualAdapters;
+  return {
+    order,
+    fallback: raw.fallback ?? {},
+    perProvider: raw.perProvider ?? {},
+    adapters,
+  };
 }
 
 export function loadDefaults(): Defaults {

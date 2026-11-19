@@ -2,9 +2,10 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { jobDir, writeJsonAtomic } from '../core/fsx.ts';
-import { loadDefaults } from '../core/config.ts';
+import { loadDefaults, loadThemes } from '../core/config.ts';
+import { pickTheme } from '../core/theme.ts';
 import type { AgentContext } from '../agents/guard.ts';
-import type { AssetRecord, ScenePlan } from '../core/types.ts';
+import type { AssetRecord, ScenePlan, Theme } from '../core/types.ts';
 import { ffprobe, contactSheet } from './ffmpeg.ts';
 
 export interface RenderResult {
@@ -17,7 +18,12 @@ export interface RenderResult {
   scenes: number;
   preview: string | null;
   hasAudio: boolean;
+  bitrateKbps: number;
+  transitions: number;
 }
+
+/** Duration of the cross-fade between clips, in seconds. */
+const XFADE_SEC = 0.5;
 
 function aspectSize(aspect: string): { width: number; height: number } {
   const d = loadDefaults().render;
@@ -45,16 +51,99 @@ function escapeDrawText(text: string): string {
 }
 
 /**
- * Renders each scene to a normalized clip, then concatenates. Per-scene clips
- * are cached so a resumed job only re-renders missing scenes.
+ * Camera moves are chosen per scene key so consecutive shots never look alike.
+ * Without this every clip is a still frame with the same slow push-in, which
+ * reads as a slideshow rather than a video.
+ */
+type CameraMove = 'push-in' | 'pull-out' | 'pan-right' | 'pan-left' | 'tilt-up' | 'orbit' | 'speed-ramp';
+
+function cameraMoveFor(scene: ScenePlan): CameraMove {
+  switch (scene.key) {
+    case 'hook':
+      return 'push-in';
+    case 'exterior':
+      return 'orbit';
+    case 'features':
+      return 'pan-right';
+    case 'interior':
+      return 'tilt-up';
+    case 'action':
+      return 'speed-ramp';
+    case 'cta':
+      return 'pull-out';
+    case 'detail_wheel':
+      return 'pan-left';
+    case 'detail_engine':
+      return 'tilt-up';
+    case 'night':
+      return 'pan-right';
+    case 'lifestyle':
+      return 'push-in';
+    default:
+      return 'push-in';
+  }
+}
+
+/**
+ * zoompan works on the input frame; the x/y expressions animate the crop
+ * window, which is what produces real lateral movement (a pan) instead of a
+ * pure zoom. Values stay inside the frame so no black borders appear.
+ */
+function cameraFilter(move: CameraMove, frames: number, width: number, height: number, fps: number): string {
+  const total = Math.max(2, frames);
+  const z = {
+    'push-in': `min(1+0.14*on/${total},1.14)`,
+    'pull-out': `max(1.14-0.14*on/${total},1.0)`,
+    orbit: `min(1.06+0.10*on/${total},1.16)`,
+    'speed-ramp': `min(1.0+0.22*on/${total},1.22)`,
+    'pan-right': '1.12',
+    'pan-left': '1.12',
+    'tilt-up': '1.12',
+  }[move];
+  const x = {
+    'pan-right': `(iw-iw/zoom)*(on/${total})`,
+    'pan-left': `(iw-iw/zoom)*(1-on/${total})`,
+    orbit: `(iw-iw/zoom)*(0.5+0.35*sin(on/${total}*PI))`,
+    'speed-ramp': `(iw-iw/zoom)*0.5`,
+    'tilt-up': `(iw-iw/zoom)*0.5`,
+  }[move as string] ?? '(iw-iw/zoom)/2';
+  const y = {
+    'tilt-up': `(ih-ih/zoom)*(1-on/${total})`,
+    'speed-ramp': `(ih-ih/zoom)*0.5`,
+    'pan-right': `(ih-ih/zoom)*0.5`,
+    'pan-left': `(ih-ih/zoom)*0.5`,
+  }[move as string] ?? '(ih-ih/zoom)/2';
+  return (
+    `zoompan=z='${z}':x='${x}':y='${y}':d=${total}:s=${width}x${height}:fps=${fps}`
+  );
+}
+
+function gradeFilters(theme: Theme): string[] {
+  const contrast = (1 + (theme.grade.contrast - 1) * 0.6).toFixed(3);
+  const saturation = (1 + (theme.grade.saturation - 1) * 0.6).toFixed(3);
+  const warm = theme.grade.temperature > 0;
+  return [
+    `eq=contrast=${contrast}:saturation=${saturation}:gamma=0.98`,
+    warm ? 'colorbalance=rs=0.04:gs=0.01:bs=-0.04' : 'colorbalance=rs=-0.03:bs=0.05',
+    'vignette=PI/5',
+    'noise=alls=2:allf=t+u',
+    'unsharp=5:5:0.35:5:5:0.0',
+  ];
+}
+
+/**
+ * Renders each scene to a normalized clip, then joins them with cross-fades.
+ * Per-scene clips are cached so a resumed job only re-renders missing scenes.
  */
 export async function assembleVideo(ctx: AgentContext): Promise<RenderResult> {
   const scenes = (ctx.readArtifact<ScenePlan[]>('storyboard.json') ?? []) as ScenePlan[];
   const assets = (ctx.readArtifact<AssetRecord[]>('assets.json') ?? []) as AssetRecord[];
-  const job = ctx.brief as unknown as { model?: string; rasio?: string };
-  const { width, height } = aspectSize(job.rasio ?? '16:9');
+  const brief = ctx.brief as unknown as { model?: string; rasio?: string };
+  const { width, height } = aspectSize(brief.rasio ?? '16:9');
   const defaults = loadDefaults();
   const fps = defaults.render.fps;
+  const themes = loadThemes();
+  const theme = pickTheme(brief.model ?? '', themes.themes, themes.defaultTheme);
   const clipsDir = path.join(jobDir(ctx.jobId), 'clips');
   fs.mkdirSync(clipsDir, { recursive: true });
 
@@ -62,6 +151,13 @@ export async function assembleVideo(ctx: AgentContext): Promise<RenderResult> {
   const missing = scenes.filter((s) => !byScene.has(s.index));
   if (missing.length) {
     throw new Error(`render ditolak: ${missing.length} scene belum punya aset realistis`);
+  }
+  const broken = assets.filter((a) => !fs.existsSync(a.path) || fs.statSync(a.path).size === 0);
+  if (broken.length) {
+    throw new Error(
+      `render ditolak: ${broken.length} berkas aset hilang/kosong ` +
+        `(scene ${broken.map((b) => b.sceneIndex + 1).join(', ')})`,
+    );
   }
   const fallback = assets.filter((a) => a.fallback);
   if (fallback.length) {
@@ -78,12 +174,16 @@ export async function assembleVideo(ctx: AgentContext): Promise<RenderResult> {
 
     const font = fontFile();
     const text = scene.onScreenText ? escapeDrawText(scene.onScreenText) : '';
+    const frames = Math.max(2, Math.round(scene.duration * fps));
+    const move = cameraMoveFor(scene);
     const filters = [
-      `scale=${width}:${height}:force_original_aspect_ratio=increase`,
-      `crop=${width}:${height}`,
-      `zoompan=z='min(zoom+0.0008,1.08)':d=${Math.max(1, Math.round(scene.duration * fps))}:s=${width}x${height}:fps=${fps}`,
-      'eq=contrast=1.10:saturation=1.06',
-      'noise=alls=3:allf=t',
+      // Overscan first: zoompan needs room to move, otherwise the crop window
+      // hits the edge and the frame jitters.
+      `scale=${Math.round(width * 1.15)}:${Math.round(height * 1.15)}:force_original_aspect_ratio=increase`,
+      `crop=${Math.round(width * 1.15)}:${Math.round(height * 1.15)}`,
+      `scale=${width * 2}:${height * 2}`,
+      cameraFilter(move, frames, width, height, fps),
+      ...gradeFilters(theme),
     ];
     if (text && font) {
       const fontSize = Math.round(width / 22);
@@ -94,41 +194,34 @@ export async function assembleVideo(ctx: AgentContext): Promise<RenderResult> {
     }
     filters.push('format=yuv420p');
 
-    const args = asset.kind === 'video'
-      ? ['-v', 'error', '-y', '-stream_loop', '-1', '-i', asset.path, '-t', String(scene.duration)]
-      : ['-v', 'error', '-y', '-loop', '1', '-i', asset.path, '-t', String(scene.duration)];
+    const inputArgs = asset.kind === 'video'
+      ? ['-stream_loop', '-1', '-i', asset.path, '-t', String(scene.duration)]
+      : ['-loop', '1', '-i', asset.path, '-t', String(scene.duration)];
 
-    args.push(
+    const args = [
+      '-v', 'error', '-y',
+      ...inputArgs,
       '-vf', filters.join(','),
       '-r', String(fps),
       '-c:v', 'libx264',
-      '-preset', 'veryfast',
-      '-crf', '22',
+      '-preset', 'medium',
+      '-crf', '20',
       '-maxrate', '12M',
       '-bufsize', '24M',
       '-pix_fmt', 'yuv420p',
       '-an',
       clip,
-    );
+    ];
 
     const res = spawnSync('ffmpeg', args, { encoding: 'utf8' });
     if (res.status !== 0) {
-      throw new Error(`ffmpeg gagal di scene ${scene.index + 1}: ${(res.stderr ?? '').slice(0, 300)}`);
+      throw new Error(`ffmpeg gagal di scene ${scene.index + 1}: ${(res.stderr ?? '').slice(0, 400)}`);
     }
-    await ctx.setStageProgress(Math.round(((scene.index + 1) / scenes.length) * 90));
+    await ctx.setStageProgress(Math.round(((scene.index + 1) / scenes.length) * 85));
   }
 
-  const listFile = path.join(clipsDir, 'list.txt');
-  fs.writeFileSync(listFile, clipPaths.map((c) => `file '${c}'`).join('\n'));
   const outFile = path.join(jobDir(ctx.jobId), 'video.mp4');
-  const concat = spawnSync(
-    'ffmpeg',
-    ['-v', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', listFile, '-c', 'copy', '-movflags', '+faststart', outFile],
-    { encoding: 'utf8' },
-  );
-  if (concat.status !== 0) {
-    throw new Error(`ffmpeg concat gagal: ${(concat.stderr ?? '').slice(0, 300)}`);
-  }
+  const transitions = await joinClips(clipPaths, outFile, fps, width, height);
 
   const probe = ffprobe(outFile);
   if (!probe.ok) throw new Error('hasil render tidak lolos ffprobe');
@@ -138,6 +231,7 @@ export async function assembleVideo(ctx: AgentContext): Promise<RenderResult> {
     path.join(jobDir(ctx.jobId), 'preview.jpg'),
   );
 
+  const expected = scenes.reduce((sum, s) => sum + s.duration, 0);
   const result: RenderResult = {
     file: outFile,
     durationSec: probe.durationSec ?? 0,
@@ -148,8 +242,83 @@ export async function assembleVideo(ctx: AgentContext): Promise<RenderResult> {
     scenes: scenes.length,
     preview,
     hasAudio: false,
+    bitrateKbps: Math.round(((fs.statSync(outFile).size * 8) / Math.max(1, probe.durationSec ?? 1)) / 1000),
+    transitions,
   };
+
+  // The render stage owns this check so a broken file never reaches QA with a
+  // misleading "ketajaman 0" message.
+  const durationDrift = Math.abs(result.durationSec - expected);
+  if (durationDrift > 1.5) {
+    throw new Error(
+      `render tidak valid: durasi ${result.durationSec.toFixed(1)} dtk, seharusnya ${expected.toFixed(1)} dtk`,
+    );
+  }
+  if (result.bitrateKbps < 2000) {
+    throw new Error(`render tidak valid: bitrate ${result.bitrateKbps} kbps terlalu rendah`);
+  }
+
   writeJsonAtomic(path.join(jobDir(ctx.jobId), 'render-result.json'), result);
   await ctx.setStageProgress(100);
   return result;
+}
+
+/**
+ * Cross-fades clips instead of concatenating them. A hard cut between two
+ * stills is the other half of the slideshow look; overlapping by 0.5s keeps
+ * motion continuous across scenes.
+ */
+async function joinClips(
+  clips: string[],
+  outFile: string,
+  fps: number,
+  width: number,
+  height: number,
+): Promise<number> {
+  if (clips.length === 1) {
+    fs.copyFileSync(clips[0], outFile);
+    return 0;
+  }
+  const durations = clips.map((c) => ffprobe(c).durationSec ?? 0);
+  const args: string[] = ['-v', 'error', '-y'];
+  for (const clip of clips) args.push('-i', clip);
+
+  const filters: string[] = [];
+  clips.forEach((_, i) => {
+    filters.push(`[${i}:v]settb=AVTB,fps=${fps},format=yuv420p[v${i}]`);
+  });
+  let lastLabel = 'v0';
+  let offset = durations[0] - XFADE_SEC;
+  for (let i = 1; i < clips.length; i++) {
+    const label = i === clips.length - 1 ? 'vout' : `x${i}`;
+    filters.push(
+      `[${lastLabel}][v${i}]xfade=transition=fade:duration=${XFADE_SEC}:offset=${Math.max(0.1, offset).toFixed(3)}[${label}]`,
+    );
+    lastLabel = label;
+    offset += durations[i] - XFADE_SEC;
+  }
+  filters.push(`[${lastLabel}]scale=${width}:${height},format=yuv420p[final]`);
+
+  const res = spawnSync(
+    'ffmpeg',
+    [...args, '-filter_complex', filters.join(';'), '-map', '[final]',
+     '-c:v', 'libx264', '-preset', 'medium', '-crf', '20',
+     '-pix_fmt', 'yuv420p', '-movflags', '+faststart', outFile],
+    { encoding: 'utf8' },
+  );
+  if (res.status !== 0) {
+    // Falling back to a plain concat keeps the job alive; the caller's duration
+    // check still guards the result.
+    const listFile = path.join(path.dirname(outFile), 'clips', 'list.txt');
+    fs.writeFileSync(listFile, clips.map((c) => `file '${c}'`).join('\n'));
+    const concat = spawnSync(
+      'ffmpeg',
+      ['-v', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', listFile, '-c', 'copy',
+       '-movflags', '+faststart', outFile],
+      { encoding: 'utf8' },
+    );
+    if (concat.status !== 0) throw new Error(`ffmpeg gabung gagal: ${(concat.stderr ?? '').slice(0, 300)}`);
+    return 0;
+  }
+  return clips.length - 1;
 }

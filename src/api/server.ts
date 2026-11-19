@@ -38,7 +38,8 @@ import { Worker } from '../worker/worker.ts';
 import { loadCapability } from '../pipeline/llm.ts';
 import { publishJob, listPublications } from '../publish/instagram.ts';
 import { userAssetsFor } from '../visuals/types.ts';
-import { clearCheckpoint, readArtifactFile } from '../pipeline/checkpoint.ts';
+import { clearCheckpoint } from '../pipeline/checkpoint.ts';
+import { readArtifactFile } from '../agents/guard.ts';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace

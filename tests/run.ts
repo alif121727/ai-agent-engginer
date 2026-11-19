@@ -475,6 +475,57 @@ await check('API menolak unggah berkas dengan ekstensi asing', async () => {
   }
 });
 
+await check('API menandai gambar stok acak dan menyajikan berkas aset', async () => {
+  const { app } = createApp({ startWorker: false });
+  const server = app.listen(0);
+  const port = (server.address() as { port: number }).port;
+  const base = `http://127.0.0.1:${port}`;
+  const model = `Uji Aset ${Date.now()}`;
+  const login = await fetch(`${base}/api/login`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email: 'uji@studio.id', password: 'rahasia123' }),
+  });
+  const cookie = (login.headers.get('set-cookie') ?? '').split(';')[0];
+  try {
+    const jpeg = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.from('Picsum ID: 846')]);
+    const upload = await fetch(`${base}/api/assets/${encodeURIComponent(model)}?name=acak.jpg`, {
+      method: 'POST',
+      headers: { cookie, 'content-type': 'application/octet-stream' },
+      body: jpeg,
+    });
+    assert(upload.status === 201, `unggah harus 201, dapat ${upload.status}`);
+
+    const listed = (await (await fetch(`${base}/api/assets/${encodeURIComponent(model)}`, { headers: { cookie } })).json()) as {
+      files: string[];
+      warnings: Record<string, string>;
+    };
+    assert(listed.files.includes('acak.jpg'), 'berkas harus terdaftar');
+    assert(Boolean(listed.warnings['acak.jpg']), 'gambar stok harus diberi peringatan');
+
+    const served = await fetch(`${base}/api/assets/${encodeURIComponent(model)}/file/acak.jpg`, {
+      headers: { cookie },
+    });
+    assert(served.status === 200, `saji berkas harus 200, dapat ${served.status}`);
+    assert((await served.arrayBuffer()).byteLength === jpeg.length, 'isi berkas harus utuh');
+
+    const traversal = await fetch(`${base}/api/assets/${encodeURIComponent(model)}/file/${encodeURIComponent('../../data/studio.db')}`, {
+      headers: { cookie },
+    });
+    assert(traversal.status === 400, `path traversal harus 400, dapat ${traversal.status}`);
+  } finally {
+    await fetch(`${base}/api/assets/${encodeURIComponent(model)}/acak.jpg`, {
+      method: 'DELETE',
+      headers: { cookie },
+    }).catch(() => {});
+    fs.rmSync(path.join(process.cwd(), 'assets', 'own', model.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase()), {
+      recursive: true,
+      force: true,
+    });
+    server.close();
+  }
+});
+
 await check('API mengembalikan 409 saat mengulang job yang masih jalan', async () => {
   const { app } = createApp({ startWorker: false });
   const server = app.listen(0);

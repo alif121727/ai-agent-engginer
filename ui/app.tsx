@@ -882,17 +882,23 @@ function ArtifactPanel({ jobId, artifacts }: { jobId: string; artifacts: string[
   );
 }
 
+const VIDEO_EXT = /\.(mp4|mov)$/i;
+
 function AssetPanel({ model }: { model: string }) {
   const [files, setFiles] = useState<string[]>([]);
+  const [warnings, setWarnings] = useState<Record<string, string>>({});
   const [folder, setFolder] = useState('');
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
 
   const load = useCallback(() => {
     api
-      .get<{ folder: string; files: string[] }>(`/assets/${encodeURIComponent(model)}`)
+      .get<{ folder: string; files: string[]; warnings?: Record<string, string> }>(
+        `/assets/${encodeURIComponent(model)}`,
+      )
       .then((res) => {
         setFiles(res.files);
+        setWarnings(res.warnings ?? {});
         setFolder(res.folder);
       })
       .catch(() => setFiles([]));
@@ -920,6 +926,8 @@ function AssetPanel({ model }: { model: string }) {
       setBusy(false);
     }
   };
+
+  const flagged = files.filter((file) => warnings[file]).length;
 
   return (
     <section className="card card--wide">
@@ -950,26 +958,48 @@ function AssetPanel({ model }: { model: string }) {
           {note}
         </p>
       )}
+      {flagged > 0 && (
+        <p className="warn" style={{ marginTop: 16 }} role="alert">
+          {flagged} berkas terdeteksi gambar stok acak, bukan kendaraan. Video akan tampil tanpa mobil —
+          ganti dulu sebelum render.
+        </p>
+      )}
       {files.length > 0 && (
-        <ul style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 8, listStyle: 'none' }}>
-          {files.map((file) => (
-            <li key={file} style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-              <span className="mono" style={{ flex: 1, fontSize: '0.8rem' }}>
-                {file}
-              </span>
-              <button
-                className="btn btn--ghost"
-                onClick={() =>
-                  api
-                    .send(`/assets/${encodeURIComponent(model)}/${encodeURIComponent(file)}`, undefined, 'DELETE')
-                    .then(load)
-                    .catch((e: Error) => setNote(e.message))
-                }
-              >
-                Hapus
-              </button>
-            </li>
-          ))}
+        <ul className="asset-grid">
+          {files.map((file) => {
+            const url = `/api/assets/${encodeURIComponent(model)}/file/${encodeURIComponent(file)}`;
+            const warning = warnings[file];
+            return (
+              <li key={file} className="asset" data-warn={warning ? 'true' : undefined}>
+                <div className="asset__frame">
+                  {VIDEO_EXT.test(file) ? (
+                    <video src={url} muted preload="metadata" />
+                  ) : (
+                    <img src={url} alt={`Pratinjau ${file}`} loading="lazy" />
+                  )}
+                  {VIDEO_EXT.test(file) && <span className="asset__badge">video</span>}
+                </div>
+                <div className="asset__meta">
+                  <span className="mono" title={file}>
+                    {file}
+                  </span>
+                  <button
+                    className="btn btn--ghost"
+                    aria-label={`Hapus ${file}`}
+                    onClick={() =>
+                      api
+                        .send(`/assets/${encodeURIComponent(model)}/${encodeURIComponent(file)}`, undefined, 'DELETE')
+                        .then(load)
+                        .catch((e: Error) => setNote(e.message))
+                    }
+                  >
+                    Hapus
+                  </button>
+                </div>
+                {warning && <p className="asset__warn">{warning}</p>}
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>

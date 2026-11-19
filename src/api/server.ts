@@ -418,10 +418,36 @@ export function createApp(opts: AppOptions = {}) {
     path.join(paths.assets, 'own', model.replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase());
   const ASSET_EXT = /\.(jpe?g|png|webp|mp4|mov)$/i;
 
+  /**
+   * Random stock photos look sharp to the QA stage, so they pass and render a
+   * car-less video. Their downloaders leave a marker in the file header; flag
+   * those so the UI can warn before a render burns two minutes.
+   */
+  const STOCK_MARKERS = [/Picsum ID/i, /Lorem Picsum/i, /placeholder\.com/i];
+  const assetFlag = (file: string): string | null => {
+    let head: Buffer;
+    try {
+      const fd = fs.openSync(file, 'r');
+      head = Buffer.alloc(64 * 1024);
+      const read = fs.readSync(fd, head, 0, head.length, 0);
+      fs.closeSync(fd);
+      head = head.subarray(0, read);
+    } catch {
+      return null;
+    }
+    const text = head.toString('latin1');
+    return STOCK_MARKERS.some((re) => re.test(text)) ? 'Gambar stok acak, bukan kendaraan' : null;
+  };
+
   app.get('/api/assets/:model', async (req, res) => {
     const dir = ownDir(req.params.model);
     const files = fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => ASSET_EXT.test(f)) : [];
-    res.json({ model: req.params.model, folder: path.relative(paths.root, dir), files });
+    const warnings: Record<string, string> = {};
+    for (const file of files) {
+      const flag = assetFlag(path.join(dir, file));
+      if (flag) warnings[file] = flag;
+    }
+    res.json({ model: req.params.model, folder: path.relative(paths.root, dir), files, warnings });
   });
 
   app.post(
@@ -443,6 +469,20 @@ export function createApp(opts: AppOptions = {}) {
       res.status(201).json({ ok: true, folder: path.relative(paths.root, dir), file: name });
     },
   );
+
+  app.get('/api/assets/:model/file/:name', async (req, res) => {
+    const name = path.basename(req.params.name);
+    if (!ASSET_EXT.test(name)) {
+      res.status(400).json({ error: 'tipe berkas tidak didukung' });
+      return;
+    }
+    const file = path.join(ownDir(req.params.model), name);
+    if (!fs.existsSync(file)) {
+      res.status(404).json({ error: 'berkas tidak ada' });
+      return;
+    }
+    res.sendFile(file);
+  });
 
   app.delete('/api/assets/:model/:name', async (req, res) => {
     const name = path.basename(req.params.name);

@@ -149,7 +149,7 @@ belum punya foto dan akan memakai generator.
 ## 7. Cara melanjutkan
 
 ```bash
-npm test                                   # 40 pemeriksaan
+npm test                                   # 46 pemeriksaan
 PORT=12000 node --experimental-strip-types src/api/main.ts &
 node --experimental-strip-types src/worker/main.ts &
 bash scripts/autopush.sh &                 # commit tiap 10 menit
@@ -163,5 +163,45 @@ bash scripts/autopush.sh &                 # commit tiap 10 menit
 ## 8. Terbuka
 
 - Halaman Pengaturan untuk mengatur provider visual dari UI belum ditelusuri.
-- Katalog baru 27 model; menambah model = menambah folder `assets/own/<slug>/`
-  dengan foto asli.
+- Katalog kini 33 model; menambah model = menambah entri `config/catalog.json`
+  + folder `assets/own/<slug>/` berisi foto asli.
+
+---
+
+## 9. Sesi lanjutan — pemilih katalog di web + skrip `npm run web` rusak
+
+Permintaan: melanjutkan pekerjaan yang tertunda (katalog belum tersambung ke UI).
+
+**Akar masalah 1 — `npm run web` tidak pernah bisa jalan.**
+Skrip menunjuk `src/web/main.ts`, berkas yang **tidak ada di git** (folder
+`src/web/` kosong). Yang benar-benar melayani UI + API adalah `src/api/main.ts`.
+Skrip sudah diarahkan ke sana; port diatur lewat `PORT`.
+
+**Akar masalah 2 — katalog tidak sampai ke layar.**
+`/api/config` sudah mengirim `catalog`, tetapi UI masih memakai grid tema lama
+(7 kartu) dengan fungsi `labelFor()` yang memetakan id tema ke nama mobil.
+
+**Perbaikan.**
+- `ui/app.tsx`: `interface CatalogModel` + `catalog` di `interface Config`;
+  grid tema diganti pemilih 33 model dengan kotak cari dan filter kategori
+  (semua/sport/balap/modifikasi/klasik). `filterKatalog()` menyaring gabungan
+  kata kunci dan kategori; `ringkasModel()` menyembunyikan penanda data.
+- Penanda `'tidak disebut di sumber'` sempat **bocor ke kartu model** (terlihat
+  di Porsche Taycan Turbo S, Mercedes 300 SL, BMW M4 GT3). Sekarang hanya
+  kategori · tahun · tenaga yang tampil, dan tenaga kosong dilewati.
+
+**Bukti.**
+- `npm test`: 46 lulus, 0 gagal (naik dari 41). Empat cek baru: katalog sampai
+  ke `/api/config` (≥33 model, ≥2 balap), tiap model punya foto di
+  `assets/own`, penanda tak pernah muncul di `specLines()`, sumber tiap model
+  berupa artikel Wikipedia.
+- `python3 scripts/audit-katalog.py`: `0/33 entri punya angka tanpa bukti`.
+- Di browser: 33 kartu tampil, filter "balap" menyisakan 11 model, cari
+  "z-tune" menyisakan 1, klik kartu mengisi kolom model dan langkah durasi
+  menampilkan estimasi 45 dtk / 7 scene / $0.42.
+- `/api/health` → `{"ok":true,"connection":"ONLINE","db":"sqlite","ffmpeg":true}`.
+
+**Catatan teknis.** `npx tsc --noEmit` gagal karena `@types/node` tidak
+terpasang; ini bukan regresi — build nyata memakai esbuild (`npm run build:ui`)
+dan lolos. Bila memeriksa UI manual, ganti query `?v=` di URL karena browser
+meng-cache `app.js` dengan keras.

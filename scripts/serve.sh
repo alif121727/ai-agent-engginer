@@ -5,7 +5,7 @@ set -u
 PORT="${1:-12000}"
 cd "$(dirname "$0")/.."
 export PORT
-export APP_URL="${APP_URL:-https://work-1-bvtlbdodwnodjuan.prod-runtime.all-hands.dev}"
+export APP_URL="${APP_URL:-https://work-1-lxpwikokempxmoli.prod-runtime.all-hands.dev}"
 
 if ! curl -sf "http://localhost:${PORT}/api/health" >/dev/null 2>&1; then
   nohup node --experimental-strip-types src/api/main.ts > /tmp/api.log 2>&1 &

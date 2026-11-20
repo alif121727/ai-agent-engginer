@@ -5,11 +5,13 @@ import type { Route } from '../components/shell';
 import { CATALOG, type Car } from '../data/catalog';
 import { MIN_DUR, MAX_DUR, VIDEO_MODELS } from '../data/models';
 import { buildBrief, buildShots, type Brief, type Shot } from '../services/api';
+import { ResearchPanel } from '../components/ResearchPanel';
+import { listResearched } from '../data/researched';
 
 type Step = 0 | 1 | 2 | 3 | 4;
 const STEPS = ['Pilih Mobil', 'Data & Brief', 'Storyboard', 'Parameter', 'Pratinjau & Generate'];
 
-export function NewVideo({ go }: { go: (r: Route) => void }) {
+export function NewVideo({ go, preselect }: { go: (r: Route) => void; preselect?: string }) {
   const { api, upsert, settings, toast } = useStudio();
   const [step, setStep] = React.useState<Step>(0);
 
@@ -31,14 +33,33 @@ export function NewVideo({ go }: { go: (r: Route) => void }) {
   const [music, setMusic] = React.useState(true);
   const [voice, setVoice] = React.useState(false);
 
+  // Hasil riset mandiri ikut dicari, jadi model di luar katalog tetap terpilih.
+  const [researched, setResearched] = React.useState(() => listResearched());
+  const pool = React.useMemo<Car[]>(() => {
+    const known = new Set(CATALOG.map((c) => c.slug));
+    return [...CATALOG, ...researched.map((r) => r.car).filter((c) => !known.has(c.slug))];
+  }, [researched]);
+
   const list = React.useMemo(() => {
     const s = q.trim().toLowerCase();
-    return CATALOG.filter((c) => {
+    return pool.filter((c) => {
       const okKat = kat === 'semua' || c.kategori === kat;
       const okQ = !s || `${c.merk} ${c.model} ${c.seri} ${c.tahun}`.toLowerCase().includes(s);
       return okKat && okQ;
     });
-  }, [q, kat]);
+  }, [q, kat, pool]);
+
+  // Datang dari Garasi dengan mobil tertentu: langsung pilih dan susun brief.
+  const preselected = React.useRef(false);
+  React.useEffect(() => {
+    if (preselected.current || !preselect) return;
+    const target = pool.find((c) => c.slug === preselect);
+    if (!target) return;
+    preselected.current = true;
+    setCar(target);
+    setStep(1);
+    void makeBrief(target);
+  }, [preselect, pool]);
 
   const pickedModel = VIDEO_MODELS.find((m) => m.id === modelId)!;
 
@@ -127,7 +148,11 @@ export function NewVideo({ go }: { go: (r: Route) => void }) {
             </div>
           </div>
 
-          <div className="dim tiny">{list.length} model di katalog — semua angka berasal dari Wikipedia, bukan karangan.</div>
+          <div className="dim tiny">
+            {list.length > 0
+              ? `${list.length} model — semua angka berasal dari Wikipedia, bukan karangan.`
+              : 'Belum ada model yang cocok di katalog. Gunakan riset mandiri di bawah.'}
+          </div>
 
           <div className="vgrid">
             {list.map((c) => (
@@ -141,6 +166,11 @@ export function NewVideo({ go }: { go: (r: Route) => void }) {
                   <span className="chip chip--accent">{c.kategori}</span>
                   <span className="dim tiny mono">{c.tahun}</span>
                 </div>
+                {researched.some((r) => r.car.slug === c.slug) && (
+                  <div className="chip chip--ok tiny" style={{ marginBottom: 6 }}>
+                    <Icon.Bolt size={10} /> hasil riset web
+                  </div>
+                )}
                 <div style={{ fontWeight: 650, fontSize: '0.9rem' }}>{c.model}</div>
                 <div className="dim tiny" style={{ marginBottom: 8 }}>{c.seri}</div>
                 <div className="vcard__specs">
@@ -153,9 +183,33 @@ export function NewVideo({ go }: { go: (r: Route) => void }) {
 
           {list.length === 0 && (
             <div className="empty">
-              <div className="empty__title">Tidak ada model yang cocok</div>
-              <p className="empty__text">Coba kata kunci lain atau pilih kategori “semua”.</p>
+              <div className="empty__title">
+                {q.trim() ? `"${q.trim()}" belum ada di katalog` : 'Tidak ada model yang cocok'}
+              </div>
+              <p className="empty__text">
+                {q.trim()
+                  ? 'Agen bisa mencari sendiri ke Wikipedia: spesifikasi, foto berlisensi, dan sumbernya.'
+                  : 'Coba kata kunci lain atau pilih kategori “semua”.'}
+              </p>
             </div>
+          )}
+
+          {/* Riset mandiri: hanya muncul saat katalog tidak punya jawabannya. */}
+          {list.length === 0 && q.trim().length >= 2 && (
+            <ResearchPanel
+              query={q}
+              onPick={(entry) => {
+                setResearched(listResearched());
+                setCar(entry.car);
+                setBrief(null);
+                setShots([]);
+                toast({
+                  title: 'Model hasil riset dipakai',
+                  body: `${entry.car.model} — ${entry.missing.length ? `tanpa ${entry.missing.join(', ')}` : 'data lengkap'}`,
+                  kind: 'ok',
+                });
+              }}
+            />
           )}
 
           <div className="row row--between">

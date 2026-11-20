@@ -58,7 +58,7 @@ function Router() {
           }
         />
         {route.name === 'dashboard' && <Dashboard go={go} />}
-        {route.name === 'baru' && <NewVideo go={go} />}
+        {route.name === 'baru' && <NewVideo go={go} preselect={route.car} />}
         {route.name === 'agen' && <Agent go={go} />}
         {route.name === 'proyek' && <Projects go={go} />}
         {route.name === 'proyek-detail' && <ProjectDetail id={route.id} go={go} />}

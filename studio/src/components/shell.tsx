@@ -4,7 +4,7 @@ import { Icon } from './ui';
 
 export type Route =
   | { name: 'dashboard' }
-  | { name: 'baru' }
+  | { name: 'baru'; car?: string }
   | { name: 'agen' }
   | { name: 'proyek' }
   | { name: 'proyek-detail'; id: string }
@@ -18,7 +18,7 @@ export function useHashRoute(): [Route, (r: Route) => void] {
     const h = (location.hash || '#/').replace(/^#\/?/, '');
     const [seg, id] = h.split('/');
     switch (seg) {
-      case 'baru': return { name: 'baru' };
+      case 'baru': return { name: 'baru', car: id };
       case 'agen': return { name: 'agen' };
       case 'proyek': return id ? { name: 'proyek-detail', id } : { name: 'proyek' };
       case 'perpustakaan': return { name: 'perpustakaan' };
@@ -38,6 +38,7 @@ export function useHashRoute(): [Route, (r: Route) => void] {
     const h =
       r.name === 'dashboard' ? '#/'
       : r.name === 'proyek-detail' ? `#/proyek/${r.id}`
+      : r.name === 'baru' && r.car ? `#/baru/${r.car}`
       : `#/${r.name}`;
     if (location.hash === h) setRoute(r);
     else location.hash = h;

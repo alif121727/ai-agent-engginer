@@ -3,6 +3,7 @@ import { useStudio } from '../state/store';
 import { EmptyState, Icon } from '../components/ui';
 import type { Route } from '../components/shell';
 import { CATALOG } from '../data/catalog';
+import { listResearched } from '../data/researched';
 import { StatusChip } from './Dashboard';
 
 export function Projects({ go }: { go: (r: Route) => void }) {
@@ -76,10 +77,14 @@ export function Projects({ go }: { go: (r: Route) => void }) {
 export function Garage({ go }: { go: (r: Route) => void }) {
   const [q, setQ] = React.useState('');
   const [kategori, setKategori] = React.useState('semua');
-  const list = CATALOG.filter((c) => {
+  // Hasil riset web ikut tampil supaya mobil yang baru dicari tetap bisa dibuka.
+  const researched = listResearched().map((r) => r.car);
+  const all = [...researched, ...CATALOG];
+  const list = all.filter((c) => {
     const s = q.trim().toLowerCase();
     return (kategori === 'semua' || c.kategori === kategori) && (!s || `${c.merk} ${c.model} ${c.seri}`.toLowerCase().includes(s));
   });
+  const researchedSlugs = new Set(researched.map((c) => c.slug));
 
   return (
     <div className="page stack" style={{ gap: 18 }}>
@@ -87,7 +92,7 @@ export function Garage({ go }: { go: (r: Route) => void }) {
         <div className="eyebrow">Garasi</div>
         <h1 style={{ marginTop: 4 }}>Katalog mobil</h1>
         <p className="muted small" style={{ marginTop: 4 }}>
-          {CATALOG.length} model dengan spesifikasi bersumber dari Wikipedia. Studio tidak mengarang angka — kolom yang tidak ada ditandai kosong.
+          {CATALOG.length} model katalog{researched.length > 0 ? ` + ${researched.length} hasil riset web` : ''} — semua angka bersumber dari Wikipedia. Studio tidak mengarang spesifikasi; kolom yang tidak ada ditandai kosong.
         </p>
       </div>
 
@@ -108,7 +113,10 @@ export function Garage({ go }: { go: (r: Route) => void }) {
           {list.map((c) => (
             <article key={c.slug} className="card card--tight stack" style={{ gap: 8 }}>
               <div className="row row--between">
-                <span className="chip chip--accent">{c.kategori}</span>
+                <span className="row" style={{ gap: 6 }}>
+                  <span className="chip chip--accent">{c.kategori}</span>
+                  {researchedSlugs.has(c.slug) && <span className="chip chip--info">riset web</span>}
+                </span>
                 <span className="dim tiny mono">{c.tahun}</span>
               </div>
               <div>
@@ -123,7 +131,7 @@ export function Garage({ go }: { go: (r: Route) => void }) {
               </div>
               <p className="dim tiny" style={{ marginTop: 2 }}>{c.tagline}</p>
               <div className="row" style={{ gap: 6, marginTop: 'auto' }}>
-                <button className="btn btn--sm btn--primary" onClick={() => go({ name: 'baru' })}>Buat video</button>
+                <button className="btn btn--sm btn--primary" onClick={() => go({ name: 'baru', car: c.slug })}>Buat video</button>
                 <a className="btn btn--ghost btn--sm" href={c.sumber} target="_blank" rel="noreferrer">Sumber <Icon.ChevronR size={11} /></a>
               </div>
             </article>

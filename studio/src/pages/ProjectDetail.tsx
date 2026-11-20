@@ -5,6 +5,7 @@ import { Icon, Spinner, EmptyState } from '../components/ui';
 import type { Route } from '../components/shell';
 import { STAGES, VIDEO_MODELS } from '../data/models';
 import { CATALOG, findCar } from '../data/catalog';
+import { findResearched } from '../data/researched';
 import type { Project, StageRun, PublishOutcome } from '../services/api';
 import { StatusChip } from './Dashboard';
 
@@ -38,7 +39,8 @@ export function ProjectDetail({ id, go }: { id: string; go: (r: Route) => void }
     );
   }
 
-  const car = findCar(project.carSlug, project.carName);
+  // Proyek bisa memakai mobil hasil riset web, yang tidak ada di katalog.
+  const car = findCar(project.carSlug, project.carName) ?? findResearched(project.carSlug)?.car;
   const model = VIDEO_MODELS.find((m) => m.id === project.modelId);
   const doneCount = project.stages.filter((s) => s.state === 'selesai' || s.state === 'dilewati').length;
   const pct = Math.round((doneCount / project.stages.length) * 100);

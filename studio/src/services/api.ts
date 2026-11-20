@@ -7,6 +7,7 @@
 import { CATALOG, findCar, type Car } from '../data/catalog.ts';
 import { STAGES, MIN_DUR } from '../data/models.ts';
 import { RENDERED, type RenderedVideo } from '../data/rendered.ts';
+import { findResearched, listResearched } from '../data/researched.ts';
 
 export type StageState = 'menunggu' | 'berjalan' | 'selesai' | 'gagal' | 'dilewati';
 
@@ -73,18 +74,36 @@ type ServerJob = {
   error?: string | null;
 };
 
+/** Proyek lama bisa tersimpan dengan merek dobel ("Bugatti Bugatti Chiron"). */
+function cleanTitle(title: string): string {
+  const words = title.trim().split(/\s+/);
+  if (words.length > 1 && words[0].toLowerCase() === words[1].toLowerCase()) {
+    return words.slice(1).join(' ');
+  }
+  return title;
+}
+
+/**
+ * Cari mobil berdasarkan slug, termasuk model hasil riset web yang tidak ada
+ * di katalog statis. Tanpa ini, proyek dari hasil riset gagal dibuat dengan
+ * pesan "Mobil tidak ada di katalog".
+ */
+export function resolveCar(slug: string): Car | undefined {
+  return CATALOG.find((c) => c.slug === slug) ?? findResearched(slug)?.car;
+}
+
 const ASPECTS = ['16:9', '9:16', '1:1'] as const;
 
 export function projectFromServer(j: ServerJob): Project {
   const slug = j.brief_slug ?? '';
-  const car = findCar(slug, j.model);
+  const car = findCar(slug, j.model) ?? findResearched(slug)?.car ?? findResearched(j.model)?.car;
   const created = j.created_at ? Date.parse(j.created_at) : NaN;
   const status = j.status === 'done' || j.status === 'running' || j.status === 'failed' ? j.status : 'draft';
   return {
     id: j.id,
     createdAt: Number.isFinite(created) ? created : Date.now(),
     updatedAt: Number.isFinite(created) ? created : Date.now(),
-    title: j.title ?? j.model ?? 'Tanpa judul',
+    title: cleanTitle(j.title ?? j.model ?? 'Tanpa judul'),
     carSlug: car?.slug ?? slug,
     carName: car?.model ?? j.model ?? '',
     modelId: 'studio',
@@ -296,7 +315,7 @@ export class DemoStudioApi implements StudioApi {
       return merged;
     }
 
-    return stored;
+    return stored.map((p) => ({ ...p, title: cleanTitle(p.title) }));
   }
 
   private persist(list: Project[]) {
@@ -318,7 +337,7 @@ export class DemoStudioApi implements StudioApi {
   }
 
   async createProject(input: Partial<Project> & { carSlug: string }): Promise<Project> {
-    const car = CATALOG.find((c) => c.slug === input.carSlug);
+    const car = resolveCar(input.carSlug);
     if (!car) throw new Error('Mobil tidak ada di katalog');
     const dur = Math.max(MIN_DUR, input.durationSec ?? MIN_DUR);
     const brief = buildBrief(car);
@@ -326,7 +345,7 @@ export class DemoStudioApi implements StudioApi {
       id: rid(),
       createdAt: Date.now(),
       updatedAt: Date.now(),
-      title: `${car.merk} ${car.seri || car.model}`,
+      title: car.seri ? `${car.merk} ${car.seri}` : car.model,
       carSlug: car.slug,
       carName: car.model,
       modelId: input.modelId ?? 'local-render',
@@ -411,7 +430,7 @@ export class HttpStudioApi implements StudioApi {
     /* server yang menyimpan; tidak perlu aksi */
   }
   async createProject(input: Partial<Project> & { carSlug: string }): Promise<Project> {
-    const car = CATALOG.find((c) => c.slug === input.carSlug);
+    const car = resolveCar(input.carSlug);
     if (!car) throw new Error('Mobil tidak ada di katalog');
     const d = await this.j<{ job: Project }>('/api/jobs', {
       method: 'POST',

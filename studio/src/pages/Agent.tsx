@@ -98,7 +98,9 @@ export function Agent({ go }: { go: (r: Route) => void }) {
   }
 
   const plans = car ? planPublish(car, uploadTarget(car), connected) : [];
-  const pct = Math.round((Math.min(stageIdx, STAGES.length) / STAGES.length) * 100);
+  // stageIdx = -1 berarti belum mulai; tanpa penjepitan ini persentase negatif.
+  const doneCount = Math.max(0, Math.min(stageIdx + 1, STAGES.length));
+  const pct = Math.round((doneCount / STAGES.length) * 100);
 
   return (
     <div className="page stack" style={{ gap: 16 }}>
@@ -171,7 +173,7 @@ export function Agent({ go }: { go: (r: Route) => void }) {
           <div className="card">
             <div className="row row--between" style={{ marginBottom: 8 }}>
               <div className="eyebrow">Progres</div>
-              <span className="mono tiny dim">{Math.min(stageIdx + 1, STAGES.length)}/{STAGES.length} · {pct}%</span>
+              <span className="mono tiny dim">{doneCount}/{STAGES.length} · {pct}%</span>
             </div>
             <div className="bar" style={{ height: 6, background: 'var(--surface-3)', borderRadius: 3, overflow: 'hidden' }}>
               <div style={{ width: `${pct}%`, height: '100%', background: 'var(--accent)', transition: 'width .3s' }} />

@@ -1167,6 +1167,207 @@ await check('benih lama dimigrasi dan proyek terhapus tidak kembali', async () =
   delete (globalThis as any).localStorage;
 });
 
+/* ---------------------------------------------- riset mandiri (Wikipedia) */
+await check('parser infobox mengambil label dan nilai dengan benar', async () => {
+  const { infoboxRows } = await import('../studio/src/services/research.ts');
+  const html = `<table class="infobox hproduct"><tr><th>Manufacturer</th><td>[[Porsche AG]]</td></tr>
+    <tr><th>Power&nbsp;output</th><td>652 kW (887 PS; 875 hp)</td></tr></table>`;
+  const rows = infoboxRows(html);
+  assert(rows['manufacturer'] === '[[Porsche AG]]', `manufacturer salah: ${rows['manufacturer']}`);
+  assert(rows['power output'] === '652 kW (887 PS; 875 hp)', 'label power output tidak dinormalkan');
+});
+
+await check('satuan dinormalkan ke PS, Nm, dan kg', async () => {
+  const r = await import('../studio/src/services/research.ts');
+  assert(r.normalisePower('652 kW (887 PS; 875 hp)') === '887 PS', 'PS tidak diambil');
+  assert(r.normalisePower('710 hp') === '720 PS', `konversi hp salah: ${r.normalisePower('710 hp')}`);
+  assert(r.normalisePower('1,103 kW') === '1500 PS', `konversi kW salah: ${r.normalisePower('1,103 kW')}`);
+  assert(r.normaliseTorque('1,280 N⋅m (944 lbf⋅ft)') === '1280 Nm', 'Nm tidak diambil');
+  assert(r.normaliseWeight('1,634–1,720 kg (3,602–3,791 lb)') === '1,634 kg', 'kg tidak diambil');
+  assert(r.normaliseWeight('4,400 lb (1,996 kg)') === '1,996 kg', 'lb→kg salah');
+  assert(r.normaliseYears('September 2013 – June 2015') === '2013–2015', 'rentang tahun salah');
+  assert(r.normaliseYears('2015') === '2015', 'tahun tunggal salah');
+});
+
+await check('0–100 tidak tertukar dengan angka 0–200', async () => {
+  const { findAcceleration } = await import('../studio/src/services/research.ts');
+  // Kalimat nyata dari artikel Porsche 918: 2,6 dtk untuk 0–100, 7,2 dtk untuk 0–200.
+  const prose =
+    'performance figures of 0–100 km/h (0–62 mph) in 2.6 seconds, 0–200 km/h (0–124 mph) in 7.2 seconds';
+  assert(findAcceleration(prose) === '2,6 dtk', `salah ambil: ${findAcceleration(prose)}`);
+  assert(findAcceleration('It accelerates from 0-100 km/h in 3.4 s.') === '3,4 dtk', 'format "in 3.4 s" gagal');
+  assert(findAcceleration('A 4.0 L engine.') === '', 'mengarang angka akselerasi');
+});
+
+await check('top speed hanya diambil dari kalimat yang menyebutnya', async () => {
+  const { findTopSpeed } = await import('../studio/src/services/research.ts');
+  assert(findTopSpeed('a top speed of 345 km/h (214 mph)') === '345 km/jam', 'top speed gagal');
+  assert(findTopSpeed('Its top speed is 330 km/h.') === '330 km/jam', 'format "is 330 km/h" gagal');
+  assert(findTopSpeed('It is fast and red.') === '', 'mengarang top speed');
+});
+
+await check('mobil listrik memakai baris "Electric motor" sebagai mesin', async () => {
+  const { buildCarFromArticle } = await import('../studio/src/services/research.ts');
+  const html = `<table class="infobox"><tr><th>Class</th><td>Sports car (S)</td></tr>
+    <tr><th>Electric&nbsp;motor</th><td>4 permanent magnet electric motors</td></tr>
+    <tr><th>Power&nbsp;output</th><td>1,407.7 kW (1,888 hp; 1,914 PS)</td></tr></table>`;
+  const { car } = buildCarFromArticle({ title: 'Rimac Nevera', html, prose: '', summary: 'A sports car.' });
+  assert(car.mesin.includes('electric motors'), `mesin kosong untuk mobil listrik: "${car.mesin}"`);
+  assert(car.tenaga === '1,914 PS', `tenaga salah: ${car.tenaga}`);
+  assert(car.kategori === 'sport', `kategori salah: ${car.kategori}`);
+});
+
+await check('field yang tidak ada di sumber dilaporkan kosong, bukan dikarang', async () => {
+  const { buildCarFromArticle } = await import('../studio/src/services/research.ts');
+  const html = `<table class="infobox"><tr><th>Engine</th><td>2.0 L I4</td></tr></table>`;
+  const { car, missing } = buildCarFromArticle({ title: 'Contoh Mobil', html, prose: '', summary: '' });
+  assert(car.mesin === '2.0 L I4', 'mesin tidak terbaca');
+  assert(car.tenaga === '' && car.torsi === '' && car.nol100 === '', 'mengarang angka yang tidak ada');
+  assert(missing.includes('Tenaga') && missing.includes('0–100'), `daftar field kosong salah: ${missing.join(',')}`);
+});
+
+await check('proyek bisa dibuat dari mobil hasil riset web', async () => {
+  const store: Record<string, string> = {};
+  (globalThis as any).localStorage = {
+    getItem: (k: string) => (k in store ? store[k] : null),
+    setItem: (k: string, v: string) => {
+      store[k] = String(v);
+    },
+    removeItem: (k: string) => {
+      delete store[k];
+    },
+  };
+  store['asa.user'] = JSON.stringify({ email: 'proyek@studio.id' });
+  const r = await import('../studio/src/data/researched.ts');
+  const api = await import('../studio/src/services/api.ts');
+  r.resetResearchedCache();
+  r.saveResearched({
+    car: {
+      slug: 'bugatti-chiron',
+      merk: 'Bugatti',
+      model: 'Bugatti Chiron',
+      seri: '',
+      tahun: '2016–2024',
+      kategori: 'sport',
+      mesin: '8.0 L quad-turbo W16',
+      tenaga: '1.500 PS',
+      torsi: '1.600 Nm',
+      nol100: '2,4 dtk',
+      vmax: '380 km/jam',
+      berat: '1.996 kg',
+      layout: 'Mid-engine, four-wheel-drive',
+      tagline: '1.500 PS · 0–100 2,4 dtk.',
+      sumber: 'https://en.wikipedia.org/wiki/Bugatti_Chiron',
+    },
+    missing: [],
+    photoUrl: null,
+    photoCredit: null,
+    photoLicense: null,
+    photoPageUrl: null,
+    articleTitle: 'Bugatti Chiron',
+    articleUrl: 'https://en.wikipedia.org/wiki/Bugatti_Chiron',
+    researchedAt: 1,
+  } as any);
+
+  const resolved = api.resolveCar('bugatti-chiron');
+  assert(resolved?.model === 'Bugatti Chiron', 'resolveCar tidak menemukan hasil riset');
+  assert(api.resolveCar('ferrari-296-gtb')?.model === 'Ferrari 296 GTB', 'resolveCar merusak katalog');
+  assert(api.resolveCar('tidak-ada') === undefined, 'resolveCar mengembalikan mobil palsu');
+
+  const demo = new api.DemoStudioApi();
+  const p = await demo.createProject({ carSlug: 'bugatti-chiron', durationSec: 30 });
+  assert(p.carName === 'Bugatti Chiron', `proyek salah mobil: ${p.carName}`);
+  assert(p.brief.hook.startsWith('Bugatti Chiron:'), `hook salah: ${p.brief.hook}`);
+  assert(p.shots.length > 0, 'shot tidak dibuat');
+  assert(p.title === 'Bugatti Chiron', `judul dobel merek: ${p.title}`);
+
+  const catalogProject = await demo.createProject({ carSlug: 'ferrari-296-gtb', durationSec: 30 });
+  assert(!catalogProject.title.startsWith('Ferrari Ferrari'), `judul katalog dobel: ${catalogProject.title}`);
+
+  delete (globalThis as any).localStorage;
+});
+
+await check('nilai layout yang berulang dirapikan', async () => {
+  const { dedupePhrases } = await import('../studio/src/services/research.ts');
+  const v = dedupePhrases('Mid-engine, four-wheel-drive layout, All-wheel drive vehicle');
+  assert(v === 'Mid-engine, four-wheel-drive layout', `dedupe salah: ${v}`);
+  assert(dedupePhrases('Front-engine, rear-wheel-drive') === 'Front-engine, rear-wheel-drive', 'penggerak roda belakang terhapus');
+  assert(dedupePhrases('') === '', 'nilai kosong berubah');
+});
+
+await check('tagline hasil riset berbahasa Indonesia dan memakai angka nyata', async () => {
+  const { taglineFrom } = await import('../studio/src/services/research.ts');
+  const t = taglineFrom({
+    model: 'Porsche 918 Spyder',
+    engine: '4.6 L V8',
+    power: '887 PS',
+    torque: '1,280 Nm',
+    nol100: '2,6 dtk',
+    vmax: '345 km/jam',
+  });
+  assert(t.includes('887 PS') && t.includes('2,6 dtk'), `tagline tidak memuat angka: ${t}`);
+  assert(!/The Porsche|manufactured by/i.test(t), `tagline masih kutipan Inggris: ${t}`);
+  // Nama model ditambahkan buildBrief, jadi tagline tidak boleh mengulanginya.
+  assert(!t.includes('Porsche 918 Spyder'), `tagline mengulang nama model: ${t}`);
+  const bare = taglineFrom({ model: 'X', engine: '', power: '', torque: '', nol100: '', vmax: '' });
+  assert(!/·/.test(bare) && bare.length > 0, 'tagline kosong tidak punya teks cadangan');
+});
+
+await check('merek dikenali dari judul dan kategori tidak salah untuk hypercar', async () => {
+  const { guessBrand, guessCategory } = await import('../studio/src/services/research.ts');
+  assert(guessBrand('Koenigsegg Jesko', '') === 'Koenigsegg', 'merek tidak dikenali');
+  assert(guessBrand('Rimac Nevera', 'Rimac Automobili') === 'Rimac', 'merek dari manufacturer gagal');
+  assert(guessCategory('Sports car, developed from motorsport', '2022–2026') === 'sport', 'hypercar dianggap balap');
+  assert(guessCategory('Formula One racing car', '2021') === 'balap', 'mobil F1 tidak dianggap balap');
+  assert(guessCategory('A classic roadster', '1962') === 'sport', 'roadster klasik salah kategori');
+});
+
+await check('hasil riset tersimpan per akun, dan data versi lama dibuang', async () => {
+  const store: Record<string, string> = {};
+  (globalThis as any).localStorage = {
+    getItem: (k: string) => (k in store ? store[k] : null),
+    setItem: (k: string, v: string) => {
+      store[k] = String(v);
+    },
+    removeItem: (k: string) => {
+      delete store[k];
+    },
+  };
+  store['asa.user'] = JSON.stringify({ email: 'riset@studio.id', name: 'riset' });
+  const r = await import('../studio/src/data/researched.ts');
+  r.resetResearchedCache();
+
+  // Data format lama (array langsung, seri berisi tanggal) harus diabaikan.
+  store['asa.researched.riset@studio.id'] = JSON.stringify([
+    { car: { slug: 'porsche-918-spyder', model: 'Porsche 918 Spyder', seri: 'September 2013 – June 2015' } },
+  ]);
+  assert(r.listResearched().length === 0, 'data skema lama tidak dibuang');
+
+  const entry = {
+    car: { slug: 'porsche-918-spyder', merk: 'Porsche', model: 'Porsche 918 Spyder', seri: '', tahun: '2013–2015' },
+    missing: [],
+    photoUrl: null,
+    photoCredit: null,
+    photoLicense: null,
+    photoPageUrl: null,
+    articleTitle: 'Porsche 918 Spyder',
+    articleUrl: 'https://en.wikipedia.org/wiki/Porsche_918_Spyder',
+    researchedAt: 1,
+  } as any;
+  r.saveResearched(entry);
+  r.resetResearchedCache();
+  const back = r.listResearched();
+  assert(back.length === 1 && back[0].car.slug === 'porsche-918-spyder', 'hasil riset tidak tersimpan');
+  assert(r.findResearched('porsche-918-spyder')?.car.model === 'Porsche 918 Spyder', 'findResearched gagal');
+
+  // Akun lain tidak boleh melihat hasil riset akun ini.
+  store['asa.user'] = JSON.stringify({ email: 'lain@studio.id' });
+  r.resetResearchedCache();
+  assert(r.listResearched().length === 0, 'hasil riset bocor ke akun lain');
+
+  delete (globalThis as any).localStorage;
+});
+
 await closeDb();
 fs.rmSync(tmpRoot, { recursive: true, force: true });
 console.log(`\n${passed} pemeriksaan lulus, ${failures.length} gagal`);

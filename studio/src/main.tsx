@@ -61,7 +61,7 @@ function Router() {
         {route.name === 'baru' && <NewVideo go={go} preselect={route.car} />}
         {route.name === 'agen' && <Agent go={go} />}
         {route.name === 'proyek' && <Projects go={go} />}
-        {route.name === 'proyek-detail' && <ProjectDetail id={route.id} go={go} />}
+        {route.name === 'proyek-detail' && <ProjectDetail id={route.id} go={go} autoRun={route.autoRun} />}
         {route.name === 'perpustakaan' && <Library go={go} />}
         {route.name === 'garasi' && <Garage go={go} />}
         {route.name === 'model' && <Models />}

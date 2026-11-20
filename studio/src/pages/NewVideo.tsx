@@ -98,7 +98,7 @@ export function NewVideo({ go, preselect }: { go: (r: Route) => void; preselect?
       p.brief = brief ?? p.brief;
       await upsert(p);
       toast({ title: 'Proyek dibuat', body: `${p.title} siap dijalankan`, kind: 'ok' });
-      go({ name: 'proyek-detail', id: p.id });
+      go({ name: 'proyek-detail', id: p.id, autoRun: true });
     } catch (e) {
       setErr((e as Error).message);
     }

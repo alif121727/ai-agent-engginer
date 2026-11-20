@@ -7,7 +7,7 @@ export type Route =
   | { name: 'baru'; car?: string }
   | { name: 'agen' }
   | { name: 'proyek' }
-  | { name: 'proyek-detail'; id: string }
+  | { name: 'proyek-detail'; id: string; autoRun?: boolean }
   | { name: 'perpustakaan' }
   | { name: 'garasi' }
   | { name: 'model' }
@@ -20,7 +20,7 @@ export function useHashRoute(): [Route, (r: Route) => void] {
     switch (seg) {
       case 'baru': return { name: 'baru', car: id };
       case 'agen': return { name: 'agen' };
-      case 'proyek': return id ? { name: 'proyek-detail', id } : { name: 'proyek' };
+      case 'proyek': return id ? { name: 'proyek-detail', id, autoRun: h.split('/')[2] === 'jalankan' } : { name: 'proyek' };
       case 'perpustakaan': return { name: 'perpustakaan' };
       case 'garasi': return { name: 'garasi' };
       case 'model': return { name: 'model' };
@@ -37,7 +37,7 @@ export function useHashRoute(): [Route, (r: Route) => void] {
   const go = React.useCallback((r: Route) => {
     const h =
       r.name === 'dashboard' ? '#/'
-      : r.name === 'proyek-detail' ? `#/proyek/${r.id}`
+      : r.name === 'proyek-detail' ? `#/proyek/${r.id}${r.autoRun ? '/jalankan' : ''}`
       : r.name === 'baru' && r.car ? `#/baru/${r.car}`
       : `#/${r.name}`;
     if (location.hash === h) setRoute(r);

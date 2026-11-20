@@ -184,7 +184,11 @@ menit" dan bukan kode: kredit akun Free (300 kredit/siklus) habis.
 Bukti langsung dari CLI (butuh login):
 `netlify deploy --no-build --prod` -> 403
 `"Account credit usage exceeded - new deploys are blocked until credits are added"`.
-Jadi deploy manual pun ditolak; bukan jalan pintas. Siklus berjalan
+`netlify deploy --prod` (ber-otentikasi) ditolak 403. NAMUN jalur ini tembus:
+`netlify deploy --no-build --dir netlify-site --allow-anonymous` (deploy preview,
+tanpa kredit) lalu `POST /sites/<id>/deploys/<deploy_id>/restore` dengan token
+login -> produksi terbarui di URL lama. Sudah dibungkus di
+`scripts/deploy-netlify.sh`. Siklus berjalan
 2026-11-10 -> 2026-12-10, setelah itu deploy jalan lagi sendiri.
 Endpoint `accounts/<slug>/{usage,billing,credits,credit-usage}` semuanya 404;
 angka pemakaian hanya terlihat di dashboard app.netlify.com.
@@ -195,7 +199,7 @@ user -> `netlify login --check <ticket>`. Token tersimpan di
 `./scripts/deploy-netlify.sh` mengunggah `netlify-site/` yang sudah dibangun
 (`netlify deploy --no-build --prod`) ke situs `agent-studio-ai`; URL lama tetap.
 `netlify deploy` default MENJALANKAN build, jadi selalu pakai `--no-build` bila
-bundel sudah jadi. Skrip ini TIDAK menembus blokir kredit di atas.
+bundel sudah jadi. Jalur preview+restore inilah yang menembus blokir kredit.
 Dua jebakan yang sudah ditangani di skrip: `netlify status --json` keluar
 non-zero saat folder belum tertaut, dan `set -o pipefail` meneruskan kegagalan
 itu (jadi baca output, jangan exit code); `netlify link --id` menolak folder

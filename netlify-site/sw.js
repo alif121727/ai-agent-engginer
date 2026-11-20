@@ -1,7 +1,7 @@
 // Service worker: cache app shell saja.
 // Video TIDAK di-cache — ukurannya besar dan harus selalu bisa di-stream.
-const SHELL = 'studio-shell-v1';
-const SHELL_FILES = ['./', './index.html', './manifest.webmanifest', './ikon/ikon-192.png'];
+const SHELL = 'studio-shell-v2';
+const SHELL_FILES = ['./', './index.html', './manifest.json', './ikon/ikon-192.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(SHELL).then((c) => c.addAll(SHELL_FILES)).then(() => self.skipWaiting()));

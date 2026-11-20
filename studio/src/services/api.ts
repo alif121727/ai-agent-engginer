@@ -4,7 +4,7 @@
 //                      dipakai/dinilai saat di-deploy statis (Netlify).
 // Pemanggil tidak perlu tahu mana yang aktif.
 
-import { CATALOG, findCar, type Car } from '../data/catalog.ts';
+import { CATALOG, carName, findCar, type Car } from '../data/catalog.ts';
 import { STAGES, MIN_DUR } from '../data/models.ts';
 import { RENDERED, type RenderedVideo } from '../data/rendered.ts';
 import { findResearched, listResearched } from '../data/researched.ts';
@@ -74,13 +74,18 @@ type ServerJob = {
   error?: string | null;
 };
 
-/** Proyek lama bisa tersimpan dengan merek dobel ("Bugatti Bugatti Chiron"). */
-function cleanTitle(title: string): string {
-  const words = title.trim().split(/\s+/);
+/**
+ * Judul proyek selalu diturunkan dari mobilnya. Ini juga menyembuhkan proyek
+ * lama yang tersimpan dengan judul keliru ("Bugatti Bugatti Chiron").
+ */
+function projectTitle(carSlug: string, fallback: string): string {
+  const car = resolveCar(carSlug);
+  if (car) return carName(car);
+  const words = fallback.trim().split(/\s+/);
   if (words.length > 1 && words[0].toLowerCase() === words[1].toLowerCase()) {
     return words.slice(1).join(' ');
   }
-  return title;
+  return fallback;
 }
 
 /**
@@ -103,7 +108,7 @@ export function projectFromServer(j: ServerJob): Project {
     id: j.id,
     createdAt: Number.isFinite(created) ? created : Date.now(),
     updatedAt: Number.isFinite(created) ? created : Date.now(),
-    title: cleanTitle(j.title ?? j.model ?? 'Tanpa judul'),
+    title: projectTitle(slug || j.model || '', j.title ?? j.model ?? 'Tanpa judul'),
     carSlug: car?.slug ?? slug,
     carName: car?.model ?? j.model ?? '',
     modelId: 'studio',
@@ -315,7 +320,7 @@ export class DemoStudioApi implements StudioApi {
       return merged;
     }
 
-    return stored.map((p) => ({ ...p, title: cleanTitle(p.title) }));
+    return stored.map((p) => ({ ...p, title: projectTitle(p.carSlug, p.title) }));
   }
 
   private persist(list: Project[]) {
@@ -345,7 +350,7 @@ export class DemoStudioApi implements StudioApi {
       id: rid(),
       createdAt: Date.now(),
       updatedAt: Date.now(),
-      title: car.seri ? `${car.merk} ${car.seri}` : car.model,
+      title: carName(car),
       carSlug: car.slug,
       carName: car.model,
       modelId: input.modelId ?? 'local-render',

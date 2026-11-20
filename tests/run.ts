@@ -1239,6 +1239,7 @@ await check('proyek bisa dibuat dari mobil hasil riset web', async () => {
   };
   store['asa.user'] = JSON.stringify({ email: 'proyek@studio.id' });
   const r = await import('../studio/src/data/researched.ts');
+  const { carName: carNameOf } = await import('../studio/src/data/catalog.ts');
   const api = await import('../studio/src/services/api.ts');
   r.resetResearchedCache();
   r.saveResearched({
@@ -1282,7 +1283,10 @@ await check('proyek bisa dibuat dari mobil hasil riset web', async () => {
   assert(p.title === 'Bugatti Chiron', `judul dobel merek: ${p.title}`);
 
   const catalogProject = await demo.createProject({ carSlug: 'ferrari-296-gtb', durationSec: 30 });
-  assert(!catalogProject.title.startsWith('Ferrari Ferrari'), `judul katalog dobel: ${catalogProject.title}`);
+  assert(catalogProject.title === 'Ferrari 296 GTB', `judul katalog salah: ${catalogProject.title}`);
+
+  const audi = (await import('../studio/src/data/catalog.ts')).CATALOG.find((c) => c.slug === 'audi-r8-v10-performance')!;
+  assert(carNameOf(audi) === 'Audi R8 V10 Performance', `merek dobel: ${carNameOf(audi)}`);
 
   delete (globalThis as any).localStorage;
 });

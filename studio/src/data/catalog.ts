@@ -26,7 +26,10 @@ export type Car = {
  */
 export function carName(car: Pick<Car, 'merk' | 'model'>): string {
   const m = car.model.trim();
-  return m.toLowerCase().startsWith(car.merk.trim().toLowerCase()) ? m : `${car.merk} ${m}`;
+  // Merek seperti "Audi Sport" atau "BMW M" sudah terkandung di nama model,
+  // jadi cukup bandingkan kata pertama agar tidak jadi "Audi Sport Audi R8".
+  const brand = car.merk.trim().toLowerCase().split(/\s+/)[0];
+  return m.toLowerCase().startsWith(brand) ? m : `${car.merk} ${m}`;
 }
 
 const norm = (v: string) => v.toLowerCase().replace(/[^a-z0-9]+/g, '');

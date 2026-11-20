@@ -227,3 +227,20 @@ yang sudah tertaut (jadi `unlink` dulu). CLI ada di `/workspace/tools`
   (bukan bug kode). Binari siap pakai: `/workspace/tools/bin` (dari
   imageio-ffmpeg + ffprobe-static); jalankan
   `PATH=/workspace/tools/bin:$PATH npm test` -> 93 lulus.
+
+## Deploy Netlify: token bisa hilang
+- Sandbox **restart menghapus `~/.config/netlify/config.json`** (jadi 81 byte,
+  `users: {}`). `scripts/deploy-netlify.sh` lalu gagal di `netlify link`
+  dengan "Authentication required". Tidak ada token di env/.env/repo.
+- Pemulihan tanpa interaksi tidak mungkin. Dua jalan:
+  1. `netlify login --request "<pesan>"` -> kirim Authorize URL ke user, lalu
+     `netlify login --check <ticket>`.
+  2. User memberi personal access token -> `NETLIFY_AUTH_TOKEN=... ./scripts/deploy-netlify.sh`.
+- `netlify deploy --allow-anonymous` **tidak menolong**: ia membuat SITUS BARU
+  ber-password (HTTP 401), bukan memperbarui `agent-studio-ai`.
+- Build dari GitHub untuk repo ini di-skip (kredit habis: state=error,
+  skipped=true), jadi push TIDAK memperbarui situs live.
+- GitHub Pages juga tertutup: token OAuth tidak punya izin Pages
+  (POST /pages -> 403 "Resource not accessible by integration").
+- Link sementara yang selalu segar: `python3 -m http.server 12000 --directory
+  netlify-site` lalu pakai URL publik sandbox port 12000.

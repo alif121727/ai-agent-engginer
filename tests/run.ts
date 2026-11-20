@@ -1127,6 +1127,46 @@ await check('penanda "tanpa foto" cocok dengan aset job aslinya', async () => {
   }
 });
 
+await check('benih lama dimigrasi dan proyek terhapus tidak kembali', async () => {
+  const store = new Map<string, string>();
+  (globalThis as any).localStorage = {
+    getItem: (k: string) => (store.has(k) ? store.get(k)! : null),
+    setItem: (k: string, v: string) => void store.set(k, v),
+    removeItem: (k: string) => void store.delete(k),
+  };
+  const api = await import('../studio/src/services/api.ts');
+  const demo = new api.DemoStudioApi();
+
+  localStorage.setItem('asa.user', JSON.stringify({ email: 'uji@studio.id', name: 'uji' }));
+
+  // Pengunjung lama: benih versi sebelumnya (judul & tanggal salah), tanpa versi.
+  const stale = api.seedProjects().map((p) => ({ ...p, title: `LAMA ${p.title}`, createdAt: 0 }));
+  localStorage.setItem(api.demoProjectsKey(), JSON.stringify(stale.slice(0, 3)));
+  const migrated = await demo.listProjects();
+  assert(migrated.length === api.seedProjects().length, `migrasi menghasilkan ${migrated.length} proyek`);
+  assert(!migrated.some((p) => p.title.startsWith('LAMA')), 'judul lama masih tersisa setelah migrasi');
+
+  // Proyek buatan pengguna tidak boleh hilang saat migrasi.
+  const own = await demo.createProject({ carSlug: 'ferrari-296-gtb' });
+  await demo.saveProject(own);
+  const withOwn = await demo.listProjects();
+  assert(withOwn.some((p) => p.id === own.id), 'proyek buatan pengguna hilang saat migrasi');
+
+  // Hapus satu proyek benih persis seperti store, lalu naikkan versi benih:
+  // proyek itu tidak boleh kembali.
+  const victim = api.seedProjects()[0];
+  const key = api.demoProjectsKey();
+  const stored = JSON.parse(localStorage.getItem(key) || '[]') as { id: string }[];
+  localStorage.setItem(key, JSON.stringify(stored.filter((p) => p.id !== victim.id)));
+  api.rememberDeletion(victim.id);
+  localStorage.setItem('asa.seedVersion.uji@studio.id', '0');
+  const after = await demo.listProjects();
+  assert(!after.some((p) => p.id === victim.id), 'proyek benih yang dihapus muncul lagi setelah versi naik');
+  assert(after.some((p) => p.id === own.id), 'proyek buatan pengguna hilang setelah versi benih naik');
+
+  delete (globalThis as any).localStorage;
+});
+
 await closeDb();
 fs.rmSync(tmpRoot, { recursive: true, force: true });
 console.log(`\n${passed} pemeriksaan lulus, ${failures.length} gagal`);

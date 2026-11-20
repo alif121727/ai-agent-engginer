@@ -114,7 +114,11 @@ export function Sidebar({ route, go }: { route: Route; go: (r: Route) => void })
           <div className="userchip__avatar">{(user?.name || '?').slice(0, 2).toUpperCase()}</div>
           <div className="userchip__meta">
             <div className="userchip__name">{user?.name}</div>
-            <div className="userchip__mail">{user?.email}</div>
+            {/* Login demo boleh memakai username, sehingga email == nama.
+                Jangan tampilkan baris yang mengulang nama yang sama. */}
+            {user?.email && user.email !== user.name && (
+              <div className="userchip__mail">{user.email}</div>
+            )}
           </div>
           <button className="btn btn--ghost btn--sm" onClick={logout} title="Keluar" aria-label="Keluar">
             <Icon.Logout size={14} />

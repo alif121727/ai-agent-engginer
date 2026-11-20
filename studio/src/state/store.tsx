@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { pickApi, demoProjectsKey, type Project, type StudioApi } from '../services/api';
+import { pickApi, demoProjectsKey, rememberDeletion, type Project, type StudioApi } from '../services/api';
 
 /* ------------------------------------------------------------------ types */
 export type User = { name: string; email: string };
@@ -142,6 +142,9 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
           const key = demoProjectsKey();
           const all = JSON.parse(localStorage.getItem(key) || '[]') as Project[];
           localStorage.setItem(key, JSON.stringify(all.filter((p) => p.id !== id)));
+          // Catat penghapusan proyek benih, supaya tidak muncul lagi saat
+          // data benih diperbarui di kemudian hari.
+          rememberDeletion(id);
         } catch {
           /* localStorage rusak -> refresh di bawah menampilkan keadaan nyata */
         }

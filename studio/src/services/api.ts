@@ -212,16 +212,50 @@ export function seedProjects(): Project[] {
 }
 
 /* ------------------------------------------------------------- demo impl */
-/** Kunci penyimpanan demo, diturunkan dari email akun yang login. */
-export function demoProjectsKey(): string {
-  let email = 'anon';
+function demoEmail(): string {
   try {
     const raw = localStorage.getItem('asa.user');
-    if (raw) email = (JSON.parse(raw) as { email?: string }).email || 'anon';
+    if (raw) return (JSON.parse(raw) as { email?: string }).email || 'anon';
   } catch {
     /* localStorage rusak -> pakai kunci anon */
   }
-  return `asa.projects.${email}`;
+  return 'anon';
+}
+
+/** Kunci penyimpanan demo, diturunkan dari email akun yang login. */
+export function demoProjectsKey(): string {
+  return `asa.projects.${demoEmail()}`;
+}
+
+/**
+ * Naikkan angka ini setiap kali data benih berubah (judul, tanggal, durasi).
+ * Tanpa versi, pengunjung yang sudah pernah membuka situs menyimpan benih lama
+ * selamanya dan perbaikan data tidak pernah sampai ke mereka.
+ */
+export const SEED_VERSION = 2;
+
+const seedVersionKey = () => `asa.seedVersion.${demoEmail()}`;
+const deletedKey = () => `asa.deleted.${demoEmail()}`;
+
+/** Id proyek yang berasal dari benih, dipakai membedakan dari proyek buatan pengguna. */
+const seedIds = () => new Set(RENDERED.map((v) => v.jobId));
+
+export function deletedSeeds(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem(deletedKey()) || '[]') as string[];
+  } catch {
+    return [];
+  }
+}
+
+export function rememberDeletion(id: string) {
+  if (!seedIds().has(id)) return;
+  const next = Array.from(new Set([...deletedSeeds(), id]));
+  try {
+    localStorage.setItem(deletedKey(), JSON.stringify(next));
+  } catch {
+    /* kuota penuh -> proyek bisa muncul lagi setelah versi benih berubah */
+  }
 }
 
 export class DemoStudioApi implements StudioApi {
@@ -234,22 +268,43 @@ export class DemoStudioApi implements StudioApi {
   async listProjects(): Promise<Project[]> {
     await wait(120);
     const raw = localStorage.getItem(this.key());
-    // Kunci belum ada = pengguna baru. Isi dengan proyek hasil render nyata
-    // supaya studio tidak terbuka kosong. Kunci kosong ([]) berarti pengguna
-    // memang sudah menghapus semuanya, jadi jangan diisi ulang.
+    const deleted = new Set(deletedSeeds());
+
+    // Pengguna baru: isi dengan proyek hasil render nyata supaya studio tidak
+    // terbuka kosong.
     if (raw === null) {
-      const seed = seedProjects();
-      try {
-        localStorage.setItem(this.key(), JSON.stringify(seed));
-      } catch {
-        /* kuota penuh -> tetap kembalikan benih untuk sesi ini */
-      }
+      const seed = seedProjects().filter((p) => !deleted.has(p.id));
+      this.persist(seed);
       return seed;
     }
+
+    let stored: Project[] = [];
     try {
-      return JSON.parse(raw) as Project[];
+      stored = JSON.parse(raw) as Project[];
     } catch {
-      return [];
+      stored = [];
+    }
+
+    // Versi benih lama: segarkan entri benih, pertahankan proyek buatan
+    // pengguna dan proyek benih yang sudah dia hapus.
+    if (localStorage.getItem(seedVersionKey()) !== String(SEED_VERSION)) {
+      const ids = seedIds();
+      const own = stored.filter((p) => !ids.has(p.id));
+      const fresh = seedProjects().filter((p) => !deleted.has(p.id));
+      const merged = [...own, ...fresh].sort((a, b) => b.createdAt - a.createdAt);
+      this.persist(merged);
+      return merged;
+    }
+
+    return stored;
+  }
+
+  private persist(list: Project[]) {
+    try {
+      localStorage.setItem(this.key(), JSON.stringify(list.slice(0, 60)));
+      localStorage.setItem(seedVersionKey(), String(SEED_VERSION));
+    } catch {
+      /* kuota penuh -> data hanya berlaku untuk sesi ini */
     }
   }
 
@@ -259,7 +314,7 @@ export class DemoStudioApi implements StudioApi {
     p.updatedAt = Date.now();
     if (i >= 0) all[i] = p;
     else all.unshift(p);
-    localStorage.setItem(this.key(), JSON.stringify(all.slice(0, 60)));
+    this.persist(all);
   }
 
   async createProject(input: Partial<Project> & { carSlug: string }): Promise<Project> {

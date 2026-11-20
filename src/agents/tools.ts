@@ -13,7 +13,7 @@ import { findModel, specLines } from '../core/catalog.ts';
 import type { AssetRecord, Brief, ScenePlan } from '../core/types.ts';
 import { resolveDuration } from '../core/brief.ts';
 import { jobDir } from '../core/fsx.ts';
-import { checkAssets } from '../pipeline/quality.ts';
+import { checkAssets, isBelowMinimum } from '../pipeline/quality.ts';
 import { ffprobe, contactSheet, frameSharpness, extractFrame, perceptualHash } from '../render/ffmpeg.ts';
 import type { RenderResult } from '../render/assemble.ts';
 import { markSceneDone, readSceneCheckpoint, markStageComplete } from '../pipeline/checkpoint.ts';
@@ -535,7 +535,7 @@ tool('approve_job', 'Verifikasi hasil akhir lalu setujui atau tolak', async (_ar
     detail: probe.hasAudio ? `codec ${probe.audioCodec}` : 'video tanpa trek audio',
   });
 
-  const resolutionOk = (probe.width ?? 0) >= 720 && (probe.height ?? 0) >= 720;
+  const resolutionOk = !isBelowMinimum(probe.width ?? 0, probe.height ?? 0, { minWidth: 1280, minHeight: 720 });
   checks.push({
     name: 'resolusi',
     ok: resolutionOk,

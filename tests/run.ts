@@ -816,6 +816,47 @@ await check('setiap model katalog bisa ditemukan dari namanya sendiri', async ()
   }
 });
 
+// The UI and the API both let a user append qualifiers ("Mazda RX-7 FD3S").
+// An unresolved name means the job quietly ignores the real photos in
+// assets/own/<slug>/ and renders a generator-invented car instead.
+await check('nama model dengan kualifikasi ekstra tetap menemukan fotonya', async () => {
+  const { findModel } = await import('../src/core/catalog.ts');
+  const { assetFolderSlug, userAssetsFor } = await import('../src/visuals/types.ts');
+  const kasus: Array<[string, string]> = [
+    ['Mazda RX-7 FD3S', 'mazda-rx7-fd'],
+    ['Mazda RX-7', 'mazda-rx7-fd'],
+    ['Porsche 911 GT3 RS 992', 'porsche-911-gt3-rs-992'],
+    ['Lamborghini Huracan STO', 'lamborghini-huracan-sto'],
+    ['Nissan Skyline GT-R R34', 'nissan-skyline-r34-gtr'],
+  ];
+  for (const [nama, slug] of kasus) {
+    assert(findModel(nama)?.slug === slug, `"${nama}" harus resolve ke ${slug}`);
+    assert(assetFolderSlug(nama) === slug, `folder aset untuk "${nama}" harus ${slug}`);
+    assert(userAssetsFor(nama, path.join('assets', 'own')).length > 0, `"${nama}" harus menemukan foto di ${slug}`);
+  }
+});
+
+await check('model di luar katalog tidak dipaksa cocok dengan mobil lain', async () => {
+  const { findModel } = await import('../src/core/catalog.ts');
+  assert(findModel('Koenigsegg Jesko') === undefined, 'Jesko tidak boleh dianggap model katalog');
+  assert(findModel('Tesla Cybertruck') === undefined, 'Cybertruck tidak boleh dianggap model katalog');
+});
+
+// A 9:16 reel is 1080x1920: correct for the brief but narrower than the
+// landscape minimum, so a width-only check rejected every vertical video.
+await check('gerbang resolusi menerima video vertikal 9:16', async () => {
+  const { isBelowMinimum } = await import('../src/pipeline/quality.ts');
+  const o = { minWidth: 1280, minHeight: 720 };
+  assert(!isBelowMinimum(1920, 1080, o), 'landscape 1920x1080 harus lolos');
+  assert(!isBelowMinimum(1080, 1920, o), 'potret 1080x1920 harus lolos');
+  assert(!isBelowMinimum(1080, 1080, o), 'persegi 1080x1080 harus lolos');
+  // The free image provider caps 9:16 output at 1024x1792 by design, so that
+  // is the smallest portrait source the pipeline can actually obtain.
+  assert(!isBelowMinimum(1024, 1792, o), 'potret 1024x1792 (batas provider gratis) harus lolos');
+  assert(isBelowMinimum(640, 360, o), '640x360 harus ditolak');
+  assert(isBelowMinimum(720, 720, o), '720x720 harus ditolak (long edge di bawah 1024)');
+});
+
 // ------------------------------------------------------- suara per model
 
 await check('profil suara mesin berbeda antar model', async () => {

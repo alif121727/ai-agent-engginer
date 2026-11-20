@@ -1,3 +1,4 @@
+import '../core/env.ts';
 import { createApp } from './server.ts';
 import { logger } from '../core/log.ts';
 import { Worker } from '../worker/worker.ts';

@@ -1,3 +1,4 @@
+import '../core/env.ts';
 import { Worker } from './worker.ts';
 import { logger } from '../core/log.ts';
 import { wireBus } from '../core/bus.ts';

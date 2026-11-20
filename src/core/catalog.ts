@@ -94,6 +94,14 @@ function scoreAgainst(query: string, qTokens: string[], qCompact: string, name: 
   if (nCompact.includes(qCompact)) {
     return 0.8 - (0.1 * (nCompact.length - qCompact.length)) / Math.max(1, nCompact.length);
   }
+  // The query may be the name plus extra qualifiers ("Mazda RX-7 FD3S" for
+  // "Mazda RX-7", or a model plus its chassis code). Without this the extra
+  // word drags the score under the threshold, the car stays unresolved, and the
+  // job silently renders a generator-invented car instead of the real photos.
+  if (qCompact.includes(nCompact)) {
+    const extraChars = qCompact.length - nCompact.length;
+    return 0.9 - (0.2 * extraChars) / Math.max(1, qCompact.length);
+  }
 
   const matched = qTokens.filter((qt) => nTokens.some((nt) => nt === qt || nt.startsWith(qt) || qt.startsWith(nt)));
   if (!matched.length) return 0;
@@ -110,7 +118,14 @@ function scoreModel(query: string, m: CatalogModel): number {
   const qTokens = tokensOf(query);
   const qCompact = qTokens.join('');
   if (!qCompact) return 0;
-  const names = [m.model, m.seri, m.slug.replace(/-/g, ' '), ...(ALIASES[m.slug] ?? [])];
+  // The catalog shows "merk model seri" as one line, so users type it as one
+  // name ("Nissan Skyline GT-R R34"). Scoring that composite keeps a base car
+  // from losing to a tuned variant whose longer name merely starts the same.
+  const model = m.model.toLowerCase().startsWith(m.merk.toLowerCase())
+    ? m.model
+    : `${m.merk} ${m.model}`;
+  const full = [model, m.seri].filter(Boolean).join(' ');
+  const names = [full, m.model, m.seri, m.slug.replace(/-/g, ' '), ...(ALIASES[m.slug] ?? [])];
   return names.reduce((best, name) => Math.max(best, scoreAgainst(query, qTokens, qCompact, name, m.slug)), 0);
 }
 

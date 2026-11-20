@@ -24,6 +24,27 @@ export interface QualityReport {
   checkedAt: string;
 }
 
+/**
+ * Compares the short and long edge instead of width/height, so a portrait 9:16
+ * frame (1080x1920) and a square 1:1 frame (1080x1080) pass the same bar as
+ * landscape 1920x1080. Comparing raw width rejected every vertical reel, and
+ * the free image provider caps 9:16 output at 1024x1792 by design.
+ *
+ * `minWidth`/`minHeight` describe a landscape reference frame (1280x720), so
+ * the short edge inherits the smaller of the two. The long edge is capped at
+ * 1024: nothing we ask of a source is larger, and a shorter long edge is
+ * visibly soft once the renderer upscales it.
+ */
+const MAX_DEMANDED_LONG_EDGE = 1024;
+
+export function isBelowMinimum(width: number, height: number, options: { minWidth: number; minHeight: number }): boolean {
+  const shortEdge = Math.min(width, height);
+  const longEdge = Math.max(width, height);
+  const shortMin = Math.min(options.minWidth, options.minHeight);
+  const longMin = Math.min(Math.max(options.minWidth, options.minHeight), MAX_DEMANDED_LONG_EDGE);
+  return shortEdge < shortMin || longEdge < longMin;
+}
+
 export interface QualityOptions {
   minWidth: number;
   minHeight: number;
@@ -70,7 +91,7 @@ export function checkAssets(input: {
       issues.push({ sceneIndex: scene.index, code: 'unreadable', reason: probe.error ?? 'tidak terbaca' });
       continue;
     }
-    if ((probe.width ?? 0) < input.options.minWidth || (probe.height ?? 0) < input.options.minHeight) {
+    if (isBelowMinimum(probe.width ?? 0, probe.height ?? 0, input.options)) {
       issues.push({
         sceneIndex: scene.index,
         code: 'too-small',

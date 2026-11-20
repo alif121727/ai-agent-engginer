@@ -176,3 +176,13 @@ asset md5 is byte-identical to its `assets/own/<slug>/foto-N.jpg` source.
 `POST /api/login` takes `{email, password}` — the field is `email` but accepts a
 username. Then `POST /api/jobs` with `{brief:{model,tagline,durasi,rasio,keunggulan}}`.
 Video download is `GET /api/jobs/:id/file/video.mp4` (not `/video`).
+
+## Deploy Netlify bisa "di-skip" tanpa error kode
+Push ke `main` bisa menghasilkan deploy `state=error, skipped=true` dalam ~0,1
+detik (`build_time: null`) — build tidak pernah mulai, biasanya kuota build
+menit paket gratis. Cek `GET https://api.netlify.com/api/v1/sites/<site>/deploys`
+(publik, tanpa token) dan lihat `skipped` sebelum menyalahkan kode. Buktikan kode
+sehat dengan clone bersih: `npm install --include=dev && npm run build:studio`.
+`/deploys/<id>/log` 404 dan `/builds/<id>` 401 tanpa token. GitHub Pages diblokir
+(403 "Resource not accessible by integration"). Jalur publik tanpa password:
+`python3 -m http.server 12001` di `netlify-site/` -> port 12001 sandbox.

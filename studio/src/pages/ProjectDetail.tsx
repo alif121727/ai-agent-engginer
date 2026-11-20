@@ -56,6 +56,7 @@ export function ProjectDetail({ id, go, autoRun }: { id: string; go: (r: Route) 
   const model = VIDEO_MODELS.find((m) => m.id === project.modelId);
   const doneCount = project.stages.filter((s) => s.state === 'selesai' || s.state === 'dilewati').length;
   const pct = Math.round((doneCount / project.stages.length) * 100);
+  const allSelesai = doneCount === project.stages.length;
 
   async function runFrom(startIdx = 0) {
     if (!project) return;
@@ -155,8 +156,12 @@ export function ProjectDetail({ id, go, autoRun }: { id: string; go: (r: Route) 
               <Icon.X size={14} /> Hentikan
             </button>
           ) : (
-            <button className="btn btn--primary" onClick={() => runFrom(failedIdx >= 0 ? failedIdx : 0)} disabled={project.stages.every((s) => s.state === 'selesai')}>
-              {failedIdx >= 0 ? <><Icon.Retry size={14} /> Coba lagi dari tahap gagal</> : <><Icon.Play size={14} /> Jalankan pipeline</>}
+            // Jangan pernah disable tombol ini: proyek yang sudah selesai harus
+            // bisa dijalankan ulang, kalau tidak video jadi buntu tanpa jalan keluar.
+            <button className="btn btn--primary" onClick={() => runFrom(failedIdx >= 0 ? failedIdx : 0)}>
+              {failedIdx >= 0 ? <><Icon.Retry size={14} /> Coba lagi dari tahap gagal</>
+                : allSelesai ? <><Icon.Retry size={14} /> Jalankan ulang pipeline</>
+                : <><Icon.Play size={14} /> Jalankan pipeline</>}
             </button>
           )}
         </div>

@@ -1,0 +1,60 @@
+{
+  "loudnessLufs": -14,
+  "music": {
+    "ducking": true,
+    "gain": -18
+  },
+  "sfx": [
+    {
+      "sceneIndex": 0,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 1,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 2,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 3,
+      "bed": "cabin-ambience"
+    },
+    {
+      "sceneIndex": 4,
+      "bed": "engine-rev"
+    },
+    {
+      "sceneIndex": 5,
+      "bed": "studio-room"
+    }
+  ],
+  "subtitles": [
+    {
+      "sceneIndex": 0,
+      "text": "Porsche 911 GT3 RS 992. Aero dan downforce"
+    },
+    {
+      "sceneIndex": 1,
+      "text": "Ini Porsche 911 GT3 RS 992, 2022–sekarang. Mesin flat-6 4.0L naturally aspirated (MA2.75)."
+    },
+    {
+      "sceneIndex": 2,
+      "text": "Salah satu andalannya: flat-6 4.0L naturally aspirated (MA2.75) · 525 PS."
+    },
+    {
+      "sceneIndex": 3,
+      "text": "Kabin Porsche 992 GT3 RS, semua tersusun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "text": "Di jalan, 525 PS, nol sampai seratus 3,2 dtk."
+    },
+    {
+      "sceneIndex": 5,
+      "text": "Porsche 911 GT3 RS 992. Aero dan downforce"
+    }
+  ],
+  "ttsAvailable": false
+}

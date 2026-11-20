@@ -1,0 +1,36 @@
+{
+  "model": "Mazda RX-7 FD3S",
+  "tagline": "Rotary legenda",
+  "lines": [
+    {
+      "sceneIndex": 0,
+      "onScreenText": "Rotary legenda",
+      "voiceover": "Mazda RX-7 FD3S. Rotary legenda"
+    },
+    {
+      "sceneIndex": 1,
+      "onScreenText": "Mazda RX-7 FD3S",
+      "voiceover": "Ini Mazda RX-7 FD3S, dilihat dari setiap sudut."
+    },
+    {
+      "sceneIndex": 2,
+      "onScreenText": "mesin rotary twin-turbo",
+      "voiceover": "Salah satu andalannya: mesin rotary twin-turbo."
+    },
+    {
+      "sceneIndex": 3,
+      "onScreenText": "desain pop-up headlight",
+      "voiceover": "Masuk ke kabin, semua tersusun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "onScreenText": "",
+      "voiceover": "Di jalan, mesin rotary twin-turbo."
+    },
+    {
+      "sceneIndex": 5,
+      "onScreenText": "Mazda RX-7 FD3S",
+      "voiceover": "Mazda RX-7 FD3S. Rotary legenda"
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "model": "Porsche 911 GT3 RS 992",
+  "tagline": "Aero dan downforce",
+  "lines": [
+    {
+      "sceneIndex": 0,
+      "onScreenText": "Aero dan downforce",
+      "voiceover": "Porsche 911 GT3 RS 992. Aero dan downforce"
+    },
+    {
+      "sceneIndex": 1,
+      "onScreenText": "Porsche 911 GT3 RS 992",
+      "voiceover": "Ini Porsche 911 GT3 RS 992, 2022–sekarang. Mesin flat-6 4.0L naturally aspirated (MA2.75)."
+    },
+    {
+      "sceneIndex": 2,
+      "onScreenText": "sayap belakang aktif",
+      "voiceover": "Salah satu andalannya: flat-6 4.0L naturally aspirated (MA2.75) · 525 PS."
+    },
+    {
+      "sceneIndex": 3,
+      "onScreenText": "mesin 4.0L flat-six",
+      "voiceover": "Kabin Porsche 992 GT3 RS, semua tersusun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "onScreenText": "",
+      "voiceover": "Di jalan, 525 PS, nol sampai seratus 3,2 dtk."
+    },
+    {
+      "sceneIndex": 5,
+      "onScreenText": "Porsche 911 GT3 RS 992",
+      "voiceover": "Porsche 911 GT3 RS 992. Aero dan downforce"
+    }
+  ]
+}

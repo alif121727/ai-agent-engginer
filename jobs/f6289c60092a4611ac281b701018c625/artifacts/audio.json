@@ -1,0 +1,60 @@
+{
+  "loudnessLufs": -14,
+  "music": {
+    "ducking": true,
+    "gain": -18
+  },
+  "sfx": [
+    {
+      "sceneIndex": 0,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 1,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 2,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 3,
+      "bed": "cabin-ambience"
+    },
+    {
+      "sceneIndex": 4,
+      "bed": "engine-rev"
+    },
+    {
+      "sceneIndex": 5,
+      "bed": "studio-room"
+    }
+  ],
+  "subtitles": [
+    {
+      "sceneIndex": 0,
+      "text": "Mazda RX-7 FD3S. Rotary legenda"
+    },
+    {
+      "sceneIndex": 1,
+      "text": "Ini Mazda RX-7 FD3S, 1992–2002. Mesin rotary twin-turbo 1.3L (13B-REW)."
+    },
+    {
+      "sceneIndex": 2,
+      "text": "Salah satu andalannya: rotary twin-turbo 1.3L (13B-REW) · 255–280 PS."
+    },
+    {
+      "sceneIndex": 3,
+      "text": "Kabin Mazda FD3S, semua tersusun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "text": "Di jalan, 255–280 PS, nol sampai seratus 5,3 dtk."
+    },
+    {
+      "sceneIndex": 5,
+      "text": "Mazda RX-7 FD3S. Rotary legenda"
+    }
+  ],
+  "ttsAvailable": false
+}

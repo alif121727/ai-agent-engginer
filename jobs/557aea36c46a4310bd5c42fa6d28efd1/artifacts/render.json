@@ -1,0 +1,13 @@
+{
+  "file": "/workspace/project/jobs/557aea36c46a4310bd5c42fa6d28efd1/video.mp4",
+  "durationSec": 30,
+  "width": 1080,
+  "height": 1920,
+  "fps": 30,
+  "codec": "h264",
+  "scenes": 6,
+  "preview": "/workspace/project/jobs/557aea36c46a4310bd5c42fa6d28efd1/preview.jpg",
+  "hasAudio": true,
+  "bitrateKbps": 3377,
+  "transitions": 5
+}

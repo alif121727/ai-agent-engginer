@@ -20,3 +20,5 @@ docs/ui/*.png
 netlify-site/video/
 netlify-site/thumb/
 netlify-site.zip
+# State deploy lokal (site id sementara dari deploy anonymous)
+netlify-site/.netlify/

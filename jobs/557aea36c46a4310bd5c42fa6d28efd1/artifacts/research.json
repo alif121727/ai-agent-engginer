@@ -1,0 +1,16 @@
+{
+  "model": "Mazda RX-7 FD3S",
+  "catalog": null,
+  "specs": [
+    {
+      "text": "mesin rotary twin-turbo",
+      "source": "brief"
+    },
+    {
+      "text": "desain pop-up headlight",
+      "source": "brief"
+    }
+  ],
+  "missing": [],
+  "note": "angka dari brief didahulukan; sisanya dari katalog yang bersumber Wikipedia"
+}

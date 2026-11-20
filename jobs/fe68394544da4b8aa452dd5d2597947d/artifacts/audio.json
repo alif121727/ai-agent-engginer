@@ -1,0 +1,60 @@
+{
+  "loudnessLufs": -14,
+  "music": {
+    "ducking": true,
+    "gain": -18
+  },
+  "sfx": [
+    {
+      "sceneIndex": 0,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 1,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 2,
+      "bed": "studio-room"
+    },
+    {
+      "sceneIndex": 3,
+      "bed": "cabin-ambience"
+    },
+    {
+      "sceneIndex": 4,
+      "bed": "engine-rev"
+    },
+    {
+      "sceneIndex": 5,
+      "bed": "studio-room"
+    }
+  ],
+  "subtitles": [
+    {
+      "sceneIndex": 0,
+      "text": "Nissan Skyline GT-R R34. Godzilla"
+    },
+    {
+      "sceneIndex": 1,
+      "text": "Ini Nissan Skyline GT-R R34, 1999–2002. Mesin I6 2.6L twin-turbo (RB26DETT)."
+    },
+    {
+      "sceneIndex": 2,
+      "text": "Salah satu andalannya: I6 2.6L twin-turbo (RB26DETT) · 280 PS (206 kW)."
+    },
+    {
+      "sceneIndex": 3,
+      "text": "Kabin Nissan R34, semua tersusun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "text": "Di jalan, 280 PS (206 kW), nol sampai seratus 4,9 dtk."
+    },
+    {
+      "sceneIndex": 5,
+      "text": "Nissan Skyline GT-R R34. Godzilla"
+    }
+  ],
+  "ttsAvailable": false
+}

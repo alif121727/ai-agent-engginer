@@ -1,0 +1,58 @@
+{
+  "grade": {
+    "contrast": 1.2,
+    "saturation": 1.1,
+    "temperature": -400
+  },
+  "palette": {
+    "primary": "#7A8A99",
+    "secondary": "#0B1E3A",
+    "accent": "#38E1FF"
+  },
+  "scenes": [
+    {
+      "sceneIndex": 0,
+      "textAnimation": "tracking-in",
+      "transition": "dissolve",
+      "camera": "ken-burns",
+      "parallax": false
+    },
+    {
+      "sceneIndex": 1,
+      "textAnimation": "fade-up",
+      "transition": "dissolve",
+      "camera": "ken-burns",
+      "parallax": true
+    },
+    {
+      "sceneIndex": 2,
+      "textAnimation": "fade-up",
+      "transition": "dissolve",
+      "camera": "ken-burns",
+      "parallax": true
+    },
+    {
+      "sceneIndex": 3,
+      "textAnimation": "fade-up",
+      "transition": "dissolve",
+      "camera": "ken-burns",
+      "parallax": true
+    },
+    {
+      "sceneIndex": 4,
+      "textAnimation": "fade-up",
+      "transition": "whip-pan",
+      "camera": "speed-ramp",
+      "parallax": true
+    },
+    {
+      "sceneIndex": 5,
+      "textAnimation": "fade-up",
+      "transition": "dissolve",
+      "camera": "ken-burns",
+      "parallax": true
+    }
+  ],
+  "grain": 0.06,
+  "motionBlur": true
+}

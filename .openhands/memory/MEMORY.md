@@ -105,9 +105,20 @@ an mp4 using a team of AI agents with fixed job desks. Node + `--experimental-st
 - Netlify site is a **static build** (`netlify-site/`), so it always runs in
   `mode demo` (localStorage). Real login/publish only work against the Express
   backend. The UI states this honestly; keep it that way.
-- `npx netlify deploy --prod --dir .` inside `netlify-site/` (already linked,
-  `netlify-cli` is NOT a repo dependency — install ad hoc or it bloats the
-  project). Deploy is content-deduped: "Found 2 files to upload" is normal.
+- **The Netlify site is Git-connected, so every `git push` redeploys.** This is
+  why the link once went 404: with no root `netlify.toml`, Netlify published the
+  repo root (no `index.html`) and overwrote good manual deploys. Root
+  `netlify.toml` now sets `command = npm install --include=dev && npm run
+  build:studio` and `publish = "netlify-site"`. Never "fix" the site with a
+  manual `netlify deploy` only — push, or the next push will undo it.
+- Because builds run from a clean checkout, `netlify-site/video` and
+  `netlify-site/thumb` must stay **tracked in git** (~35 MB). `build-studio.ts`
+  exits 1 when they are missing, so a bad build keeps the last good deploy
+  instead of publishing an empty gallery.
+- Deploy is content-deduped: "Found 2 files to upload" / "All files already
+  uploaded" is normal. `netlify-cli` is NOT a repo dependency.
+- Proof that auto-build really runs: change `studio/src`, push, and the
+  `?v=<hash>` in the served `index.html` changes without any manual deploy.
 
 ## Layout notes
 - `jobs/<id>/` (gitignored) holds `artifacts/`, `checkpoints/`, `assets/`, `video.mp4`.

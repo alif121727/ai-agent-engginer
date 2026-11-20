@@ -191,11 +191,13 @@ angka pemakaian hanya terlihat di dashboard app.netlify.com.
 Login tanpa menyimpan token di repo: `netlify login --request` -> beri URL ke
 user -> `netlify login --check <ticket>`. Token tersimpan di
 `~/.config/netlify/config.json` (key `users.*.auth.token`).
-## Deploy ulang tanpa build menit
+## Skrip deploy Netlify
 `./scripts/deploy-netlify.sh` mengunggah `netlify-site/` yang sudah dibangun
-(`netlify deploy --no-build --prod`) ke situs `agent-studio-ai`, jadi URL lama
-tetap dipakai dan kuota build menit tidak terpakai. Butuh `netlify login`;
-tanpa kredensial pakai `netlify login --request` (tiket, user klik URL) lalu
-`--check <ticket>`. `netlify deploy` default MENJALANKAN build — selalu
-`--no-build` kalau bundel sudah jadi. CLI tinggal di `/workspace/tools`
+(`netlify deploy --no-build --prod`) ke situs `agent-studio-ai`; URL lama tetap.
+`netlify deploy` default MENJALANKAN build, jadi selalu pakai `--no-build` bila
+bundel sudah jadi. Skrip ini TIDAK menembus blokir kredit di atas.
+Dua jebakan yang sudah ditangani di skrip: `netlify status --json` keluar
+non-zero saat folder belum tertaut, dan `set -o pipefail` meneruskan kegagalan
+itu (jadi baca output, jangan exit code); `netlify link --id` menolak folder
+yang sudah tertaut (jadi `unlink` dulu). CLI ada di `/workspace/tools`
 (bertahan lintas reset, tidak seperti `/tmp`).

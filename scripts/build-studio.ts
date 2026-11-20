@@ -1,0 +1,64 @@
+// Build studio -> netlify-site/ (index.html + assets/*).
+// Video & thumb tidak disentuh: sudah ada di netlify-site dan di-gitignore.
+import { build } from 'esbuild';
+import fs from 'node:fs';
+import path from 'node:path';
+
+const root = process.cwd();
+const src = path.join(root, 'studio');
+const out = path.join(root, 'netlify-site');
+const assets = path.join(out, 'assets');
+
+fs.mkdirSync(assets, { recursive: true });
+
+const res = await build({
+  entryPoints: [path.join(src, 'src/main.tsx')],
+  bundle: true,
+  minify: true,
+  sourcemap: false,
+  format: 'iife',
+  target: ['es2020'],
+  jsx: 'automatic',
+  loader: { '.css': 'css' },
+  outfile: path.join(assets, 'studio.js'),
+  metafile: true,
+  logLevel: 'warning',
+});
+
+// esbuild menaruh CSS hasil impor di file .css terpisah
+const cssOut = path.join(assets, 'studio.css');
+if (!fs.existsSync(cssOut)) {
+  console.error('CSS tidak dihasilkan esbuild');
+  process.exit(1);
+}
+
+// index.html: ambil dari studio, tapi pertahankan versi lama sebagai cadangan
+const oldIndex = path.join(out, 'index.html');
+if (fs.existsSync(oldIndex)) {
+  const prev = fs.readFileSync(oldIndex, 'utf8');
+  if (!prev.includes('assets/studio.js')) {
+    fs.writeFileSync(path.join(root, 'netlify-site', 'galeri-lama.html'), prev);
+    console.log('· galeri lama disimpan sebagai galeri-lama.html');
+  }
+}
+fs.copyFileSync(path.join(src, 'index.html'), oldIndex);
+
+const js = fs.statSync(path.join(assets, 'studio.js')).size;
+const css = fs.statSync(cssOut).size;
+
+// Sisipkan hash isi ke index.html supaya cache-busting otomatis dan
+// deploy baru langsung terlihat walau CDN masih menyimpan versi lama.
+const crypto = await import('node:crypto');
+const hash = crypto
+  .createHash('sha1')
+  .update(fs.readFileSync(path.join(assets, 'studio.js')))
+  .update(fs.readFileSync(cssOut))
+  .digest('hex')
+  .slice(0, 8);
+const idxPath = path.join(out, 'index.html');
+const html = fs.readFileSync(idxPath, 'utf8')
+  .replace('assets/studio.css', `assets/studio.css?v=${hash}`)
+  .replace('assets/studio.js', `assets/studio.js?v=${hash}`);
+fs.writeFileSync(idxPath, html);
+
+console.log(`✓ studio dibangun: studio.js ${(js / 1024).toFixed(0)} kB, studio.css ${(css / 1024).toFixed(1)} kB, v=${hash}`);

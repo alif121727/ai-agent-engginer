@@ -43,6 +43,12 @@ function defaultCaption(model: string, tagline?: string): string {
  * and a fingerprint stops the same video being posted twice.
  */
 export async function publishJob(input: PublishInput): Promise<PublishResult> {
+  // Repo ini hanya punya adaptor Instagram. Platform lain ditolak terang-terangan
+  // supaya UI tidak menampilkan "dry run" untuk sesuatu yang tidak ada.
+  if (input.platform !== 'instagram') {
+    throw new Error(`belum ada adaptor publish untuk ${input.platform}; hanya Instagram`);
+  }
+
   const job = await getJob(input.jobId);
   if (!job) throw new Error('job tidak ditemukan');
   if (job.status !== 'done') throw new Error('job belum selesai, tidak bisa dipublikasikan');
@@ -89,7 +95,7 @@ export async function publishJob(input: PublishInput): Promise<PublishResult> {
       remoteId: null,
       dryRun: true,
       fingerprint,
-      note: token ? 'dryRun aktif' : 'kredensial Instagram belum diset',
+      note: token ? 'dryRun aktif: tidak ada unggahan' : 'kredensial Instagram belum diset',
     };
   }
 

@@ -12,7 +12,9 @@
     "web": "node --experimental-strip-types src/api/main.ts",
     "build:ui": "node --experimental-strip-types scripts/build-ui.ts",
     "test": "node --experimental-strip-types tests/run.ts",
-    "llm-check": "node --experimental-strip-types scripts/llm-capability.ts"
+    "llm-check": "node --experimental-strip-types scripts/llm-capability.ts",
+    "build:studio": "node --experimental-strip-types scripts/build-studio.ts",
+    "typecheck:studio": "tsc --noEmit --jsx react-jsx --module esnext --moduleResolution bundler --target es2020 --skipLibCheck --allowImportingTsExtensions studio/src/main.tsx"
   },
   "dependencies": {
     "express": "^5.1.0",

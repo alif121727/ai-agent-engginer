@@ -931,9 +931,118 @@ await check('campuran mesin + musik menghasilkan audio stereo 48 kHz', async () 
   fs.rmSync(path.join('jobs', job), { recursive: true, force: true });
 });
 
+// --- metadata unggahan (studio) ------------------------------------------
+await check('metadata tidak menggandakan merek pada nama mobil', async () => {
+  const { CATALOG, carName } = await import('../studio/src/data/catalog.ts');
+  const { buildMetadata } = await import('../studio/src/services/metadata.ts');
+  const car = CATALOG[0];
+  const meta = buildMetadata(car, { carSlug: car.slug, aspect: '9:16' }, 'tiktok');
+  assert(!/Ferrari Ferrari/i.test(meta.title), `judul menggandakan merek: ${meta.title}`);
+  assert(carName(car) === car.model, 'carName harus memakai model yang sudah memuat merek');
+  assert(meta.title.includes(car.tenaga), 'judul harus memuat tenaga dari katalog');
+});
+
+await check('caption memakai angka katalog, bukan karangan', async () => {
+  const { CATALOG } = await import('../studio/src/data/catalog.ts');
+  const { buildMetadata } = await import('../studio/src/services/metadata.ts');
+  const car = CATALOG.find((c) => c.slug === 'mazda-rx7-fd') ?? CATALOG[0];
+  const meta = buildMetadata(car, { carSlug: car.slug, aspect: '16:9' }, 'youtube');
+  for (const angka of [car.torsi, car.nol100, car.vmax]) {
+    assert(meta.caption.includes(angka), `caption harus memuat "${angka}" dari katalog`);
+  }
+  assert(meta.caption.includes('Wikipedia'), 'caption harus menyebut sumber');
+});
+
+await check('hashtag unik, bersih, dan menghormati batas platform', async () => {
+  const { CATALOG } = await import('../studio/src/data/catalog.ts');
+  const { buildMetadata, PLATFORM_LIMITS } = await import('../studio/src/services/metadata.ts');
+  const car = CATALOG[0];
+  for (const p of ['tiktok', 'instagram', 'youtube'] as const) {
+    const meta = buildMetadata(car, { carSlug: car.slug, aspect: '9:16' }, p);
+    const set = new Set(meta.hashtags);
+    assert(set.size === meta.hashtags.length, `hashtag duplikat di ${p}`);
+    assert(meta.hashtags.length <= PLATFORM_LIMITS[p].hashtags, `hashtag melebihi batas ${p}`);
+    assert(meta.hashtags.every((t) => /^[a-z0-9]+$/.test(t)), `hashtag tidak bersih di ${p}`);
+    assert(meta.caption.length <= PLATFORM_LIMITS[p].caption, `caption melebihi batas ${p}`);
+  }
+});
+
+await check('publish tidak pernah siap tanpa kredensial platform', async () => {
+  const { CATALOG } = await import('../studio/src/data/catalog.ts');
+  const { planPublish } = await import('../studio/src/services/metadata.ts');
+  const car = CATALOG[0];
+  const target = { carSlug: car.slug, aspect: '9:16' as const };
+  const blocked = planPublish(car, target, { tiktok: false, instagram: false, youtube: false });
+  assert(blocked.every((p) => !p.ready && p.blockedBy), 'semua platform harus terblokir tanpa kredensial');
+  const open = planPublish(car, target, { tiktok: true, instagram: false, youtube: false });
+  assert(open.find((p) => p.platform === 'tiktok')?.ready === true, 'tiktok siap bila kredensial ada');
+  assert(open.find((p) => p.platform === 'youtube')?.ready === false, 'youtube tetap terblokir');
+});
+
+await check('nama berkas unggahan aman untuk semua platform', async () => {
+  const { CATALOG } = await import('../studio/src/data/catalog.ts');
+  const { uploadFileName } = await import('../studio/src/services/metadata.ts');
+  for (const car of CATALOG) {
+    for (const p of ['tiktok', 'instagram', 'youtube'] as const) {
+      const n = uploadFileName({ carSlug: car.slug, aspect: '9:16' }, p);
+      assert(/^[a-z0-9]+\.mp4$/.test(n), `nama berkas tidak aman: ${n}`);
+      assert(n.endsWith('.mp4'), 'berkas harus mp4');
+    }
+  }
+});
+
+await check('findCar mencocokkan slug server yang berbeda dari katalog', async () => {
+  const { findCar, CATALOG } = await import('../studio/src/data/catalog.ts');
+  assert(findCar('nissan-skyline-gt-r-r34')?.slug === 'nissan-skyline-r34-gtr', 'slug server harus cocok ke katalog');
+  assert(findCar('mazda-rx-7-fd3s')?.slug === 'mazda-rx7-fd', 'slug RX-7 harus cocok');
+  assert(findCar('', 'Ferrari 296 GTB')?.slug === 'ferrari-296-gtb', 'nama model harus cocok');
+  assert(findCar('mobil-yang-tidak-ada-xyz') === undefined, 'slug asing tidak boleh dipaksa cocok');
+  for (const c of CATALOG) assert(findCar(c.slug)?.slug === c.slug, `slug katalog harus cocok: ${c.slug}`);
+});
+
+await check('hanya platform dengan adaptor nyata yang ditawarkan', async () => {
+  const { PLATFORMS_WITH_ADAPTOR, PLATFORM_LABEL } = await import('../studio/src/services/metadata.ts');
+  assert(PLATFORMS_WITH_ADAPTOR.length > 0, 'harus ada minimal satu platform');
+  assert(PLATFORMS_WITH_ADAPTOR.every((p) => PLATFORM_LABEL[p]), 'setiap platform wajib punya label');
+  assert(!PLATFORMS_WITH_ADAPTOR.includes('tiktok'), 'tiktok belum punya adaptor');
+  assert(!PLATFORMS_WITH_ADAPTOR.includes('youtube'), 'youtube belum punya adaptor');
+});
+
+await check('adaptor publish menolak platform tanpa implementasi', async () => {
+  const { publishJob } = await import('../src/publish/instagram.ts');
+  for (const platform of ['tiktok', 'youtube']) {
+    let msg = '';
+    try {
+      await publishJob({ jobId: 'tidak-ada', platform, dryRun: true });
+    } catch (err) {
+      msg = err instanceof Error ? err.message : String(err);
+    }
+    assert(msg.includes('belum ada adaptor'), `${platform} harus ditolak sebagai belum ada adaptor, dapat: ${msg}`);
+  }
+});
+
+await check('project dari server memakai durasi dan tanggal asli', async () => {
+  const { projectFromServer } = await import('../studio/src/services/api.ts');
+  const p = projectFromServer({
+    id: 'x1',
+    title: 'Nissan Skyline GT-R R34',
+    model: 'Nissan Skyline GT-R R34',
+    brief_slug: 'nissan-skyline-gt-r-r34',
+    duration_sec: 45,
+    aspect: '9:16',
+    status: 'done',
+    created_at: '2026-11-20T06:39:27.766Z',
+  });
+  assert(p.durationSec === 45, 'durasi harus dari duration_sec');
+  assert(p.aspect === '9:16', 'rasio harus terbawa');
+  assert(p.carSlug === 'nissan-skyline-r34-gtr', 'slug harus dipetakan ke katalog');
+  assert(Number.isFinite(p.createdAt) && p.createdAt > 0, 'tanggal harus valid, bukan NaN');
+  assert(p.stages.every((s) => s.state === 'selesai'), 'status done berarti semua tahap selesai');
+  assert(p.stages.every((s) => typeof s.label === 'string' && s.label.length > 0), 'tahap wajib punya label');
+});
+
 await closeDb();
 fs.rmSync(tmpRoot, { recursive: true, force: true });
-
 console.log(`\n${passed} pemeriksaan lulus, ${failures.length} gagal`);
 if (failures.length) {
   for (const f of failures) console.log(`  - ${f}`);

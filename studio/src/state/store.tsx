@@ -1,0 +1,199 @@
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { pickApi, type Project, type StudioApi } from '../services/api';
+
+/* ------------------------------------------------------------------ types */
+export type User = { name: string; email: string };
+
+type Toast = { id: string; title: string; body?: string; kind?: 'ok' | 'err' | 'info' };
+
+type Ctx = {
+  ready: boolean;
+  api: StudioApi;
+  user: User | null;
+  login(account: string, password: string): Promise<{ ok: boolean; error?: string }>;
+  register(name: string, email: string): void;
+  logout(): void;
+  projects: Project[];
+  /** true selama daftar proyek pertama kali diambil dari server. */
+  loadingProjects: boolean;
+  refresh(): Promise<void>;
+  upsert(p: Project): Promise<void>;
+  remove(id: string): Promise<void>;
+  toasts: Toast[];
+  toast(t: Omit<Toast, 'id'>): void;
+  dismiss(id: string): void;
+  settings: Settings;
+  saveSettings(s: Partial<Settings>): void;
+};
+
+export type Settings = {
+  defaultModel: string;
+  language: 'id' | 'en';
+  exportQuality: '1080p' | '4K';
+  theme: 'dark';
+};
+
+const DEFAULTS: Settings = { defaultModel: 'local-render', language: 'id', exportQuality: '1080p', theme: 'dark' };
+
+const StudioCtx = createContext<Ctx | null>(null);
+export const useStudio = () => {
+  const c = useContext(StudioCtx);
+  if (!c) throw new Error('useStudio harus di dalam StudioProvider');
+  return c;
+};
+
+/* --------------------------------------------------------------- provider */
+export function StudioProvider({ children }: { children: React.ReactNode }) {
+  const [ready, setReady] = useState(false);
+  const [api, setApi] = useState<StudioApi | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const [settings, setSettings] = useState<Settings>(DEFAULTS);
+  const timers = useRef<Record<string, number>>({});
+
+  useEffect(() => {
+    (async () => {
+      const a = await pickApi();
+      setApi(a);
+      try {
+        const u = localStorage.getItem('asa.user');
+        if (u) setUser(JSON.parse(u));
+        const s = localStorage.getItem('asa.settings');
+        if (s) setSettings({ ...DEFAULTS, ...JSON.parse(s) });
+      } catch {
+        /* localStorage rusak -> mulai bersih */
+      }
+      setReady(true);
+    })();
+  }, []);
+
+  const refresh = useCallback(async () => {
+    if (!api) return;
+    setLoadingProjects(true);
+    try {
+      setProjects(await api.listProjects());
+    } finally {
+      setLoadingProjects(false);
+    }
+  }, [api]);
+
+  useEffect(() => {
+    if (api && user) void refresh();
+  }, [api, user, refresh]);
+
+  const toast = useCallback((t: Omit<Toast, 'id'>) => {
+    const id = Math.random().toString(36).slice(2);
+    setToasts((prev) => [...prev, { ...t, id }]);
+    timers.current[id] = window.setTimeout(() => {
+      setToasts((prev) => prev.filter((x) => x.id !== id));
+    }, 5200);
+  }, []);
+
+  const dismiss = useCallback((id: string) => {
+    clearTimeout(timers.current[id]);
+    setToasts((prev) => prev.filter((x) => x.id !== id));
+  }, []);
+
+  const login = useCallback(
+    async (account: string, password: string) => {
+      if (!api) return { ok: false, error: 'Studio belum siap.' };
+      const res = await api.authenticate(account, password);
+      if (!res.ok) return res;
+      // Nama tampilan diambil dari akun yang benar-benar login di backend.
+      const name = account.includes('@') ? account.split('@')[0] : account;
+      const u = { email: account, name };
+      localStorage.setItem('asa.user', JSON.stringify(u));
+      setUser(u);
+      return { ok: true };
+    },
+    [api],
+  );
+
+  const register = useCallback((name: string, email: string) => {
+    const u = { name, email };
+    localStorage.setItem('asa.user', JSON.stringify(u));
+    setUser(u);
+  }, []);
+
+  const logout = useCallback(() => {
+    localStorage.removeItem('asa.user');
+    setUser(null);
+    setProjects([]);
+  }, []);
+
+  const upsert = useCallback(
+    async (p: Project) => {
+      if (!api) return;
+      await api.saveProject(p);
+      await refresh();
+    },
+    [api, refresh],
+  );
+
+  const remove = useCallback(
+    async (id: string) => {
+      const key = `asa.projects.${user?.email || 'anon'}`;
+      try {
+        const all = JSON.parse(localStorage.getItem(key) || '[]') as Project[];
+        localStorage.setItem(key, JSON.stringify(all.filter((p) => p.id !== id)));
+      } catch {
+        /* abaikan */
+      }
+      await refresh();
+    },
+    [user, refresh],
+  );
+
+  const saveSettings = useCallback((s: Partial<Settings>) => {
+    setSettings((prev) => {
+      const next = { ...prev, ...s };
+      localStorage.setItem('asa.settings', JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  const value = useMemo<Ctx | null>(
+    () =>
+      api
+        ? { ready, api, user, login, register, logout, projects, loadingProjects, refresh, upsert, remove, toasts, toast, dismiss, settings, saveSettings }
+        : null,
+    [ready, api, user, login, register, logout, projects, loadingProjects, refresh, upsert, remove, toasts, toast, dismiss, settings, saveSettings],
+  );
+
+  if (!value) {
+    return (
+      <div style={{ display: 'grid', placeItems: 'center', minHeight: '100vh', gap: 12 }}>
+        <div className="skel" style={{ width: 160, height: 8 }} />
+        <div className="dim tiny">Menyiapkan studio…</div>
+      </div>
+    );
+  }
+
+  return <StudioCtx.Provider value={value}>{children}</StudioCtx.Provider>;
+}
+
+/* ------------------------------------------------------------------ toasts */
+export function ToastHost() {
+  const { toasts, dismiss } = useStudio();
+  return (
+    <div className="toasts" aria-live="polite">
+      {toasts.map((t) => (
+        <div key={t.id} className={`toast${t.kind === 'ok' ? ' toast--ok' : t.kind === 'err' ? ' toast--err' : ''}`} role="status">
+          <div className="row row--between" style={{ alignItems: 'flex-start' }}>
+            <div>
+              <div className="toast__title">{t.title}</div>
+              {t.body && <div className="dim tiny">{t.body}</div>}
+            </div>
+            <button className="btn btn--ghost btn--sm" onClick={() => dismiss(t.id)} aria-label="Tutup notifikasi">
+              <Icon.XInline />
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const Icon = { XInline: () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12" /></svg> };

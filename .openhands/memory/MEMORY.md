@@ -38,7 +38,7 @@ an mp4 using a team of AI agents with fixed job desks. Node + `--experimental-st
 - `npm run api` (port 8080) + `npm run worker` — both needed; jobs stall without the worker.
 - `./scripts/serve.sh 12000` — starts API on the public sandbox port and the
   worker if absent, then prints health + the public URL. Public URL for port
-  12000: `https://work-1-bvtlbdodwnodjuan.prod-runtime.all-hands.dev`
+  12000: `https://work-1-lxpwikokempxmoli.prod-runtime.all-hands.dev`
   (port 12001 maps to `work-2-...`). Logs: `/tmp/api.log`, `/tmp/worker.log`.
 - `npm run build:ui` after any `ui/app.tsx` change.
 - `scripts/autopush.sh` commits+pushes every 10 min (log: `/tmp/autopush.log`).
@@ -93,6 +93,21 @@ an mp4 using a team of AI agents with fixed job desks. Node + `--experimental-st
 - `GET /api/health` used to report `ffmpeg:true` unconditionally
   (`process.env.FFMPEG_OK ?? 'true'` — the var is never set). Fixed in `87f0784`
   to call `ffmpegAvailable()`. Don't trust a health `true` you haven't verified.
+
+## Frontend (studio/) gotchas
+- **React hooks must sit above every early return.** `ProjectDetail` used to
+  declare `useState` after `if (!project) return ...`; deep-linking a project
+  crashed with "Rendered more hooks than during the previous render", which
+  React surfaces as a *fully blank page* (only the `<noscript>` text remains).
+  Blank page on one route = hooks-order bug, not a routing bug. Verify by
+  hard-loading the URL with a fresh `?v=` query, since in-app hash clicks
+  re-render instead of remounting.
+- Netlify site is a **static build** (`netlify-site/`), so it always runs in
+  `mode demo` (localStorage). Real login/publish only work against the Express
+  backend. The UI states this honestly; keep it that way.
+- `npx netlify deploy --prod --dir .` inside `netlify-site/` (already linked,
+  `netlify-cli` is NOT a repo dependency — install ad hoc or it bloats the
+  project). Deploy is content-deduped: "Found 2 files to upload" is normal.
 
 ## Layout notes
 - `jobs/<id>/` (gitignored) holds `artifacts/`, `checkpoints/`, `assets/`, `video.mp4`.

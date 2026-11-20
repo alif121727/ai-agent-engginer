@@ -9,6 +9,7 @@ import { parseBrief, resolveDuration, BriefError } from '../core/brief.ts';
 import { pickTheme } from '../core/theme.ts';
 import { loadCatalog, aliasesFor } from '../core/catalog.ts';
 import { planScenes, estimateCost } from '../pipeline/scenes.ts';
+import { ffmpegAvailable } from '../render/ffmpeg.ts';
 import { paths, slugify, jobDir } from '../core/fsx.ts';
 import { assetFolderSlug } from '../visuals/types.ts';
 import {
@@ -91,7 +92,7 @@ export function createApp(opts: AppOptions = {}) {
       ok: true,
       connection: currentConnection(),
       db: process.env.DB_KIND ?? 'sqlite',
-      ffmpeg: Boolean(process.env.FFMPEG_OK ?? 'true'),
+      ffmpeg: ffmpegAvailable(),
     });
   });
 

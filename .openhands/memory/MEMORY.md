@@ -120,6 +120,13 @@ an mp4 using a team of AI agents with fixed job desks. Node + `--experimental-st
 - Proof that auto-build really runs: change `studio/src`, push, and the
   `?v=<hash>` in the served `index.html` changes without any manual deploy.
 
+## Studio AI statis (deploy Netlify)
+- Situs live: https://agent-studio-ai.netlify.app (Netlify `agent-studio-ai`,
+  Git-connected ke `main`). Build lokal: `npm run build:studio` -> `netlify-site/`;
+  cocokkan hash `assets/studio.js?v=` dengan situs live untuk memastikan deploy.
+- Nama mobil selalu lewat `carName()`; bandingkan kata pertama merek supaya
+  "Audi Sport Audi R8" tidak muncul. Judul proyek diturunkan dari `carSlug`.
+
 ## Layout notes
 - `jobs/<id>/` (gitignored) holds `artifacts/`, `checkpoints/`, `assets/`, `video.mp4`.
 - `POST /api/jobs/:id/retry` accepts `{ from: '<stage name>' }` to rewind.

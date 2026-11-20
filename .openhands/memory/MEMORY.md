@@ -126,6 +126,19 @@ an mp4 using a team of AI agents with fixed job desks. Node + `--experimental-st
 - `GET /api/jobs/:id/artifact/:name` returns artifact JSON for the UI panel.
 - UI shows an Artefak panel + QA verdict; `AssetPanel` uploads own photos.
 
+## Static demo site (`studio/`, `netlify-site/`)
+- Live: `https://agent-studio-ai.netlify.app` (Netlify site `agent-studio-ai`,
+  Git-connected to `main`, auto-deploy on push). Build: `npm run build:studio`.
+- **Seed data is cached in localStorage per account** (`asa.projects.<email>`).
+  Bumping the seed requires raising `SEED_VERSION` in
+  `studio/src/services/api.ts`, or returning visitors keep the old data forever.
+  Deleted seed projects are tombstoned (`asa.deleted.<email>`) so they stay gone.
+- Netlify ignores `[[headers]]` Content-Type overrides, so the PWA manifest is
+  served as `manifest.json` (a `.webmanifest` file arrives as
+  `application/octet-stream` and breaks installability).
+- Deploy check: the `?v=<hash>` on `assets/studio.js` in the live HTML must match
+  `netlify-site/index.html` locally; a stale hash means the deploy hasn't landed.
+
 ## Fixed 2026-11-20 (commit af57591)
 - **Resolution gate was landscape-only.** `checkAssets` compared raw
   width/height against 1280x720, so every correct 1080x1920 reel failed QA with

@@ -177,16 +177,20 @@ asset md5 is byte-identical to its `assets/own/<slug>/foto-N.jpg` source.
 username. Then `POST /api/jobs` with `{brief:{model,tagline,durasi,rasio,keunggulan}}`.
 Video download is `GET /api/jobs/:id/file/video.mp4` (not `/video`).
 
-## Deploy Netlify bisa "di-skip" tanpa error kode
-Push ke `main` bisa menghasilkan deploy `state=error, skipped=true` dalam ~0,1
-detik (`build_time: null`) — build tidak pernah mulai, biasanya kuota build
-menit paket gratis. Cek `GET https://api.netlify.com/api/v1/sites/<site>/deploys`
-(publik, tanpa token) dan lihat `skipped` sebelum menyalahkan kode. Buktikan kode
-sehat dengan clone bersih: `npm install --include=dev && npm run build:studio`.
-`/deploys/<id>/log` 404 dan `/builds/<id>` 401 tanpa token. GitHub Pages diblokir
-(403 "Resource not accessible by integration"). Jalur publik tanpa password:
-`python3 -m http.server 12001` di `netlify-site/` -> port 12001 sandbox.
-
+## Netlify: kredit akun habis -> SEMUA deploy diblokir
+Gejala: push ke `main` menghasilkan deploy `state=error, skipped=true`,
+`build_time: null` dalam ~0,1 detik. Penyebab sebenarnya bukan "kuota build
+menit" dan bukan kode: kredit akun Free (300 kredit/siklus) habis.
+Bukti langsung dari CLI (butuh login):
+`netlify deploy --no-build --prod` -> 403
+`"Account credit usage exceeded - new deploys are blocked until credits are added"`.
+Jadi deploy manual pun ditolak; bukan jalan pintas. Siklus berjalan
+2026-11-10 -> 2026-12-10, setelah itu deploy jalan lagi sendiri.
+Endpoint `accounts/<slug>/{usage,billing,credits,credit-usage}` semuanya 404;
+angka pemakaian hanya terlihat di dashboard app.netlify.com.
+Login tanpa menyimpan token di repo: `netlify login --request` -> beri URL ke
+user -> `netlify login --check <ticket>`. Token tersimpan di
+`~/.config/netlify/config.json` (key `users.*.auth.token`).
 ## Deploy ulang tanpa build menit
 `./scripts/deploy-netlify.sh` mengunggah `netlify-site/` yang sudah dibangun
 (`netlify deploy --no-build --prod`) ke situs `agent-studio-ai`, jadi URL lama

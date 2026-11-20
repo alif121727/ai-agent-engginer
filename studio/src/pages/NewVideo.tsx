@@ -6,6 +6,7 @@ import { CATALOG, type Car } from '../data/catalog';
 import { MIN_DUR, MAX_DUR, VIDEO_MODELS } from '../data/models';
 import { buildBrief, buildShots, type Brief, type Shot } from '../services/api';
 import { ResearchPanel } from '../components/ResearchPanel';
+import { PromptPanel } from '../components/PromptPanel';
 import { listResearched } from '../data/researched';
 
 type Step = 0 | 1 | 2 | 3 | 4;
@@ -428,6 +429,8 @@ export function NewVideo({ go, preselect }: { go: (r: Route) => void; preselect?
               <Check label="Musik latar" hint="Bed musik instrumental" checked={music} onChange={setMusic} />
               <Check label="Voiceover" hint={`Bahasa ${settings.language === 'id' ? 'Indonesia' : 'Inggris'}`} checked={voice} onChange={setVoice} />
             </div>
+
+            {car && <PromptPanel car={car} />}
 
             <div className="row row--between">
               <button className="btn btn--ghost" onClick={() => setStep(2)}><Icon.ChevronL size={14} /> Kembali</button>

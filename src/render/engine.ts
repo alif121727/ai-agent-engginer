@@ -1,5 +1,6 @@
 import type { CatalogModel } from '../core/catalog.ts';
 import { findModel } from '../core/catalog.ts';
+import { parseEngine } from '../core/engine-spec.ts';
 
 /**
  * Engine sound is derived from the catalog, not from a sample library: the repo
@@ -80,83 +81,33 @@ const OVERRIDES: Record<string, Partial<EngineProfile>> = {
   'jaguar-e-type': { rasp: 0.3, brightness: 0.45, redline: 6000 },
 };
 
-const LAYOUT_FIRING: Record<string, number> = {
-  // A cross-plane V8 burbles at 4 pulses/rev; a flat-plane V8 screams at 8
-  // half-order impulses, which is why they sound so different.
-  V8: 4,
-  V10: 5,
-  V12: 6,
-  V6: 3,
-  I6: 3,
-  'flat-6': 3,
-  I4: 2,
-  'flat-4': 2,
-  rotary: 3,
-  electric: 0,
-};
-
-function detectLayout(engine: string): { layout: string; cylinders: number } {
-  const e = engine.toLowerCase();
-  // A hybrid lists its combustion engine first; only a pure EV has no V/I/flat.
-  const hasCombustion = /\bv\d|\bi\d\b|inline|flat-\d|rotary/.test(e);
-  if (!hasCombustion && /electric|motor listrik|listrik/.test(e)) return { layout: 'electric', cylinders: 0 };
-  const flat = e.match(/flat-(\d)/);
-  if (flat) return { layout: `flat-${flat[1]}`, cylinders: Number(flat[1]) };
-  const v = e.match(/^v(\d+)/) ?? e.match(/\bv(\d+)\b/);
-  if (v) return { layout: `V${v[1]}`, cylinders: Number(v[1]) };
-  const i = e.match(/\bi(\d)\b/) ?? e.match(/inline-?(six|four|\d)/);
-  if (i) {
-    const map: Record<string, string> = { six: '6', four: '4' };
-    const n = map[i[1]] ?? i[1];
-    return { layout: `I${n}`, cylinders: Number(n) };
-  }
-  if (/rotary|13b/.test(e)) return { layout: 'rotary', cylinders: 2 };
-  return { layout: 'I6', cylinders: 6 };
-}
-
-function detectRedline(model: CatalogModel, layout: string): number {
-  const text = `${model.mesin} ${model.tenaga}`.toLowerCase();
-  if (layout === 'electric') return 16000;
-  if (/rotary|13b/.test(text)) return 8000;
-  if (/gt3|gt4|balap/.test(text) && model.kategori === 'balap') return 8500;
-  if (layout === 'V12') return 8000;
-  if (layout === 'V10') return 8500;
-  if (layout === 'flat-6') return 8200;
-  if (layout === 'I4') return 7500;
-  if (model.kategori === 'klasik') return 6200;
-  if (model.kategori === 'balap') return 8000;
-  return 7000;
+/**
+ * Deteksi tata letak/aspirasi/redline ada di src/core/engine-spec.ts karena
+ * pembuat prompt SFX juga memakainya. Kalau keduanya menebak sendiri-sendiri,
+ * prompt bisa menyebut V6 untuk mobil yang suaranya disintesis sebagai V8.
+ */
+function profileFromSpec(model: CatalogModel): EngineProfile {
+  const spec = parseEngine({ mesin: model.mesin, tenaga: model.tenaga, kategori: model.kategori });
+  const base: EngineProfile = {
+    cylinders: spec.cylinders,
+    layout: spec.layout,
+    firingPerRev: spec.firingPerRev,
+    aspiration: spec.aspiration === 'twin-turbo' ? 'turbo' : spec.aspiration,
+    redline: spec.redline,
+    idle: spec.idle,
+    rasp: spec.aspiration === 'na' ? 0.5 : 0.35,
+    whine: spec.aspiration === 'turbo' || spec.aspiration === 'twin-turbo' ? 0.35 : spec.aspiration === 'supercharged' ? 0.45 : 0.08,
+    brightness: spec.layout === 'V12' || spec.layout === 'V10' ? 0.75 : spec.layout === 'V8' ? 0.55 : 0.5,
+    label: model.mesin,
+  };
+  return { ...base, ...(OVERRIDES[model.slug] ?? {}) };
 }
 
 /** Builds the sound profile for a model name, or a generic one if unknown. */
 export function engineProfileFor(modelName: string): EngineProfile {
   const model = findModel(modelName);
   if (!model) return { ...DEFAULT, label: modelName || 'mesin generik' };
-
-  const { layout, cylinders } = detectLayout(model.mesin);
-  const electric = layout === 'electric';
-  const aspiration: EngineProfile['aspiration'] = electric
-    ? 'electric'
-    : /supercharg/.test(model.mesin.toLowerCase())
-      ? 'supercharged'
-      : /turbo/.test(model.mesin.toLowerCase())
-        ? 'turbo'
-        : 'na';
-
-  const redline = detectRedline(model, layout);
-  const base: EngineProfile = {
-    cylinders,
-    layout,
-    firingPerRev: LAYOUT_FIRING[layout] ?? Math.max(2, Math.round(cylinders / 2)),
-    aspiration,
-    redline,
-    idle: electric ? 0 : model.kategori === 'balap' ? 1100 : 850,
-    rasp: aspiration === 'na' ? 0.5 : 0.35,
-    whine: aspiration === 'turbo' ? 0.35 : aspiration === 'supercharged' ? 0.45 : 0.08,
-    brightness: layout === 'V12' || layout === 'V10' ? 0.75 : layout === 'V8' ? 0.55 : 0.5,
-    label: model.mesin,
-  };
-  return { ...base, ...(OVERRIDES[model.slug] ?? {}) };
+  return profileFromSpec(model);
 }
 
 /** Human-readable one-liner used in job artifacts and the UI. */

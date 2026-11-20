@@ -1374,6 +1374,146 @@ await check('hasil riset tersimpan per akun, dan data versi lama dibuang', async
 
 await closeDb();
 fs.rmSync(tmpRoot, { recursive: true, force: true });
+
+/* ------------------------------------------------- prompt SFX & video AI */
+await check('prompt SFX menyebut mesin yang sebenarnya, bukan menebak', async () => {
+  const { engineSfxPrompts } = await import('../src/core/prompts.ts');
+  const supra = engineSfxPrompts({ merk: 'Toyota', model: 'GR Supra', mesin: 'I6 3.0L turbo (B58B30)', tenaga: '387 PS', kategori: 'sport' });
+  const mustang = engineSfxPrompts({ merk: 'Ford', model: 'Mustang Fastback', mesin: 'V8 289–390 cu in (4.7–6.4L)', kategori: 'klasik' });
+  const taycan = engineSfxPrompts({ merk: 'Porsche', model: 'Taycan Turbo S', mesin: 'dua motor listrik sinkron AC', kategori: 'sport' });
+
+  assert(supra.length === 5 && mustang.length === 5 && taycan.length === 5, 'tiap mobil butuh lima prompt SFX');
+  const supraText = supra.map((s) => s.prompt).join(' ').toLowerCase();
+  const mustangText = mustang.map((s) => s.prompt).join(' ').toLowerCase();
+  const evText = taycan.map((s) => s.prompt).join(' ').toLowerCase();
+
+  assert(supraText.includes('inline-six') && supraText.includes('turbo'), 'Supra harus inline-six turbo');
+  assert(!supraText.includes('v8'), 'Supra tidak boleh disebut V8');
+  assert(mustangText.includes('v8') && mustangText.includes('naturally aspirated'), 'Mustang harus V8 NA');
+  assert(evText.includes('electric') && !evText.includes('v8'), 'Taycan harus listrik, bukan V8');
+  assert(supraText.includes('b58b30'), 'kode mesin nyata harus ikut supaya generator tidak menebak');
+  assert(!mustangText.includes('4.7'), 'kubikasi dalam kurung bukan kode mesin, jangan dipakai sebagai kode');
+});
+
+await check('prompt SFX tidak membocorkan bahasa Indonesia atau placeholder', async () => {
+  const { engineSfxPrompts, videoScenePrompts } = await import('../src/core/prompts.ts');
+  const car = { merk: 'Toyota', model: 'GR Supra', mesin: 'I6 3.0L turbo (B58B30)', tenaga: '387 PS', nol100: '4,1 dtk', kategori: 'sport' };
+  const all = [...engineSfxPrompts(car).map((s) => s.prompt), ...videoScenePrompts(car).map((s) => s.prompt)];
+  for (const p of all) {
+    assert(!/dtk|\bundefined\b|\bnull\b|\$\{|\[mobil\]|TODO/i.test(p), `prompt masih kotor: ${p.slice(0, 90)}`);
+  }
+  const scene5 = videoScenePrompts(car).find((s) => s.n === 5)!;
+  assert(scene5.prompt.includes('4.1 s'), `angka akselerasi harus format Inggris: ${scene5.prompt.slice(0, 120)}`);
+});
+
+await check('prompt video punya 8 scene dengan gaya global dan durasi aman', async () => {
+  const { videoScenePrompts, VIDEO_STYLE_TAG, VIDEO_NEGATIVE } = await import('../src/core/prompts.ts');
+  const car = { merk: 'Porsche', model: '911 GT3 RS', mesin: 'flat-6 4.0L naturally aspirated (MA2.75)', kategori: 'sport' };
+  const scenes = videoScenePrompts(car);
+  assert(scenes.length === 8, `harus 8 scene, dapat ${scenes.length}`);
+  assert(scenes.every((s) => s.prompt.includes(VIDEO_STYLE_TAG)), 'setiap scene butuh global style tag');
+  assert(scenes.every((s) => s.dur >= 5 && s.dur <= 12), 'durasi klip harus 5–12 dtk agar aman untuk model video AI');
+  assert(scenes.every((s) => s.prompt.includes('911 GT3 RS')), 'nama mobil harus konsisten di semua scene');
+  assert(VIDEO_NEGATIVE.includes('duplicate wheels'), 'negative prompt harus ada');
+
+  const vertical = videoScenePrompts(car, { vertical: true });
+  assert(vertical.every((s) => s.prompt.startsWith('Vertical 9:16')), 'versi vertikal harus diawali prefix 9:16');
+});
+
+await check('prompt video tidak mengarang warna cat yang tidak ada di katalog', async () => {
+  const { videoScenePrompts } = await import('../src/core/prompts.ts');
+  const text = videoScenePrompts({ merk: 'Toyota', model: 'GR Supra', mesin: 'I6 3.0L turbo', kategori: 'sport' })
+    .map((s) => s.prompt)
+    .join(' ');
+  assert(!/Renaissance Red|Championship White|Matte White/i.test(text), 'warna cat tidak ada di katalog, jangan dikarang');
+});
+
+await check('prompt video mobil listrik tidak menyebut knalpot atau ruang mesin', async () => {
+  const { videoScenePrompts, videoQaPrompt } = await import('../src/core/prompts.ts');
+  const taycan = { merk: 'Porsche', model: 'Taycan Turbo S', mesin: 'dua motor listrik sinkron AC', tenaga: 'tidak disebut di sumber', nol100: '2,8 dtk', kategori: 'listrik' };
+  const scenes = videoScenePrompts(taycan);
+  const text = scenes.map((s) => s.prompt).join(' ').toLowerCase();
+  // "no exhaust"/"no engine sound" adalah negasi yang benar; yang dilarang adalah
+  // menyuruh model memfilmkan knalpot, ruang mesin, atau getaran mesin bensin.
+  assert(!/exhaust tips|engine bay|engine start|engine vibration/i.test(text), `prompt EV masih menyuruh adegan bensin: ${text.slice(0, 160)}`);
+  assert(text.includes('charge port'), 'detail makro EV harus menyebut port cas, bukan knalpot');
+  assert(text.includes('electric drivetrain'), 'scene motor EV harus menyebut drivetrain listrik');
+  assert(!/tidak disebut/i.test(text), 'placeholder Indonesia tidak boleh bocor ke prompt Inggris');
+
+  const qa = videoQaPrompt(taycan).toLowerCase();
+  assert(qa.includes('motor whine'), 'QA EV harus menilai whine motor');
+  assert(!/a electric/.test(qa), 'artikel "a electric" salah tata bahasa');
+});
+
+await check('prompt video mobil bensin tetap memakai adegan mesin', async () => {
+  const { videoScenePrompts } = await import('../src/core/prompts.ts');
+  const supra = { merk: 'Toyota', model: 'GR Supra', mesin: 'I6 3.0L turbo (B58B30)', tenaga: '387 PS', nol100: '4,1 dtk', kategori: 'sport' };
+  const text = videoScenePrompts(supra).map((s) => s.prompt).join(' ').toLowerCase();
+  assert(text.includes('engine bay'), 'mobil bensin tetap butuh scene ruang mesin');
+  assert(text.includes('exhaust tips'), 'mobil bensin tetap butuh detail knalpot');
+  assert(!/no exhaust|charge port/.test(text), 'adegan EV tidak boleh muncul di mobil bensin');
+});
+
+/* ------------------------------------------------- suara mesin: bukan drone */
+await check('audio mesin stereo 48 kHz, bukan drone mono', async () => {
+  const { buildEngineTrack } = await import('../src/render/audio.ts');
+  const { ffprobe } = await import('../src/render/ffmpeg.ts');
+  const scenes = [{ index: 0, key: 'action', start: 0, duration: 3 }] as unknown as Parameters<typeof buildEngineTrack>[0]['scenes'];
+  const r = buildEngineTrack({ jobId: 'uji-stereo', durationSec: 3, model: 'Toyota GR Supra', scenes });
+  assert(r !== null, 'gagal membuat trek mesin');
+  // ffprobe() menandai `ok` hanya kalau ada stream video; berkas ini audio murni.
+  const probe = ffprobe(r!.file);
+  assert(probe.hasAudio, 'berkas mesin tidak terbaca sebagai audio');
+  const raw = spawnSync('ffprobe', ['-v', 'error', '-select_streams', 'a:0', '-show_entries', 'stream=channels,sample_rate', '-of', 'csv=p=0', r!.file], { encoding: 'utf8' });
+  const [rate, channels] = raw.stdout.trim().split(',').map(Number);
+  assert(rate === 48000, `sample rate harus 48000, dapat ${rate}`);
+  assert(channels === 2, `harus stereo, dapat ${channels} kanal`);
+});
+
+await check('pitch mesin mengikuti rpm, bukan naik dua kali lipat', async () => {
+  const { buildEngineTrack } = await import('../src/render/audio.ts');
+  // Satu scene dengan beban tetap: rpm harus datar, jadi pitch juga datar.
+  const scenes = [{ index: 0, key: 'action', start: 0, duration: 3 }] as unknown as Parameters<typeof buildEngineTrack>[0]['scenes'];
+  const r = buildEngineTrack({ jobId: 'uji-pitch', durationSec: 3, model: 'Toyota GR Supra', scenes });
+  assert(r !== null, 'gagal membuat trek mesin');
+
+  const pcm = spawnSync('ffmpeg', ['-v', 'error', '-i', r!.file, '-ac', '1', '-ar', '48000', '-f', 's16le', '-'], { encoding: 'buffer', maxBuffer: 64 * 1024 * 1024 });
+  const buf = pcm.stdout;
+  const n = Math.floor(buf.length / 2);
+  const samples = new Float32Array(n);
+  for (let i = 0; i < n; i++) samples[i] = buf.readInt16LE(i * 2) / 32768;
+
+  // Autokorelasi pada dua jendela: pitch harus sama saat rpm konstan.
+  const pitchAt = (start: number) => {
+    const win = 8192;
+    const seg = samples.subarray(start, start + win);
+    let best = 0;
+    let bestLag = 0;
+    for (let lag = 30; lag < 900; lag++) {
+      let sum = 0;
+      for (let i = 0; i < win - lag; i++) sum += seg[i] * seg[i + lag];
+      if (sum > best) { best = sum; bestLag = lag; }
+    }
+    return 48000 / bestLag;
+  };
+  const early = pitchAt(Math.floor(0.4 * 48000));
+  const late = pitchAt(Math.floor(2.2 * 48000));
+  const ratio = Math.max(early, late) / Math.min(early, late);
+  assert(ratio < 1.35, `pitch tidak stabil saat rpm tetap (${early.toFixed(0)} vs ${late.toFixed(0)} Hz) — fase salah`);
+});
+
+await check('mobil berbeda menghasilkan suara mesin berbeda', async () => {
+  const { buildEngineTrack } = await import('../src/render/audio.ts');
+  const scenes = [{ index: 0, key: 'action', start: 0, duration: 2 }] as unknown as Parameters<typeof buildEngineTrack>[0]['scenes'];
+  const out: string[] = [];
+  for (const model of ['Ford Mustang Fastback', 'Toyota AE86', 'Porsche Taycan Turbo S']) {
+    const r = buildEngineTrack({ jobId: `uji-beda-${model.split(' ').pop()!.toLowerCase()}`, durationSec: 2, model, scenes });
+    assert(r !== null, `gagal membuat suara ${model}`);
+    out.push(fs.readFileSync(r!.file).subarray(0, 3000).toString('base64'));
+  }
+  assert(new Set(out).size === 3, 'suara tiga mobil berbeda harus unik');
+});
+
 console.log(`\n${passed} pemeriksaan lulus, ${failures.length} gagal`);
 if (failures.length) {
   for (const f of failures) console.log(`  - ${f}`);

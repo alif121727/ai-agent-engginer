@@ -7,7 +7,7 @@ import { loadDefaults, loadThemes } from '../core/config.ts';
 import { pickTheme } from '../core/theme.ts';
 import type { AgentContext } from '../agents/guard.ts';
 import type { AssetRecord, ScenePlan, Theme } from '../core/types.ts';
-import { ffprobe, contactSheet } from './ffmpeg.ts';
+import { ffprobe, contactSheet, ffmpegHasFilter } from './ffmpeg.ts';
 import { buildMusicBed, buildEngineTrack, muxAudio } from './audio.ts';
 import { describeProfile } from './engine.ts';
 
@@ -51,6 +51,40 @@ function fontFile(): string | null {
 
 function escapeDrawText(text: string): string {
   return text.replace(/\\/g, '\\\\').replace(/:/g, '\\:').replace(/'/g, "\\'").replace(/%/g, '\\%');
+}
+
+/**
+ * Fallback caption saat build ffmpeg tanpa libfreetype (tidak ada `drawtext`).
+ * libass hampir selalu ikut dikompilasi, jadi caption tetap tampil sebagai
+ * berkas .ass alih-alih menggagalkan seluruh render.
+ */
+function writeAssFile(dir: string, scene: ScenePlan, width: number, height: number): string {
+  const fontSize = Math.round(width / 22);
+  const marginV = Math.round(height * 0.06);
+  const text = (scene.onScreenText ?? '')
+    .replace(/\\/g, '\\\\')
+    .replace(/\{/g, '(')
+    .replace(/\}/g, ')')
+    .replace(/\n/g, '\\N');
+  const ass = [
+    '[Script Info]',
+    'ScriptType: v4.00+',
+    `PlayResX: ${width}`,
+    `PlayResY: ${height}`,
+    'WrapStyle: 2',
+    'ScaledBorderAndShadow: yes',
+    '',
+    '[V4+ Styles]',
+    'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding',
+    `Style: Caption,DejaVu Sans,${fontSize},&H00FFFFFF,&H00FFFFFF,&H8C000000,&H8C0A0A0A,-1,0,0,0,100,100,0,0,3,${Math.round(fontSize / 3)},0,2,40,40,${marginV},1`,
+    '',
+    '[Events]',
+    'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text',
+    `Dialogue: 0,0:00:00.00,9:59:59.00,Caption,,0,0,0,,${text}`,
+  ].join('\n');
+  const file = path.join(dir, `caption-${String(scene.index + 1).padStart(2, '0')}.ass`);
+  fs.writeFileSync(file, ass, 'utf8');
+  return file;
 }
 
 /**
@@ -216,12 +250,18 @@ export async function assembleVideo(ctx: AgentContext): Promise<RenderResult> {
       cameraFilter(move, frames, width, height, fps),
       ...gradeFilters(theme),
     ];
-    if (text && font) {
-      const fontSize = Math.round(width / 22);
-      filters.push(
-        `drawtext=fontfile=${font}:text='${text}':fontcolor=white:fontsize=${fontSize}:` +
-          `x=(w-text_w)/2:y=h-(text_h*2.4):box=1:boxcolor=0x0A0A0A@0.55:boxborderw=${Math.round(fontSize / 2)}`,
-      );
+    if (scene.onScreenText) {
+      if (font && ffmpegHasFilter('drawtext')) {
+        const fontSize = Math.round(width / 22);
+        filters.push(
+          `drawtext=fontfile=${font}:text='${text}':fontcolor=white:fontsize=${fontSize}:` +
+            `x=(w-text_w)/2:y=h-(text_h*2.4):box=1:boxcolor=0x0A0A0A@0.55:boxborderw=${Math.round(fontSize / 2)}`,
+        );
+      } else if (ffmpegHasFilter('ass')) {
+        // drawtext butuh libfreetype; libass tersedia di hampir semua build.
+        const ass = writeAssFile(clipsDir, scene, width, height);
+        filters.push(`ass=${ass.replace(/([:\\'])/g, '\\$1')}`);
+      }
     }
     filters.push('format=yuv420p');
 

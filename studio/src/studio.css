@@ -727,3 +727,51 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
 @media (prefers-reduced-motion: reduce) {
   .btn--primary:hover:not(:disabled), .stat:hover { transform: none; }
 }
+
+/* ------------------------------------------------------------ panel prompt */
+.promptbox {
+  position: relative;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 9px 40px 9px 11px;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  line-height: 1.65;
+  color: var(--text-2);
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+}
+.promptbox__copy {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 3px 6px;
+  border-radius: 6px;
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+  color: var(--text-3);
+  font-size: 0.66rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+.promptbox:hover .promptbox__copy,
+.promptbox__copy:focus-visible { opacity: 1; }
+.promptbox__copy:hover { color: var(--accent); border-color: var(--accent); }
+.promptbox__copy[data-done='true'] { opacity: 1; color: var(--ok); border-color: #1b5745; }
+
+.promptrow { padding: 9px 0; border-top: 1px solid var(--line); }
+.promptrow:first-of-type { border-top: 0; padding-top: 0; }
+.promptrow__head { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+
+.scenetag {
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  color: var(--text-3);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 1px 5px;
+  flex: 0 0 auto;
+}

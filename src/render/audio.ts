@@ -104,11 +104,39 @@ function loadFor(scene: ScenePlan): number {
 }
 
 /**
- * Piecewise rpm curve: each scene gets a target, reached over the first 45% of
- * the scene so the rev lands with the cut instead of drifting through it.
+ * Fase kumulatif (radian) dari kurva rpm, dihitung analitis per segmen linear.
+ *
+ * Ini perbaikan inti: versi lama menulis sin(2*PI*f(t)*t) dengan f yang ikut
+ * berubah terhadap t. Perkalian f(t)*t bukan integral frekuensi, jadi pitch
+ * naik dua kali lebih cepat dari rpm dan hasilnya terdengar seperti siren,
+ * bukan mesin yang merev. Di sini fase = 2*PI*firing/60 * integral(rpm dt).
  */
-function rpmExpression(scenes: ScenePlan[], p: EngineProfile): string {
-  if (!scenes.length) return String(p.idle);
+function phaseExpression(points: { t: number; rpm: number }[], firingPerRev: number): string {
+  const w = (2 * Math.PI * Math.max(1, firingPerRev)) / 60;
+  // Fase di awal tiap segmen, dari integral trapezoid segmen sebelumnya.
+  const starts: number[] = [0];
+  for (let i = 1; i < points.length; i++) {
+    const a = points[i - 1];
+    const b = points[i];
+    starts.push(starts[i - 1] + w * ((a.rpm + b.rpm) / 2) * (b.t - a.t));
+  }
+
+  // Bangun dari segmen terakhir ke belakang supaya tiap if() menangkap satu segmen.
+  let expr = `${starts[starts.length - 1]}`;
+  for (let i = points.length - 1; i > 0; i--) {
+    const a = points[i - 1];
+    const b = points[i];
+    const dt = Math.max(0.05, b.t - a.t);
+    const slope = (b.rpm - a.rpm) / dt;
+    const local = `${a.rpm.toFixed(2)}*(t-${a.t.toFixed(3)})+${(slope / 2).toFixed(3)}*(t-${a.t.toFixed(3)})*(t-${a.t.toFixed(3)})`;
+    expr = `if(lt(t,${b.t.toFixed(3)}),${starts[i - 1].toFixed(4)}+${w.toFixed(6)}*(${local}),${expr})`;
+  }
+  return expr;
+}
+
+/** Kurva rpm: tiap scene punya target, dicapai pada 45% durasi scene. */
+function rpmPoints(scenes: ScenePlan[], p: EngineProfile): { t: number; rpm: number }[] {
+  if (!scenes.length) return [{ t: 0, rpm: p.idle }, { t: 1, rpm: p.idle }];
   const span = Math.max(1, p.redline - p.idle);
   const points: { t: number; rpm: number }[] = [{ t: 0, rpm: p.idle }];
   for (const scene of scenes) {
@@ -117,27 +145,18 @@ function rpmExpression(scenes: ScenePlan[], p: EngineProfile): string {
     points.push({ t: scene.start + rise, rpm: target });
     points.push({ t: scene.start + scene.duration, rpm: target });
   }
-
-  let expr = String(Math.round(points[points.length - 1].rpm));
-  for (let i = points.length - 1; i > 0; i--) {
-    const a = points[i - 1];
-    const b = points[i];
-    const dt = Math.max(0.05, b.t - a.t);
-    const ramp = `${a.rpm.toFixed(0)}+(${(b.rpm - a.rpm).toFixed(0)})*((t-${a.t.toFixed(2)})/${dt.toFixed(2)})`;
-    expr = `if(lt(t\\,${b.t.toFixed(2)})\\,${ramp}\\,${expr})`;
-  }
-  return expr;
-}
-
-/** Fundamental exhaust pulse frequency in Hz for a given rpm. */
-function pulseHz(rpmExpr: string, firingPerRev: number): string {
-  return `((${rpmExpr})/60)*${Math.max(1, firingPerRev)}`;
+  return points;
 }
 
 /**
- * Synthesises the engine note for one model. ffmpeg is used instead of a sample
- * library because the repo ships no audio, and a synthesised note can follow
- * the rev curve scene by scene — something a fixed sample cannot do.
+ * Menyintesis satu nada mesin dari profil katalog. Tidak ada sampel audio di
+ * repo, dan nada sintetis bisa mengikuti kurva rev per scene — sesuatu yang
+ * tidak bisa dilakukan satu berkas sampel tetap.
+ *
+ * Bentuk gelombangnya meniru mesin, bukan sinyal uji: pulsa knalpot yang tajam
+ * lalu meluruh (itu yang memberi "letupan" per silinder), tumpukan harmonisa di
+ * atasnya, noise rasp yang digerbangi pulsa, ditambah turbo/kompresor yang
+ * mengikuti rpm. Output stereo 48 kHz agar tidak lagi berupa drone mono.
  */
 export function buildEngineTrack(input: {
   jobId: string;
@@ -150,58 +169,80 @@ export function buildEngineTrack(input: {
   const out = path.join(dir, 'engine.m4a');
   const profile = engineProfileFor(input.model);
   const dur = Math.max(1, input.durationSec);
-  const rpm = rpmExpression(input.scenes, profile);
+  const redline = Math.max(1, profile.redline);
+  const points = rpmPoints(input.scenes, profile);
+  const theta = phaseExpression(points, profile.firingPerRev);
+  // Fraksi siklus 0..1: dasar untuk pulsa per silinder.
+  const cycle = `mod((${theta})/6.283185,1)`;
+  const rpmExpr = `(${theta})`;
 
   const sources: string[] = [];
   const parts: string[] = [];
-  // ffmpeg expressions have no Math.max; bake the constant in once.
-  const redline = Math.max(1, profile.redline);
 
   if (profile.aspiration === 'electric') {
-    // An EV has no exhaust: a rising inverter whine plus tyre/air noise.
-    const sweep = `300+(${redline}/60*18)*(${rpm}/${redline})`;
-    sources.push(`aevalsrc='0.22*sin(2*PI*(${sweep})*t)+0.10*sin(4*PI*(${sweep})*t)':d=${dur}:s=48000`);
-    parts.push(`[0:a]volume=0.55,lowpass=f=9000,highpass=f=120[a0]`);
+    // EV tidak punya knalpot: desis inverter yang naik + noise ban.
+    const sweep = `260+2400*(${rpmExpr})/(6.283185*${(profile.redline / 60) * 1})`;
+    const tone =
+      `0.20*sin(2*PI*(${sweep})*t)+0.09*sin(4*PI*(${sweep})*t)+0.05*sin(6*PI*(${sweep})*t)`;
+    sources.push(`aevalsrc='${tone}|${tone}':d=${dur}:s=48000:c=stereo`);
+    parts.push(`[0:a]highpass=f=180,lowpass=f=11000,volume=0.7[a0]`);
     sources.push(`anoisesrc=color=pink:duration=${dur}:sample_rate=48000:amplitude=0.05`);
-    parts.push(`[1:a]lowpass=f=1400,volume=0.35[a1]`);
+    parts.push(`[1:a]lowpass=f=1600,volume=0.4,aformat=channel_layouts=stereo[a1]`);
     parts.push(`[a0][a1]amix=inputs=2:duration=longest:normalize=0[eng]`);
   } else {
-    const f = pulseHz(rpm, profile.firingPerRev);
-    // Uneven harmonic weights are what separate a V8 burble from an I4 drone.
-    const h2 = (0.42 * (1 - profile.brightness * 0.3)).toFixed(3);
-    const h3 = (0.26 * profile.brightness + 0.08).toFixed(3);
-    const h4 = (0.14 * profile.brightness).toFixed(3);
-    sources.push(
-      `aevalsrc='0.30*sin(2*PI*(${f})*t)+${h2}*sin(4*PI*(${f})*t)+` +
-        `${h3}*sin(6*PI*(${f})*t)+${h4}*sin(8*PI*(${f})*t)':d=${dur}:s=48000`,
-    );
-    // Exhaust rasp: band-limited noise gated by the pulse, not a steady hiss.
-    const raspAmp = (0.16 * profile.rasp).toFixed(3);
-    sources.push(
-      `aevalsrc='${raspAmp}*(random(0)-0.5)*(0.6+0.4*sin(2*PI*(${f})*t))':d=${dur}:s=48000`,
-    );
-    parts.push(`[0:a]volume=0.62,lowpass=f=${Math.round(700 + 2600 * profile.brightness)},highpass=f=55[a0]`);
-    parts.push(`[1:a]bandpass=f=1800:w=2200,volume=0.5[a1]`);
+    // Peluruhan pulsa: makin tinggi rpm makin rapat letupan, jadi konstanta
+    // peluruhan diikat ke laju nyala supaya timbre tidak berubah saat merev.
+    const decay = (12 + profile.brightness * 6).toFixed(1);
+    const pulseL = `0.62*exp(-${decay}*${cycle})`;
+    // Kanal kanan bergeser sedikit: memberi lebar stereo tanpa phasing aneh.
+    const pulseR = `0.56*exp(-${decay}*mod((${theta})+0.35,6.283185)/6.283185)`;
 
-    // Turbo whistle and supercharger whine sit above the exhaust note.
+    const h2 = (0.20 * (1 - profile.brightness * 0.35)).toFixed(3);
+    const h3 = (0.13 * profile.brightness + 0.05).toFixed(3);
+    const h4 = (0.08 * profile.brightness + 0.02).toFixed(3);
+    const h5 = (0.05 * profile.brightness).toFixed(3);
+    // Nada setengah orde: sumber "lope" khas V8 cross-plane dan V-twin.
+    const halfOrder = profile.layout === 'V8' ? 0.16 : profile.layout === 'V10' || profile.layout === 'V12' ? 0.08 : 0.05;
+    const sub = `${halfOrder.toFixed(3)}*sin(0.5*(${theta}))`;
+    const harmonics =
+      `${h2}*sin(2*(${theta}))+${h3}*sin(3*(${theta}))+${h4}*sin(4*(${theta}))+${h5}*sin(5*(${theta}))`;
+
+    // Rasp: noise yang hanya terbuka saat katup buang membuka.
+    const rasp = (0.16 * profile.rasp).toFixed(3);
+    const raspSig = `${rasp}*(random(0)-0.5)*(0.25+0.75*exp(-6*${cycle}))`;
+    // Intake honk: harmonisa ke-2 yang digeser sedikit -> terdengar "berongga".
+    const intake = `0.06*sin(2.02*(${theta}))*(0.25+0.75*(${rpmExpr})/${(2 * Math.PI * profile.firingPerRev * redline) / 60})`;
+
+    sources.push(`aevalsrc='${pulseL}+${sub}+${harmonics}+${raspSig}+${intake}|${pulseR}+${sub}+${harmonics}+${raspSig}+${intake}':d=${dur}:s=48000:c=stereo`);
+    parts.push(`[0:a]highpass=f=45,lowpass=f=${Math.round(3200 + 5200 * profile.brightness)},volume=0.8[a0]`);
+
+    // Turbo whistle / supercharger whine: frekuensi hampir tetap, level ikut rpm.
     if (profile.whine > 0.12) {
-      const whistle = profile.aspiration === 'supercharged' ? 2400 : 5200;
-      const mod = `(0.35+0.65*(${rpm})/${redline})`;
-      sources.push(
-        `aevalsrc='${(0.10 * profile.whine).toFixed(3)}*sin(2*PI*(${whistle}+${(profile.redline * 0.28).toFixed(0)}*(${rpm})/${redline})*t)*(${mod})':d=${dur}:s=48000`,
-      );
-      parts.push(`[2:a]highpass=f=1800,volume=0.5[a2]`);
-      parts.push(`[a0][a1][a2]amix=inputs=3:duration=longest:normalize=0[eng]`);
-    } else {
+      const base = profile.aspiration === 'supercharged' ? 2400 : 4200;
+      const span = profile.aspiration === 'supercharged' ? 2200 : 3600;
+      const mod = `(0.15+0.85*(${rpmExpr})/${(2 * Math.PI * profile.firingPerRev * redline) / 60})`;
+      const whistle = `${(0.07 * profile.whine).toFixed(3)}*sin(2*PI*(${base}+${span}*${mod})*t)*${mod}`;
+      sources.push(`aevalsrc='${whistle}|${whistle}':d=${dur}:s=48000:c=stereo`);
+      parts.push(`[1:a]highpass=f=2000,volume=0.55[a1]`);
       parts.push(`[a0][a1]amix=inputs=2:duration=longest:normalize=0[eng]`);
+    } else {
+      parts.push(`[a0]anull[eng]`);
+    }
+
+    // Overrun: letupan knalpot sporadis, hanya untuk mesin yang memang berisik.
+    if (profile.rasp > 0.3) {
+      const pops = `${(0.5 * profile.rasp).toFixed(2)}*(random(1)-0.5)*gt(random(2),0.9975)*gt(${rpmExpr},${(2 * Math.PI * profile.firingPerRev * redline * 0.45) / 60})`;
+      sources.push(`aevalsrc='${pops}|${pops}':d=${dur}:s=48000:c=stereo`);
+      parts.push(`[${sources.length - 1}:a]bandpass=f=1400:w=2400,volume=0.5,aformat=channel_layouts=stereo[pop]`);
+      parts.push(`[eng][pop]amix=inputs=2:duration=first:normalize=0[eng3]`);
     }
   }
 
-  // Loudness is normalised per track so a V12 and an I4 differ in character,
-  // not in volume; otherwise one model's video is inaudible next to another's.
+  const finalLabel = profile.aspiration === 'electric' ? 'eng' : profile.rasp > 0.3 ? 'eng3' : 'eng';
   parts.push(
-    `[eng]afade=t=in:st=0:d=0.6,afade=t=out:st=${Math.max(0, dur - 1.2).toFixed(2)}:d=1.2,` +
-      `loudnorm=I=-16:TP=-1.5:LRA=7[engout]`,
+    `[${finalLabel}]acompressor=threshold=0.12:ratio=3:attack=5:release=140,` +
+      `afade=t=in:st=0:d=0.5,afade=t=out:st=${Math.max(0, dur - 1.2).toFixed(2)}:d=1.2,` +
+      `loudnorm=I=-16:TP=-1.5:LRA=8[engout]`,
   );
 
   const args = ['-v', 'error', '-y'];

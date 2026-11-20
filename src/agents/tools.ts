@@ -17,6 +17,8 @@ import { checkAssets, isBelowMinimum } from '../pipeline/quality.ts';
 import { ffprobe, contactSheet, frameSharpness, extractFrame, perceptualHash } from '../render/ffmpeg.ts';
 import type { RenderResult } from '../render/assemble.ts';
 import { markSceneDone, readSceneCheckpoint, markStageComplete } from '../pipeline/checkpoint.ts';
+import { engineSfxPrompts, AUDIO_NEGATIVE } from '../core/prompts.ts';
+import { engineProfileFor, describeProfile } from '../render/engine.ts';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -390,16 +392,32 @@ tool('synthesize_speech', 'Siapkan rencana TTS', async (args, ctx) => {
 });
 
 tool('write_audio_plan', 'Tulis rencana audio dan subtitle', async (_args, ctx) => {
+  const brief = ctx.brief as unknown as Brief;
   const script = ctx.readArtifact<{ lines: { sceneIndex: number; voiceover: string; onScreenText: string }[] }>(
     'script.json',
   );
   const scenes = scenesFrom(ctx);
+  // Suara yang disintesis pipeline ini berasal dari profil mesin di katalog,
+  // dan prompt SFX eksternal (Suno/ElevenLabs) dibangun dari sumber yang sama
+  // supaya keduanya tidak menyebut mesin yang berbeda.
+  const model = findModel(brief.model ?? '');
+  const sfxPrompts = model ? engineSfxPrompts(model) : [];
+  const profile = engineProfileFor(brief.model ?? '');
   const plan = {
     loudnessLufs: -14,
     music: { ducking: true, gain: -18 },
+    engine: {
+      profile: describeProfile(profile),
+      synthesizedLocally: true,
+      /** Prompt untuk generator SFX eksternal; pipeline lokal tidak memakainya. */
+      externalPrompts: sfxPrompts,
+      negativePrompt: AUDIO_NEGATIVE,
+    },
     sfx: scenes.map((scene) => ({
       sceneIndex: scene.index,
       bed: scene.key === 'action' ? 'engine-rev' : scene.key === 'interior' ? 'cabin-ambience' : 'studio-room',
+      /** Prompt yang cocok untuk scene ini, bila ada. */
+      promptId: scene.key === 'action' ? 'passby' : scene.key === 'interior' ? 'idle' : scene.key === 'detail_engine' ? 'start' : 'rev',
     })),
     subtitles: (script?.lines ?? []).map((line) => ({
       sceneIndex: line.sceneIndex,

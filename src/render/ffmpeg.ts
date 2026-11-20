@@ -57,6 +57,22 @@ export function ffmpegAvailable(): boolean {
   return res.status === 0;
 }
 
+const filterCache = new Map<string, boolean>();
+
+/**
+ * Build ffmpeg tidak selalu lengkap: sebagian build statis tidak menyertakan
+ * libfreetype, sehingga `drawtext` hilang dan render caption gagal total
+ * ("No such filter: drawtext"). Fitur ini dicek sekali per proses.
+ */
+export function ffmpegHasFilter(name: string): boolean {
+  const cached = filterCache.get(name);
+  if (cached !== undefined) return cached;
+  const res = spawnSync('ffmpeg', ['-hide_banner', '-filters'], { encoding: 'utf8' });
+  const has = res.status === 0 && new RegExp(`^\\s*[TSC.\\/|]+\\s+${name}\\s`, 'm').test(res.stdout ?? '');
+  filterCache.set(name, has);
+  return has;
+}
+
 // Downscaling to 160x90 erases the detail this metric measures, so sample at
 // 480x270: real photos score ~18-26, a sigma-6 blur scores ~2, flat art scores 0.
 const SHARP_W = 480;

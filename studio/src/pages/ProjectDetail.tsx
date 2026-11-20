@@ -8,6 +8,7 @@ import { CATALOG, findCar } from '../data/catalog';
 import { findResearched } from '../data/researched';
 import type { Project, StageRun, PublishOutcome } from '../services/api';
 import { StatusChip } from './Dashboard';
+import { PromptPanel } from '../components/PromptPanel';
 
 export function ProjectDetail({ id, go }: { id: string; go: (r: Route) => void }) {
   const { projects, loadingProjects, api, upsert, toast } = useStudio();
@@ -222,6 +223,8 @@ export function ProjectDetail({ id, go }: { id: string; go: (r: Route) => void }
             );
           })}
         </div>
+
+        {car && <PromptPanel car={car} />}
 
         <div className="rail stack workbench__right" style={{ gap: 12 }}>
           <div className="card card--tight">

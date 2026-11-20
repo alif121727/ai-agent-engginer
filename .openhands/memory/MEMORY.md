@@ -186,3 +186,12 @@ sehat dengan clone bersih: `npm install --include=dev && npm run build:studio`.
 `/deploys/<id>/log` 404 dan `/builds/<id>` 401 tanpa token. GitHub Pages diblokir
 (403 "Resource not accessible by integration"). Jalur publik tanpa password:
 `python3 -m http.server 12001` di `netlify-site/` -> port 12001 sandbox.
+
+## Deploy ulang tanpa build menit
+`./scripts/deploy-netlify.sh` mengunggah `netlify-site/` yang sudah dibangun
+(`netlify deploy --no-build --prod`) ke situs `agent-studio-ai`, jadi URL lama
+tetap dipakai dan kuota build menit tidak terpakai. Butuh `netlify login`;
+tanpa kredensial pakai `netlify login --request` (tiket, user klik URL) lalu
+`--check <ticket>`. `netlify deploy` default MENJALANKAN build — selalu
+`--no-build` kalau bundel sudah jadi. CLI tinggal di `/workspace/tools`
+(bertahan lintas reset, tidak seperti `/tmp`).

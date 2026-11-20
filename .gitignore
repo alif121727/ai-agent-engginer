@@ -16,9 +16,9 @@ public/index.html
 docs/ui/*.png
 *.log
 
-# Galeri statis: biner besar, jangan masuk git
-netlify-site/video/
-netlify-site/thumb/
+# Galeri statis: video & thumb WAJIB ikut git. Situs Netlify terhubung ke
+# GitHub dan build-nya jalan dari checkout bersih; kalau file ini diabaikan,
+# build menghasilkan galeri tanpa video (dan dulu bahkan 404).
 netlify-site.zip
 # State deploy lokal (site id sementara dari deploy anonymous)
 netlify-site/.netlify/

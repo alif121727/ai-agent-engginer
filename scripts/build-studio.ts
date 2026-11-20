@@ -1,5 +1,6 @@
 // Build studio -> netlify-site/ (index.html + assets/*).
-// Video & thumb tidak disentuh: sudah ada di netlify-site dan di-gitignore.
+// Video & thumb tidak disentuh di sini; keduanya ikut git karena Netlify
+// membangun dari checkout bersih.
 import { build } from 'esbuild';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -10,6 +11,18 @@ const out = path.join(root, 'netlify-site');
 const assets = path.join(out, 'assets');
 
 fs.mkdirSync(assets, { recursive: true });
+
+// Gagal keras kalau media tidak ada: Netlify mempertahankan deploy sukses
+// terakhir, jadi build gagal jauh lebih baik daripada menerbitkan galeri kosong.
+const required = ['video', 'thumb'];
+const missing = required.filter((d) => {
+  const p = path.join(out, d);
+  return !fs.existsSync(p) || fs.readdirSync(p).length === 0;
+});
+if (missing.length > 0) {
+  console.error(`Media hilang dari checkout: ${missing.join(', ')} di netlify-site/`);
+  process.exit(1);
+}
 
 const res = await build({
   entryPoints: [path.join(src, 'src/main.tsx')],

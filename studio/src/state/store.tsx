@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { pickApi, type Project, type StudioApi } from '../services/api';
+import { pickApi, demoProjectsKey, type Project, type StudioApi } from '../services/api';
 
 /* ------------------------------------------------------------------ types */
 export type User = { name: string; email: string };
@@ -134,16 +134,21 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
 
   const remove = useCallback(
     async (id: string) => {
-      const key = `asa.projects.${user?.email || 'anon'}`;
-      try {
-        const all = JSON.parse(localStorage.getItem(key) || '[]') as Project[];
-        localStorage.setItem(key, JSON.stringify(all.filter((p) => p.id !== id)));
-      } catch {
-        /* abaikan */
+      if (!api) return;
+      // Mode demo: hapus dari kunci yang sama dengan yang dibaca DemoStudioApi.
+      // Backend repo tidak punya rute hapus job, jadi proyek server tetap utuh.
+      if (api.kind === 'demo') {
+        try {
+          const key = demoProjectsKey();
+          const all = JSON.parse(localStorage.getItem(key) || '[]') as Project[];
+          localStorage.setItem(key, JSON.stringify(all.filter((p) => p.id !== id)));
+        } catch {
+          /* localStorage rusak -> refresh di bawah menampilkan keadaan nyata */
+        }
       }
       await refresh();
     },
-    [user, refresh],
+    [api, refresh],
   );
 
   const saveSettings = useCallback((s: Partial<Settings>) => {

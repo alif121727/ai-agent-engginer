@@ -1041,6 +1041,76 @@ await check('project dari server memakai durasi dan tanggal asli', async () => {
   assert(p.stages.every((s) => typeof s.label === 'string' && s.label.length > 0), 'tahap wajib punya label');
 });
 
+await check('setiap video di Perpustakaan benar-benar ada berkasnya', async () => {
+  const { RENDERED } = await import('../studio/src/data/rendered.ts');
+  assert(RENDERED.length > 0, 'perpustakaan tidak boleh kosong');
+  for (const v of RENDERED) {
+    const mp4 = path.join(process.cwd(), 'netlify-site', 'video', `${v.slug}.mp4`);
+    const jpg = path.join(process.cwd(), 'netlify-site', 'thumb', `${v.slug}.jpg`);
+    assert(fs.existsSync(mp4), `video hilang: ${v.slug}.mp4`);
+    assert(fs.existsSync(jpg), `thumb hilang: ${v.slug}.jpg`);
+    assert(fs.statSync(mp4).size > 100_000, `video terlalu kecil, mungkin rusak: ${v.slug}`);
+    assert(v.dur >= 30, `durasi ${v.slug} melanggar batas keras 30s`);
+  }
+  const slugs = RENDERED.map((v) => v.slug);
+  assert(new Set(slugs).size === slugs.length, 'slug video harus unik');
+});
+
+await check('benih proyek demo memakai data nyata, bukan karangan', async () => {
+  const { seedProjects } = await import('../studio/src/services/api.ts');
+  const { RENDERED } = await import('../studio/src/data/rendered.ts');
+  const { CATALOG } = await import('../studio/src/data/catalog.ts');
+  const seeds = seedProjects();
+
+  assert(seeds.length > 0, 'benih tidak boleh kosong, kalau kosong situs statis terbuka kosong');
+  // Model tanpa entri katalog tidak boleh dibuatkan proyek: spesifikasinya
+  // tidak bersumber. Videonya tetap ada di Perpustakaan.
+  const withCatalog = RENDERED.filter((v) => v.catalogSlug);
+  assert(seeds.length === withCatalog.length, 'jumlah benih harus sama dengan video yang punya entri katalog');
+
+  for (const p of seeds) {
+    assert(p.stages.length === 9, `${p.title} harus punya 9 tahap`);
+    assert(p.stages.every((s) => s.state === 'selesai'), `${p.title} dari job nyata berarti semua tahap selesai`);
+    assert(p.status === 'done', `${p.title} harus berstatus selesai`);
+    assert(p.durationSec >= 30, `${p.title} melanggar batas keras 30s`);
+    assert(Number.isFinite(p.createdAt) && p.createdAt > 0, `${p.title} tanggal harus valid`);
+    assert(Boolean(p.videoUrl && p.thumbUrl), `${p.title} harus menautkan video nyata`);
+    assert(CATALOG.some((c) => c.slug === p.carSlug), `${p.title} harus memakai slug katalog yang ada`);
+  }
+
+  const ids = seeds.map((p) => p.id);
+  assert(new Set(ids).size === ids.length, 'id proyek benih harus unik');
+});
+
+await check('spesifikasi video diambil dari katalog, bukan dikarang', async () => {
+  const { RENDERED, specsOf } = await import('../studio/src/data/rendered.ts');
+  const { CATALOG } = await import('../studio/src/data/catalog.ts');
+
+  for (const v of RENDERED) {
+    const car = v.catalogSlug ? CATALOG.find((c) => c.slug === v.catalogSlug) : undefined;
+    if (!car) {
+      // Tanpa katalog tetap boleh tampil, tapi harus jujur soal foto.
+      assert(v.qa === 'tanpa-foto', `${v.slug} tanpa entri katalog harus ditandai tanpa-foto`);
+      assert(specsOf(v).length > 0, `${v.slug} butuh spesifikasi cadangan`);
+      continue;
+    }
+    assert(v.merk === car.merk, `${v.slug}: merek harus dari katalog`);
+    assert(v.kategori === car.kategori, `${v.slug}: kategori harus dari katalog`);
+    assert(v.tahun === car.tahun, `${v.slug}: tahun harus dari katalog`);
+
+    const specs = specsOf(v);
+    assert(specs.length > 0, `${v.slug} harus punya spesifikasi`);
+    // Nilai yang tidak tercatat di sumber tidak boleh muncul sebagai angka.
+    assert(!specs.some((s) => s.includes('tidak disebut')), `${v.slug} menampilkan nilai "tidak disebut"`);
+    const allowed = [car.mesin, car.tenaga, car.torsi, car.nol100 && `0–100 ${car.nol100}`, car.vmax].filter(
+      (s): s is string => typeof s === 'string',
+    );
+    for (const s of specs) {
+      assert(allowed.includes(s), `${v.slug}: spesifikasi "${s}" tidak ada di katalog (indikasi karangan)`);
+    }
+  }
+});
+
 await closeDb();
 fs.rmSync(tmpRoot, { recursive: true, force: true });
 console.log(`\n${passed} pemeriksaan lulus, ${failures.length} gagal`);

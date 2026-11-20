@@ -1,36 +1,14 @@
 import React from 'react';
 import { EmptyState, Icon, Skeleton } from '../components/ui';
 import type { Route } from '../components/shell';
-import { CATALOG } from '../data/catalog';
+import { RENDERED, VIDEO_BASE, THUMB_BASE, specsOf, type RenderedVideo } from '../data/rendered';
 
-// Delapan video yang benar-benar sudah dirender oleh pipeline repo ini.
-// Metadata diambil dari jobs/*/artifacts + durasi nyata file mp4.
-export type LibItem = {
-  slug: string;
-  title: string;
-  merk: string;
-  kategori: string;
-  tahun: string;
-  dur: number;
-  aspect: '16:9' | '9:16';
-  specs: string[];
-  qa: 'lolos' | 'tanpa-foto';
-  modelAi: string;
-};
+// Metadata video nyata ada di data/rendered.ts supaya Perpustakaan dan benih
+// proyek demo memakai angka yang sama.
+export type LibItem = RenderedVideo;
 
-export const LIBRARY: LibItem[] = [
-  { slug: 'mazda-rx7', title: 'Mazda RX-7 (FD3S)', merk: 'Mazda', kategori: 'klasik', tahun: '1992–2002', dur: 45, aspect: '16:9', specs: ['rotary twin-turbo 1.3L', '255–280 PS', '294 Nm', '0–100 5,3 dtk'], qa: 'lolos', modelAi: 'Studio Render (lokal)' },
-  { slug: 'ferrari-296-gtb', title: 'Ferrari 296 GTB', merk: 'Ferrari', kategori: 'sport', tahun: '2022–2025', dur: 30, aspect: '16:9', specs: ['V6 3.0L + listrik', '830 PS', '740 Nm', '0–100 2,9 dtk'], qa: 'lolos', modelAi: 'Studio Render (lokal)' },
-  { slug: 'porsche-taycan', title: 'Porsche Taycan Turbo S', merk: 'Porsche', kategori: 'sport', tahun: '2019–sekarang', dur: 45, aspect: '16:9', specs: ['dual motor AC', '761 PS', '1.050 Nm', '0–100 2,8 dtk'], qa: 'lolos', modelAi: 'Studio Render (lokal)' },
-  { slug: 'skyline-r34', title: 'Nissan Skyline GT-R R34', merk: 'Nissan', kategori: 'modifikasi', tahun: '2005 (19 unit)', dur: 30, aspect: '16:9', specs: ['RB26DETT 2.8L', '500 PS', '540 Nm', 'AWD'], qa: 'lolos', modelAi: 'Studio Render (lokal)' },
-  { slug: 'huracan-sto', title: 'Lamborghini Huracán STO', merk: 'Lamborghini', kategori: 'balap', tahun: '2021–2024', dur: 30, aspect: '16:9', specs: ['V10 5.2L NA', '640 PS', '565 Nm', '0–100 3,0 dtk'], qa: 'lolos', modelAi: 'Studio Render (lokal)' },
-  { slug: 'subaru-22b', title: 'Subaru Impreza 22B STi', merk: 'Subaru', kategori: 'klasik', tahun: '1998', dur: 45, aspect: '9:16', specs: ['flat-4 2.2L turbo', '280 PS', '363 Nm', 'AWD'], qa: 'lolos', modelAi: 'Studio Render (lokal)' },
-  { slug: 'porsche-911-gt3rs', title: 'Porsche 911 GT3 RS', merk: 'Porsche', kategori: 'balap', tahun: '2022–sekarang', dur: 30, aspect: '16:9', specs: ['flat-6 4.0L NA', '525 PS', '465 Nm', '0–100 3,2 dtk'], qa: 'lolos', modelAi: 'Studio Render (lokal)' },
-  { slug: 'koenigsegg-jesko', title: 'Koenigsegg Jesko', merk: 'Koenigsegg', kategori: 'balap', tahun: '2023–', dur: 30, aspect: '16:9', specs: ['V8 5.0L twin-turbo', '1.600 PS', '1.500 Nm', '1.420 kg'], qa: 'tanpa-foto', modelAi: 'Studio Render (lokal)' },
-];
-
-const BASE = 'video/';
-const THUMB = 'thumb/';
+const BASE = VIDEO_BASE;
+const THUMB = THUMB_BASE;
 
 export function Library({ go }: { go: (r: Route) => void }) {
   const [q, setQ] = React.useState('');
@@ -44,8 +22,8 @@ export function Library({ go }: { go: (r: Route) => void }) {
     return () => clearTimeout(t);
   }, []);
 
-  const merks = ['semua', ...Array.from(new Set(LIBRARY.map((v) => v.merk)))];
-  const list = LIBRARY.filter((v) => {
+  const merks = ['semua', ...Array.from(new Set(RENDERED.map((v) => v.merk)))];
+  const list = RENDERED.filter((v) => {
     const s = q.trim().toLowerCase();
     const okQ = !s || `${v.title} ${v.merk} ${v.kategori}`.toLowerCase().includes(s);
     const okM = merk === 'semua' || v.merk === merk;
@@ -60,7 +38,7 @@ export function Library({ go }: { go: (r: Route) => void }) {
         <div className="eyebrow">Perpustakaan</div>
         <h1 style={{ marginTop: 4 }}>Video yang sudah jadi</h1>
         <p className="muted small" style={{ marginTop: 4 }}>
-          {LIBRARY.length} video hasil pipeline nyata — dirender dengan ffmpeg dari foto asli, bukan animasi placeholder.
+          {RENDERED.length} video hasil pipeline nyata — dirender dengan ffmpeg dari foto asli, bukan animasi placeholder.
         </p>
       </div>
 
@@ -103,7 +81,7 @@ export function Library({ go }: { go: (r: Route) => void }) {
                   <h3 className="vcard__title truncate">{v.title}</h3>
                   {v.qa === 'tanpa-foto' ? <span className="chip chip--warn">tanpa foto</span> : <span className="chip chip--ok">QA lolos</span>}
                 </div>
-                <div className="vcard__specs">{v.specs.map((s) => <span key={s}>{s}</span>)}</div>
+                <div className="vcard__specs">{specsOf(v).map((s) => <span key={s}>{s}</span>)}</div>
                 <div className="row row--wrap" style={{ gap: 6, marginTop: 'auto' }}>
                   <span className="chip chip--accent">{v.kategori}</span>
                   <span className="chip">{v.aspect}</span>

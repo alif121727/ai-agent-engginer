@@ -6,6 +6,9 @@
     <title>Agent Studio AI — Studio Video Otomotif</title>
     <meta name="description" content="Studio produksi video otomotif berbasis data: brief, storyboard, sembilan tahap pipeline, dan QA nyata." />
     <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#ff6b35" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="ikon/ikon-192.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
@@ -16,5 +19,13 @@
     <div id="root"></div>
     <noscript>Studio ini memerlukan JavaScript untuk berjalan.</noscript>
     <script src="assets/studio.js" defer></script>
+    <script>
+      // Service worker hanya untuk app shell; video tetap diambil dari jaringan.
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('sw.js').catch(function () {});
+        });
+      }
+    </script>
   </body>
 </html>

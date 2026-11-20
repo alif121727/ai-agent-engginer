@@ -1,0 +1,73 @@
+# Deploy — Agent Studio AI Otomotif
+
+Situs statis di Netlify: **https://agent-studio-ai.netlify.app**
+
+## Cara kerja
+
+Repo ini tersambung ke situs Netlify `agent-studio-ai` (site id
+`7c88850b-1563-4372-a2b9-f4aa1240c20d`). Setiap `git push` ke `main` memicu
+build Netlify memakai `netlify.toml` di akar repo:
+
+```toml
+[build]
+  command = "npm ci && npm run build:studio"
+  publish = "netlify-site"
+```
+
+`npm run build:studio` menjalankan `scripts/build-studio.ts`, yang:
+
+1. membundel `studio/src/main.tsx` dengan esbuild ke `netlify-site/assets/`,
+   dengan hash `?v=` supaya peramban tidak memakai JS lama;
+2. **gagal keras** kalau berkas media di `netlify-site/video` atau
+   `netlify-site/thumb` tidak lengkap — supaya situs tidak pernah terbit tanpa
+   video;
+3. mencetak hash bundel, jadi log build bisa dipakai memastikan versi baru.
+
+Tidak ada deploy manual. `netlify deploy` tidak diperlukan dan token CLI tidak
+disimpan di repo.
+
+## Berkas yang disajikan
+
+| Path | Isi |
+| --- | --- |
+| `/` | aplikasi (`studio/index.html`) |
+| `/assets/studio.js`, `/assets/studio.css` | bundel hasil esbuild |
+| `/video/*.mp4`, `/thumb/*.jpg` | 8 video hasil render nyata + poster |
+| `/manifest.webmanifest`, `/sw.js`, `/ikon/*` | PWA (bisa dipasang di ponsel) |
+| `/robots.txt`, `/sitemap.xml` | SEO dasar |
+
+`netlify.toml` mengatur cache: aset ber-hash dan media di-cache lama,
+`index.html` dan `sw.js` selalu divalidasi ulang.
+
+## Menambah video baru
+
+1. Render job seperti biasa, lalu salin `video.mp4` ke
+   `netlify-site/video/<slug>.mp4` dan posternya ke
+   `netlify-site/thumb/<slug>.jpg`.
+2. Tambahkan satu entri di `studio/src/data/rendered.ts` (`RECORDED`). Angka
+   durasi/resolusi/QA harus disalin dari `jobs/<id>/artifacts/*.json`, bukan
+   diperkirakan.
+3. Kalau model punya entri di `config/catalog.json`, isi `catalogSlug`. Kalau
+   tidak, beri `specsFallback` dan tandai `qa: 'tanpa-foto'` bila memang tidak
+   memakai foto asli.
+4. `npm test` — tes akan menolak spesifikasi yang tidak ada di katalog, video
+   yang berkasnya hilang, dan durasi di bawah 30 detik.
+
+## Mode demo vs backend
+
+Situs statis tidak punya server, jadi UI otomatis memakai `DemoStudioApi`:
+login tidak diverifikasi dan proyek disimpan di `localStorage` per akun.
+Saat pertama dibuka, daftar proyek diisi dari job nyata (lihat
+`seedProjects()` di `studio/src/services/api.ts`), sehingga studio tidak
+terlihat kosong. Menghapus proyek bersifat lokal dan tidak kembali setelah
+muat ulang.
+
+Kalau studio dijalankan bersama API repo (`npm run api`), `pickApi()` mendeteksi
+`/api/health` dan memakai backend sungguhan.
+
+## Kalau situs 404
+
+Penyebab yang pernah terjadi: `netlify.toml` tidak ada di akar repo, sehingga
+Netlify memakai direktori akar sebagai publish dan tidak menemukan
+`index.html`. Pastikan `netlify.toml` ada, `publish = "netlify-site"`, dan
+build log berakhir dengan baris `✓ studio dibangun: …`.

@@ -144,6 +144,27 @@ export function ProjectDetail({ id, go }: { id: string; go: (r: Route) => void }
         <div className="bar"><div className="bar__fill" style={{ width: `${pct}%` }} /></div>
       </div>
 
+      {project.videoUrl && (
+        <div className="card stack" style={{ gap: 10 }}>
+          <div className="row row--between row--wrap">
+            <span className="small" style={{ fontWeight: 600 }}>Hasil render</span>
+            {project.qaNote && <span className="chip chip--ok">{project.qaNote}</span>}
+          </div>
+          <video
+            src={project.videoUrl}
+            poster={project.thumbUrl}
+            controls
+            preload="metadata"
+            playsInline
+            style={{ width: '100%', borderRadius: 10, background: '#000', aspectRatio: project.aspect === '9:16' ? '9 / 16' : '16 / 9', maxHeight: 460 }}
+          />
+          <div className="row row--wrap" style={{ gap: 8 }}>
+            <a className="btn btn--sm" href={project.videoUrl} download><Icon.Download size={13} /> Unduh mp4</a>
+            <span className="dim tiny">Dirender pipeline nyata dengan ffmpeg dari foto asli.</span>
+          </div>
+        </div>
+      )}
+
       <div className="workbench">
         <div className="rail card card--tight">
           <div className="eyebrow" style={{ marginBottom: 8 }}>Data mobil</div>

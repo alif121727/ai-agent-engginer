@@ -6,6 +6,7 @@
 
 import { CATALOG, findCar, type Car } from '../data/catalog.ts';
 import { STAGES, MIN_DUR } from '../data/models.ts';
+import { RENDERED, type RenderedVideo } from '../data/rendered.ts';
 
 export type StageState = 'menunggu' | 'berjalan' | 'selesai' | 'gagal' | 'dilewati';
 
@@ -165,19 +166,88 @@ export function buildShots(car: Car, dur: number, brief: Brief): Shot[] {
   });
 }
 
+/* ------------------------------------------------------------------ benih */
+// Proyek awal untuk mode statis, dibangun dari job nyata di jobs/<id>/artifacts.
+// Tanpa ini situs statis terbuka kosong dan terlihat rusak.
+function fullStages(): StageRun[] {
+  return STAGES.map((s) => ({ id: s.id, label: s.label, state: 'selesai' as const, artifact: s.writes }));
+}
+
+function seedFrom(v: RenderedVideo): Project | null {
+  const car = CATALOG.find((c) => c.slug === v.catalogSlug);
+  // Tanpa entri katalog tidak ada spesifikasi bersumber: jangan mengarang
+  // proyek. Videonya tetap tersedia di Perpustakaan.
+  if (!car) return null;
+
+  const dur = Math.max(MIN_DUR, v.dur);
+  const brief = buildBrief(car);
+  const created = Date.parse(v.renderedAt);
+  return {
+    id: v.jobId,
+    createdAt: created,
+    updatedAt: created,
+    title: v.title,
+    carSlug: car.slug,
+    carName: car.model,
+    modelId: 'local-render',
+    durationSec: dur,
+    aspect: v.aspect,
+    resolution: '1080p',
+    style: 'cinematic',
+    audio: { engine: true, music: true, voiceover: false, lang: 'id' },
+    brief,
+    shots: buildShots(car, dur, brief),
+    stages: fullStages(),
+    status: 'done',
+    videoUrl: `video/${v.slug}.mp4`,
+    thumbUrl: `thumb/${v.slug}.jpg`,
+    qaNote: `${v.checks} pemeriksaan lolos — ${v.width}x${v.height} ${v.fps} fps, ${v.scenes} scene`,
+  };
+}
+
+export function seedProjects(): Project[] {
+  return RENDERED.map(seedFrom)
+    .filter((p): p is Project => p !== null)
+    .sort((a, b) => b.createdAt - a.createdAt);
+}
+
 /* ------------------------------------------------------------- demo impl */
+/** Kunci penyimpanan demo, diturunkan dari email akun yang login. */
+export function demoProjectsKey(): string {
+  let email = 'anon';
+  try {
+    const raw = localStorage.getItem('asa.user');
+    if (raw) email = (JSON.parse(raw) as { email?: string }).email || 'anon';
+  } catch {
+    /* localStorage rusak -> pakai kunci anon */
+  }
+  return `asa.projects.${email}`;
+}
+
 export class DemoStudioApi implements StudioApi {
   kind = 'demo' as const;
 
   private key() {
-    const u = localStorage.getItem('asa.user') || 'anon';
-    return `asa.projects.${u}`;
+    return demoProjectsKey();
   }
 
   async listProjects(): Promise<Project[]> {
     await wait(120);
+    const raw = localStorage.getItem(this.key());
+    // Kunci belum ada = pengguna baru. Isi dengan proyek hasil render nyata
+    // supaya studio tidak terbuka kosong. Kunci kosong ([]) berarti pengguna
+    // memang sudah menghapus semuanya, jadi jangan diisi ulang.
+    if (raw === null) {
+      const seed = seedProjects();
+      try {
+        localStorage.setItem(this.key(), JSON.stringify(seed));
+      } catch {
+        /* kuota penuh -> tetap kembalikan benih untuk sesi ini */
+      }
+      return seed;
+    }
     try {
-      return JSON.parse(localStorage.getItem(this.key()) || '[]') as Project[];
+      return JSON.parse(raw) as Project[];
     } catch {
       return [];
     }

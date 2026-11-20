@@ -38,7 +38,14 @@ export function Library({ go }: { go: (r: Route) => void }) {
         <div className="eyebrow">Perpustakaan</div>
         <h1 style={{ marginTop: 4 }}>Video yang sudah jadi</h1>
         <p className="muted small" style={{ marginTop: 4 }}>
-          {RENDERED.length} video hasil pipeline nyata — dirender dengan ffmpeg dari foto asli, bukan animasi placeholder.
+          {RENDERED.length} video hasil pipeline nyata — dirender dengan ffmpeg, bukan animasi placeholder.
+          {(() => {
+            const own = RENDERED.filter((v) => v.qa !== 'tanpa-foto').length;
+            const rest = RENDERED.length - own;
+            return rest === 0
+              ? ' Semuanya memakai foto asli dari garasi.'
+              : ` ${own} memakai foto asli dari garasi; ${rest} memakai gambar generatif dan ditandai "tanpa foto".`;
+          })()}
         </p>
       </div>
 

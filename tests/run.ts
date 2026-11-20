@@ -42,6 +42,7 @@ function assert(cond: unknown, msg: string): void {
   if (!cond) throw new Error(msg);
 }
 
+const repoRoot = path.resolve(import.meta.dirname, '..');
 const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'studio-test-'));
 const dbFile = path.join(tmpRoot, 'test.db');
 
@@ -1107,6 +1108,21 @@ await check('spesifikasi video diambil dari katalog, bukan dikarang', async () =
     );
     for (const s of specs) {
       assert(allowed.includes(s), `${v.slug}: spesifikasi "${s}" tidak ada di katalog (indikasi karangan)`);
+    }
+  }
+});
+
+await check('penanda "tanpa foto" cocok dengan aset job aslinya', async () => {
+  const { RENDERED } = await import('../studio/src/data/rendered.ts');
+  for (const v of RENDERED) {
+    const assetsPath = path.join(repoRoot, 'jobs', v.jobId, 'artifacts', 'assets.json');
+    if (!fs.existsSync(assetsPath)) continue;
+    const assets = JSON.parse(fs.readFileSync(assetsPath, 'utf8')) as { source?: string }[];
+    const allLocal = assets.length > 0 && assets.every((a) => (a.source ?? '').includes('/assets/own/'));
+    if (v.qa === 'tanpa-foto') {
+      assert(!allLocal, `${v.slug} ditandai tanpa foto padahal asetnya dari garasi`);
+    } else {
+      assert(allLocal, `${v.slug} ditandai QA lolos padahal ada aset non-garasi`);
     }
   }
 });

@@ -41,8 +41,15 @@ function Router() {
           crumb={meta.c}
           right={
             <div className="row" style={{ gap: 8 }}>
-              <span className={`chip ${api.kind === 'http' ? 'chip--ok' : 'chip--info'}`} title={api.kind === 'http' ? 'Terhubung ke backend repo' : 'Mode demo: data disimpan di peramban'}>
-                <span className="dot" /> {api.kind === 'http' ? 'backend' : 'mode demo'}
+              <span
+                className={`chip ${api.kind === 'http' ? 'chip--ok' : 'chip--info'}`}
+                title={
+                  api.kind === 'http'
+                    ? 'Terhubung ke backend repo: login, render, dan unggah berjalan sungguhan'
+                    : 'Situs statis: proyek disimpan di peramban dan video tidak dirender di sini'
+                }
+              >
+                <span className="dot" /> {api.kind === 'http' ? 'backend' : 'mode demo (statis)'}
               </span>
               <button className="btn btn--primary btn--sm" onClick={() => go({ name: 'baru' })}>
                 Buat Video

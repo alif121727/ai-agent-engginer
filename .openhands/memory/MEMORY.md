@@ -205,3 +205,25 @@ non-zero saat folder belum tertaut, dan `set -o pipefail` meneruskan kegagalan
 itu (jadi baca output, jangan exit code); `netlify link --id` menolak folder
 yang sudah tertaut (jadi `unlink` dulu). CLI ada di `/workspace/tools`
 (bertahan lintas reset, tidak seperti `/tmp`).
+
+## Studio statis (branch `main`, `netlify-site/`)
+- Deploy: `./scripts/deploy-netlify.sh` (preview tanpa kredit -> restore ke produksi).
+  Push ke GitHub memicu build yang di-skip karena kredit habis (state=error,
+  skipped=true) dan TIDAK menimpa deploy bagus; tetap jalankan skrip itu.
+- `.workbench` adalah grid **3 kolom**; jumlah anaknya harus tepat 3. Kalau
+  lebih, anak ekstra jatuh ke kolom 1 dan kartu `sticky` menimpa kartu lain.
+- `.rail` sticky `top:84px`: di layout satu kolom (<=980px) dua rail saling
+  menimpa, jadi sticky dimatikan di media query itu.
+- Topbar sticky harus **opak**. Latar transparan membuat teks yang discroll
+  tembus dan tampak "tumpang tindih" (keluhan yang mudah salah didiagnosis).
+- Tombol "Buat proyek & jalankan" dulu hanya membuat proyek tanpa memulai
+  pipeline. Sekarang rute `#/proyek/<id>/jalankan` + prop `autoRun` di
+  `ProjectDetail` menjalankan `runFrom(0)` sekali.
+- Verifikasi UI: Playwright ada di `/workspace/tools` (`overlap2.js` mengukur
+  tumpang tindih teks per baris, `resp.js` tabrakan grid per lebar layar,
+  `flow2.js` alur buat video end-to-end). Badge Netlify `#nl-badge-frame`
+  memblokir klik, hapus dulu di skrip.
+- `npm test` butuh **ffmpeg dan ffprobe**. Tanpa keduanya 6-8 cek gagal
+  (bukan bug kode). Binari siap pakai: `/workspace/tools/bin` (dari
+  imageio-ffmpeg + ffprobe-static); jalankan
+  `PATH=/workspace/tools/bin:$PATH npm test` -> 93 lulus.

@@ -227,20 +227,23 @@ yang sudah tertaut (jadi `unlink` dulu). CLI ada di `/workspace/tools`
   (bukan bug kode). Binari siap pakai: `/workspace/tools/bin` (dari
   imageio-ffmpeg + ffprobe-static); jalankan
   `PATH=/workspace/tools/bin:$PATH npm test` -> 93 lulus.
-
 ## Deploy Netlify: token bisa hilang
-- Sandbox **restart menghapus `~/.config/netlify/config.json`** (jadi 81 byte,
-  `users: {}`). `scripts/deploy-netlify.sh` lalu gagal di `netlify link`
-  dengan "Authentication required". Tidak ada token di env/.env/repo.
+- Sandbox **restart menghapus `~/.config/netlify/config.json`**. Skrip deploy
+  sudah diperbaiki: `NETLIFY_AUTH_TOKEN` didahulukan, diekspor ke semua panggilan
+  CLI, `--site` eksplisit, dan tautan diverifikasi (`link` bisa exit 0 tanpa
+  menulis `.netlify/state.json`).
 - Pemulihan tanpa interaksi tidak mungkin. Dua jalan:
   1. `netlify login --request "<pesan>"` -> kirim Authorize URL ke user, lalu
      `netlify login --check <ticket>`.
   2. User memberi personal access token -> `NETLIFY_AUTH_TOKEN=... ./scripts/deploy-netlify.sh`.
-- `netlify deploy --allow-anonymous` **tidak menolong**: ia membuat SITUS BARU
+- `netlify deploy --allow-anonymous` TIDAK menolong: ia membuat SITUS BARU
   ber-password (HTTP 401), bukan memperbarui `agent-studio-ai`.
-- Build dari GitHub untuk repo ini di-skip (kredit habis: state=error,
-  skipped=true), jadi push TIDAK memperbarui situs live.
-- GitHub Pages juga tertutup: token OAuth tidak punya izin Pages
-  (POST /pages -> 403 "Resource not accessible by integration").
-- Link sementara yang selalu segar: `python3 -m http.server 12000 --directory
-  netlify-site` lalu pakai URL publik sandbox port 12000.
+- Build Netlify dari GitHub di-skip (kredit habis), jadi push tidak memperbarui
+  situs live.
+- GitHub Pages belum aktif; `configure-pages` gagal karena GitHub App di sini
+  tidak boleh membuat situs Pages. Workflow `.github/workflows/pages.yml` sudah
+  ada dan toleran (CI hijau); aktif otomatis setelah user mengaktifkan
+  Settings -> Pages -> Source: GitHub Actions. Semua path aset relatif, jadi
+  aman di subdirektori `/ai-agent-engginer/`.
+- Link sementara yang selalu segar: `setsid python3 -m http.server 12000
+  --directory netlify-site` lalu URL publik sandbox port 12000.

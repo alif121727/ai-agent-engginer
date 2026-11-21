@@ -7,6 +7,9 @@ import { bus, currentConnection, recordEvent, wireBus } from '../core/bus.ts';
 import { loadDefaults, loadAgents, loadAdapters, loadThemes } from '../core/config.ts';
 import { parseBrief, resolveDuration, BriefError } from '../core/brief.ts';
 import { pickTheme } from '../core/theme.ts';
+import { generateAiTheme } from '../core/theme-ai.ts';
+import { searchTemplates } from '../core/templates.ts';
+import { resolveBriefLook } from '../core/brief-look.ts';
 import { loadCatalog, aliasesFor } from '../core/catalog.ts';
 import { planScenes, estimateCost } from '../pipeline/scenes.ts';
 import { ffmpegAvailable } from '../render/ffmpeg.ts';
@@ -215,6 +218,66 @@ export function createApp(opts: AppOptions = {}) {
     });
   });
 
+  /**
+   * Pencarian template otomatis. Skor dan alasannya dikirim ke UI supaya
+   * pengguna melihat kenapa sebuah template muncul di atas, bukan hanya daftar.
+   */
+  app.get('/api/templates', async (req, res) => {
+    const q = typeof req.query.q === 'string' ? req.query.q : '';
+    const kategori = typeof req.query.kategori === 'string' ? req.query.kategori : undefined;
+    const aspect = typeof req.query.aspect === 'string' ? req.query.aspect : undefined;
+    const nada = typeof req.query.nada === 'string' ? req.query.nada : undefined;
+    const durasi = Number(req.query.durasi);
+    const hits = searchTemplates({
+      q,
+      kategori,
+      aspect,
+      nada,
+      durasi: Number.isFinite(durasi) && durasi > 0 ? durasi : undefined,
+    });
+    res.json({
+      q,
+      total: hits.length,
+      hasil: hits.map((h) => ({
+        ...h.template,
+        score: h.score,
+        alasan: h.alasan,
+      })),
+    });
+  });
+
+  /** Tema buatan AI untuk satu model katalog. */
+  app.post('/api/tema-ai', async (req, res) => {
+    const parsed = z
+      .object({
+        model: z.string().min(1),
+        nada: z.enum(['sinematik', 'energik', 'edukatif', 'nostalgik']).optional(),
+        gaya: z.string().optional(),
+      })
+      .safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: 'model wajib diisi' });
+      return;
+    }
+    const entry = loadCatalog().models.find(
+      (m) => m.slug === parsed.data.model || m.model.toLowerCase() === parsed.data.model.toLowerCase(),
+    );
+    const theme = generateAiTheme({
+      model: entry?.model ?? parsed.data.model,
+      merk: entry?.merk,
+      kategori: entry?.kategori,
+      mesin: entry?.mesin,
+      tenaga: entry?.tenaga,
+      tahun: entry?.tahun,
+      tagline: entry?.tagline,
+      nada: parsed.data.nada,
+      gaya: parsed.data.gaya,
+    });
+    // Model di luar katalog tetap dapat tema, tapi UI perlu tahu bahwa
+    // tidak ada data katalog yang dipakai (jadi tidak ada klaim spesifikasi).
+    res.json({ theme, dariKatalog: Boolean(entry), katalogSlug: entry?.slug ?? null });
+  });
+
   app.post('/api/estimate', async (req, res) => {
     const defaults = loadDefaults();
     const minDurasi = await getSetting('minDurasi', defaults.minDurasi);
@@ -263,12 +326,23 @@ export function createApp(opts: AppOptions = {}) {
       const rawBrief = req.body?.brief ?? req.body;
       const brief = typeof rawBrief === 'string' ? parseBrief(rawBrief) : parseBrief(JSON.stringify(rawBrief));
       const { durationSec, bumped } = resolveDuration(brief, minDurasi, defaults.maxDurasi);
-      const themes = loadThemes();
-      const theme = pickTheme(brief.model, themes.themes, themes.defaultTheme);
-      const aspect = brief.rasio ?? '16:9';
+      // Template dan tema AI disimpan KE DALAM brief, bukan hanya dipakai di
+      // sini. Worker menjalankan tahapnya dari brief, jadi apa pun yang tidak
+      // ikut tersimpan akan hilang saat job dikerjakan.
+      const templateId = typeof req.body?.templateId === 'string' ? req.body.templateId : '';
+      const temaAi = req.body?.theme && typeof req.body.theme === 'object' ? req.body.theme : undefined;
+      const briefWithLook = { ...brief, templateId: templateId || undefined, temaAi };
+      const look = resolveBriefLook(briefWithLook);
+      const { theme, template, aspect } = look;
       const preset = String(req.body?.preset ?? (await getSetting('agentPreset', defaults.agentPreset)));
       const mode = req.body?.mode === 'final' ? 'final' : 'draft';
-      const scenes = planScenes({ brief, durationSec, theme, aspect });
+      const scenes = planScenes({
+        brief: briefWithLook,
+        durationSec,
+        theme,
+        aspect,
+        sceneKeys: template?.sceneKeys,
+      });
       const adapters = loadAdapters();
       const withVideo = Object.values(adapters.adapters).some(
         (a) => a.kind === 'video-gen' && a.envKey && process.env[a.envKey],
@@ -289,7 +363,7 @@ export function createApp(opts: AppOptions = {}) {
         durationSec,
         aspect,
         preset,
-        brief: { ...brief, durasi: durationSec },
+        brief: { ...briefWithLook, durasi: durationSec },
         costEstimate,
         scheduledAt: brief.jadwalPublish ?? null,
       });

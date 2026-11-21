@@ -111,9 +111,26 @@ export function Auth() {
           </button>
         </div>
 
+        {/* Situs statis tidak punya server untuk memverifikasi kredensial, jadi
+            gerbang login hanya menghalangi pengunjung. Di backend sungguhan
+            tombol ini tidak muncul: login tetap wajib. */}
+        {api.kind === 'demo' && (
+          <button
+            className="btn btn--sm"
+            onClick={() => register('Tamu', 'tamu@studio.id')}
+            data-testid="masuk-tamu"
+          >
+            Masuk sebagai tamu <Icon.ChevronR size={14} />
+          </button>
+        )}
+
         <div className="note">
           <span className="note__icon"><Icon.Info size={14} /></span>
-          <span>Jangan masukkan kata sandi asli. Form ini tidak mengirim apa pun ke jaringan — hanya menyimpan email di peramban Anda.</span>
+          <span>
+            {api.kind === 'http'
+              ? 'Form ini mengirim kredensial ke backend studio di mesin ini. Jangan pakai kata sandi yang Anda pakai di layanan lain.'
+              : 'Jangan masukkan kata sandi asli. Situs ini statis: tidak ada server yang memverifikasi, dan yang disimpan hanya nama di peramban Anda.'}
+          </span>
         </div>
       </div>
     </div>

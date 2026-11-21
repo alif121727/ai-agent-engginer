@@ -42,6 +42,10 @@ export interface Brief {
   referensi?: string[];
   jadwalPublish?: string;
   deadlineMenit?: number;
+  /** Template yang dipilih pengguna; menentukan resep scene. */
+  templateId?: string;
+  /** Tema buatan AI; mengalahkan tema kata kunci bawaan. */
+  temaAi?: Partial<Theme>;
 }
 
 export interface ScenePlan {

@@ -1,0 +1,36 @@
+{
+  "model": "Lamborghini Huracan STO",
+  "tagline": "",
+  "lines": [
+    {
+      "sceneIndex": 0,
+      "onScreenText": "Lamborghini Huracan STO",
+      "voiceover": "Lamborghini Huracan STO. Lamborghini STO (Super Trofeo Omologata), 2021–2024."
+    },
+    {
+      "sceneIndex": 1,
+      "onScreenText": "",
+      "voiceover": "Torsi 601 Nm @ 6.500 rpm · mid-engine, RWD."
+    },
+    {
+      "sceneIndex": 2,
+      "onScreenText": "",
+      "voiceover": "Di jalan, 640 PS, nol sampai seratus 3,0 dtk."
+    },
+    {
+      "sceneIndex": 3,
+      "onScreenText": "",
+      "voiceover": "Jantungnya V10 5.2L naturally aspirated (DGF), 640 PS."
+    },
+    {
+      "sceneIndex": 4,
+      "onScreenText": "",
+      "voiceover": "Di jalan, 640 PS, nol sampai seratus 3,0 dtk."
+    },
+    {
+      "sceneIndex": 5,
+      "onScreenText": "Lamborghini Huracan STO",
+      "voiceover": "Lamborghini Huracan STO."
+    }
+  ]
+}

@@ -785,3 +785,123 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
   padding: 1px 5px;
   flex: 0 0 auto;
 }
+
+/* ------------------------------------------------------------------- feed */
+/* Satu video = satu layar. Shell dikunci ke tinggi viewport saat rute feed aktif:
+   tanpa itu .shell ikut membesar mengikuti isi dan setiap slide jadi lebih pendek
+   dari layar, sehingga dua video tampak sekaligus dan keduanya ikut autoplay. */
+.shell:has(.feed) { height: 100dvh; min-height: 0; overflow: hidden; }
+.main:has(> .feed) { min-height: 0; overflow: hidden; }
+.feed {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  overscroll-behavior-y: contain;
+  scrollbar-width: none;
+  display: flex;
+  flex-direction: column;
+}
+.feed::-webkit-scrollbar { display: none; }
+
+.feed__rail {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: linear-gradient(180deg, rgba(8, 12, 20, 0.92), transparent);
+  pointer-events: none;
+}
+.feed__rail > * { pointer-events: auto; }
+.feed__count { font-size: 0.75rem; color: var(--text-2); }
+
+.feed__slide {
+  position: relative;
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Kartu 9:16 dibatasi tinggi layar supaya tidak pernah butuh scroll ganda. */
+  height: 100%;
+  padding: 0 16px;
+}
+
+/* Kartu adalah acuan posisi overlay: dengan begitu gradien dan tombol selalu
+   menempel ke tepi video, bukan ke tepi slide yang lebih lebar. */
+.feed__card {
+  position: relative;
+  height: 100%;
+  aspect-ratio: 9 / 16;
+  max-width: min(100%, 520px);
+}
+
+.feed__video {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  border-radius: var(--r-lg);
+  background: #05080d;
+  border: 1px solid rgba(140, 200, 255, 0.12);
+  box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.8);
+  cursor: pointer;
+}
+
+/* Gradien bawah: teks tetap terbaca di atas video terang. */
+.feed__shade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 45%;
+  border-radius: 0 0 var(--r-lg) var(--r-lg);
+  background: linear-gradient(180deg, transparent, rgba(4, 8, 14, 0.92));
+  pointer-events: none;
+}
+
+.feed__meta {
+  position: absolute;
+  left: 18px;
+  right: 84px;
+  bottom: 18px;
+}
+.feed__meta h2 { font-size: 1.05rem; }
+
+.feed__actions {
+  position: absolute;
+  right: 12px;
+  bottom: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.feed__act {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 44px;
+  padding: 8px 0;
+  border-radius: 999px;
+  border: 1px solid rgba(140, 200, 255, 0.16);
+  background: rgba(8, 14, 22, 0.66);
+  color: var(--text-2);
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: color 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+}
+.feed__act:hover { color: var(--text); border-color: rgba(140, 200, 255, 0.34); }
+.feed__act:active { transform: scale(0.94); }
+.feed__act.is-on { color: var(--accent); border-color: rgba(92, 225, 255, 0.5); }
+
+@media (max-width: 720px) {
+  .feed__meta { left: 14px; right: 70px; bottom: 14px; }
+  .feed__actions { right: 6px; bottom: 16px; }
+  .feed__slide { padding: 0 8px; }
+}

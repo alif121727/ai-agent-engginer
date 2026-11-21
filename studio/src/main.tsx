@@ -7,6 +7,7 @@ import { NewVideo } from './pages/NewVideo';
 import { ProjectDetail } from './pages/ProjectDetail';
 import { Projects, Garage } from './pages/Projects';
 import { Library } from './pages/Library';
+import { Feed } from './pages/Feed';
 import { Models, Settings } from './pages/Models';
 import { Auth } from './pages/Auth';
 import { Agent } from './pages/Agent';
@@ -18,6 +19,7 @@ const TITLES: Record<Route['name'], { t: string; c?: string }> = {
   agen: { t: 'Agen Otonom', c: 'Sembilan tahap berjalan sendiri + metadata otomatis' },
   proyek: { t: 'Proyek Saya' },
   'proyek-detail': { t: 'Detail Proyek', c: 'Pipeline sembilan tahap' },
+  feed: { t: 'Feed', c: 'Video vertikal, geser ke atas untuk lanjut' },
   perpustakaan: { t: 'Perpustakaan' },
   garasi: { t: 'Garasi' },
   model: { t: 'Model AI' },
@@ -62,6 +64,7 @@ function Router() {
         {route.name === 'agen' && <Agent go={go} />}
         {route.name === 'proyek' && <Projects go={go} />}
         {route.name === 'proyek-detail' && <ProjectDetail id={route.id} go={go} autoRun={route.autoRun} />}
+        {route.name === 'feed' && <Feed go={go} />}
         {route.name === 'perpustakaan' && <Library go={go} />}
         {route.name === 'garasi' && <Garage go={go} />}
         {route.name === 'model' && <Models />}

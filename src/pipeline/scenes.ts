@@ -122,7 +122,28 @@ export const NEGATIVE_PROMPT = [
   'teks melayang',
 ].join(', ');
 
-export function buildSceneList(durationSec: number): SceneSpec[] {
+export function buildSceneList(durationSec: number, keys?: string[]): SceneSpec[] {
+  if (keys?.length) {
+    // Template menentukan resepnya. Kunci yang tidak dikenal dibuang supaya
+    // template hasil AI yang salah ketik tidak merusak render.
+    const chosen = keys
+      .map((k) => BASE_SCENES.find((s) => s.key === k) ?? EXTRA_SCENES.find((s) => s.key === k))
+      .filter((s): s is SceneSpec => Boolean(s));
+    if (chosen.length) {
+      const scenes = [...chosen];
+      // Video panjang tetap butuh isi: ulangi resep dengan kunci unik supaya
+      // setiap scene punya aset sendiri.
+      let round = 1;
+      while (scenes.length < Math.max(4, Math.floor(durationSec / 6)) && round < 6) {
+        for (const s of chosen) {
+          if (scenes.length >= Math.max(4, Math.floor(durationSec / 6))) break;
+          scenes.splice(scenes.length - 1, 0, { ...s, key: `${s.key}_r${round}`, label: `${s.label} ${round + 1}` });
+        }
+        round++;
+      }
+      return scenes;
+    }
+  }
   const scenes = [...BASE_SCENES];
   // One extra scene per ~10s above the 30s baseline. Beyond the hand-written
   // extras the list cycles with distinct keys, so long videos stay dynamic.
@@ -144,8 +165,10 @@ export function planScenes(input: {
   durationSec: number;
   theme: Theme;
   aspect: string;
+  /** Resep scene dari template; kosong berarti alur bawaan. */
+  sceneKeys?: string[];
 }): ScenePlan[] {
-  const specs = buildSceneList(input.durationSec);
+  const specs = buildSceneList(input.durationSec, input.sceneKeys);
   const totalWeight = specs.reduce((sum, s) => sum + s.weight, 0);
 
   // Distribute duration by weight, then give the rounding remainder to the
@@ -189,11 +212,11 @@ export function planScenes(input: {
         aspect: input.aspect,
         mood: input.brief.gaya ?? input.theme.mood,
         location: locationFor(spec.key, input.theme),
-        angle: COMPOSITION[spec.key.split('_')[0]] ?? 'three-quarter front',
+        angle: COMPOSITION[baseKey(spec.key)] ?? 'three-quarter front',
         variant: index,
       }),
       negativePrompt: NEGATIVE_PROMPT,
-      onScreenText: onScreenTextFor(spec.key, input.brief, advantages),
+      onScreenText: onScreenTextFor(baseKey(spec.key), input.brief, advantages),
       voiceover: '',
     };
     start += duration;
@@ -201,7 +224,13 @@ export function planScenes(input: {
   });
 }
 
-function locationFor(key: string, theme: Theme): string {
+/** Kunci template yang diulang diberi akhiran `_r1`, `_r2`; ini aslinya. */
+function baseKey(key: string): string {
+  return key.replace(/_r\d+$/, '');
+}
+
+function locationFor(rawKey: string, theme: Theme): string {
+  const key = baseKey(rawKey);
   switch (key) {
     case 'interior':
     case 'lifestyle':

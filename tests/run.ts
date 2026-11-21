@@ -12,6 +12,9 @@ import { parseBrief, resolveDuration, BriefError } from '../src/core/brief.ts';
 import { planScenes, buildSceneList, estimateCost } from '../src/pipeline/scenes.ts';
 import { loadThemes, loadDefaults, loadAgents, loadAdapters } from '../src/core/config.ts';
 import { pickTheme } from '../src/core/theme.ts';
+import { generateAiTheme } from '../src/core/theme-ai.ts';
+import { searchTemplates, BUILTIN_TEMPLATES, SCENE_KEYS } from '../src/core/templates.ts';
+import { resolveBriefLook } from '../src/core/brief-look.ts';
 import { ConnectionMonitor } from '../src/net/monitor.ts';
 import { stagesFor, presetAgents, listPresets } from '../src/agents/registry.ts';
 import { assertGuardRejects } from '../src/agents/runner.ts';
@@ -20,6 +23,7 @@ import { createApp } from '../src/api/server.ts';
 import { fingerprintFor } from '../src/publish/instagram.ts';
 import { readCheckpoint, writeCheckpoint, markSceneDone, readSceneCheckpoint, isStageComplete, clearCheckpoint } from '../src/pipeline/checkpoint.ts';
 import { frameSharpness, perceptualHash } from '../src/render/ffmpeg.ts';
+import type { Brief } from '../src/core/types.ts';
 
 let passed = 0;
 const failures: string[] = [];
@@ -1613,6 +1617,127 @@ await check('404.html tersedia dan mandiri tanpa bundel', async () => {
 await check('versi rilis 1.0.0 konsisten di package.json', async () => {
   const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
   assert(pkg.version === '1.0.0', `versi masih ${pkg.version}`);
+});
+
+// ------------------------------------------------------- tema AI & template
+
+await check('tema AI memberi hook, palet, dan alasan yang bisa dibaca', async () => {
+  const t = generateAiTheme({ model: 'Porsche 911 GT3 RS', merk: 'Porsche', kategori: 'sport', mesin: '6 silinder 4.0L', tenaga: '525 PS' });
+  assert(t.id.startsWith('ai-'), `id tidak diawali ai-: ${t.id}`);
+  assert(t.hook.length > 10, 'hook kosong');
+  assert(/^#[0-9a-f]{6}$/i.test(t.palette.primary), 'palet utama bukan warna hex');
+  assert(t.rationale.length >= 2, 'alasan kurang dari dua butir');
+  assert(t.hashtags.every((h) => h.startsWith('#')), 'hashtag tidak diawali #');
+  assert(t.aspect === '9:16', `tema harus vertikal, dapat ${t.aspect}`);
+});
+
+await check('tema AI tidak menyebut spesifikasi yang tidak ada di katalog', async () => {
+  const tanpa = generateAiTheme({ model: 'Mobil Tanpa Data' });
+  const gabungan = [tanpa.hook, tanpa.caption, ...tanpa.hashtags, ...tanpa.rationale].join(' ');
+  assert(!/\d+\s*(PS|Nm|cc)\b/i.test(gabungan), `mengarang angka spesifikasi: ${gabungan}`);
+});
+
+await check('tema AI mengenali hibrida tanpa membuang adegan mesin', async () => {
+  const hybrid = generateAiTheme({ model: 'Ferrari 296 GTB', mesin: 'V6 3.0L twin-turbo + motor listrik', kategori: 'sport' });
+  const electric = generateAiTheme({ model: 'Porsche Taycan', mesin: 'dua motor listrik sinkron AC', kategori: 'sport' });
+  assert(hybrid.hashtags.includes('#hybrid'), `tag hibrida hilang: ${hybrid.hashtags.join(' ')}`);
+  assert(!hybrid.hashtags.includes('#ev'), 'hibrida tidak boleh diberi tag #ev');
+  // Hibrida masih punya mesin bakar, jadi tidak boleh dapat alasan "tanpa adegan knalpot".
+  assert(!hybrid.rationale.some((r) => r.includes('tanpa adegan knalpot')), 'hibrida diperlakukan seperti EV');
+  assert(hybrid.rationale.some((r) => r.includes('hibrida')), 'alasan hibrida tidak ditulis');
+  assert(electric.rationale.some((r) => r.includes('tanpa adegan knalpot')), 'EV tidak dikenali sebagai EV');
+});
+
+await check('pencarian template menaruh Track Day di atas untuk kategori balap', async () => {
+  const hits = searchTemplates({ q: 'balap', kategori: 'balap', durasi: 30, aspect: '9:16' });
+  assert(hits[0].template.id === 'track-day', `peringkat pertama: ${hits[0].template.id}`);
+  assert(hits[0].score > hits[1].score, 'skor teratas tidak lebih tinggi');
+  assert(hits[0].alasan.length > 0, 'tidak ada alasan peringkat');
+});
+
+await check('pencarian template menghukum durasi di bawah minimum', async () => {
+  const pendek = searchTemplates({ kategori: 'klasik', durasi: 10 }).find((h) => h.template.id === 'heritage')!;
+  const cukup = searchTemplates({ kategori: 'klasik', durasi: 45 }).find((h) => h.template.id === 'heritage')!;
+  assert(pendek.score < cukup.score, `skor 10s (${pendek.score}) tidak lebih rendah dari 45s (${cukup.score})`);
+});
+
+await check('setiap template hanya memakai scene yang dikenal pipeline', async () => {
+  for (const t of BUILTIN_TEMPLATES) {
+    for (const key of t.sceneKeys) {
+      assert(SCENE_KEYS.includes(key as (typeof SCENE_KEYS)[number]), `${t.id}: kunci "${key}" tidak dikenal`);
+    }
+  }
+});
+
+await check('template mengubah urutan scene yang direncanakan', async () => {
+  const brief: Brief = { model: 'Porsche 911 GT3 RS', rasio: '9:16', durasi: 30 };
+  const theme = pickTheme(brief.model, loadThemes().themes, 'generic');
+  const bawaan = planScenes({ brief, durationSec: 30, theme, aspect: '9:16' });
+  const track = planScenes({ brief, durationSec: 30, theme, aspect: '9:16', sceneKeys: ['hook', 'detail_wheel', 'action', 'detail_engine', 'cta'] });
+  assert(bawaan.some((s) => s.key === 'interior'), 'alur bawaan seharusnya punya interior');
+  assert(!track.some((s) => s.key === 'interior'), 'Track Day tidak boleh punya scene interior');
+  assert(track.some((s) => s.key === 'detail_wheel'), 'Track Day harus punya detail velg');
+  assert(track.reduce((n, s) => n + s.duration, 0) === 30, 'total durasi harus tepat 30 detik');
+});
+
+await check('brief membawa template dan tema AI ke worker', async () => {
+  const brief = parseBrief(JSON.stringify({
+    model: 'Porsche 911 GT3 RS',
+    templateId: 'track-day',
+    temaAi: { id: 'ai-uji', mood: 'uji', palette: { primary: '#112233', secondary: '#445566', accent: '#778899' } },
+  }));
+  assert(brief.templateId === 'track-day', 'templateId hilang dari brief');
+  assert(brief.temaAi?.id === 'ai-uji', 'temaAi hilang dari brief');
+  const look = resolveBriefLook(brief);
+  assert(look.template?.id === 'track-day', 'template tidak terbaca helper');
+  assert(look.theme.id === 'ai-uji', `tema tidak dipakai: ${look.theme.id}`);
+  assert(look.aspect === '9:16', `rasio template tidak dipakai: ${look.aspect}`);
+});
+
+// ------------------------------------------------------------------- feed
+
+await check('setiap entri feed vertikal, lolos QA, dan berkasnya ada', async () => {
+  const feed = JSON.parse(fs.readFileSync('studio/src/data/feed.json', 'utf8')) as Array<{
+    slug: string; width: number; height: number; qa: string; dur: number;
+  }>;
+  assert(Array.isArray(feed), 'feed.json bukan array');
+  for (const v of feed) {
+    assert(v.height > v.width, `${v.slug} tidak vertikal (${v.width}x${v.height})`);
+    assert(v.qa === 'lolos', `${v.slug} belum lolos QA`);
+    assert(v.dur >= 30, `${v.slug} di bawah minimum 30 detik (${v.dur})`);
+    assert(fs.existsSync(path.join('netlify-site', 'video', `${v.slug}.mp4`)), `${v.slug}.mp4 hilang dari situs`);
+    assert(fs.existsSync(path.join('netlify-site', 'thumb', `${v.slug}.jpg`)), `${v.slug}.jpg hilang dari situs`);
+  }
+});
+
+await check('feed tidak memakai video horizontal dari Perpustakaan', async () => {
+  const feed = JSON.parse(fs.readFileSync('studio/src/data/feed.json', 'utf8')) as Array<{ slug: string }>;
+  const lib = fs.readdirSync('netlify-site/video').filter((f) => f.endsWith('.mp4') && !f.startsWith('.'));
+  const horizontal = lib.filter((f) => !feed.some((v) => `${v.slug}.mp4` === f));
+  assert(horizontal.length > 0, 'tidak ada video horizontal tersisa; tes ini jadi tidak bermakna');
+  assert(feed.length > 0, 'feed kosong');
+});
+
+// Autoplay feed di seluler tidak boleh menarik master 1080p 23 MB per kartu.
+await check('setiap entri feed punya versi putar 720x1280 yang lebih ringan', async () => {
+  const feed = JSON.parse(fs.readFileSync('studio/src/data/feed.json', 'utf8')) as Array<{ slug: string }>;
+  for (const v of feed) {
+    const web = path.join('netlify-site', 'video', 'web', `${v.slug}.mp4`);
+    const master = path.join('netlify-site', 'video', `${v.slug}.mp4`);
+    assert(fs.existsSync(web), `video/web/${v.slug}.mp4 hilang`);
+    const webSize = fs.statSync(web).size;
+    const masterSize = fs.statSync(master).size;
+    assert(webSize < masterSize * 0.4, `versi web ${v.slug} tidak cukup ringan (${webSize} vs ${masterSize})`);
+  }
+});
+
+// Unduhan harus tetap master, bukan versi 720p yang dipakai untuk memutar.
+await check('feed memutar versi web dan mengunduh master', async () => {
+  const src = fs.readFileSync('studio/src/data/feed.ts', 'utf8');
+  assert(/feedVideoSrc[^\n]*video\/web\//.test(src), 'feedVideoSrc tidak menunjuk video/web/');
+  assert(/feedDownloadSrc[^\n]*`video\/\$\{v\.slug\}\.mp4/.test(src), 'feedDownloadSrc tidak menunjuk master');
+  const page = fs.readFileSync('studio/src/pages/Feed.tsx', 'utf8');
+  assert(page.includes('feedDownloadSrc(v)'), 'tombol unduh tidak memakai feedDownloadSrc');
 });
 
 console.log(`\n${passed} pemeriksaan lulus, ${failures.length} gagal`);

@@ -11,6 +11,22 @@ export const BriefSchema = z.object({
   referensi: z.array(z.string()).optional(),
   jadwalPublish: z.string().optional(),
   deadlineMenit: z.number().positive().optional(),
+  /** Template yang dipilih pengguna; menentukan resep scene. */
+  templateId: z.string().optional(),
+  /** Tema buatan AI yang dipilih pengguna, disimpan apa adanya di brief. */
+  temaAi: z
+    .object({
+      id: z.string(),
+      palette: z.object({ primary: z.string(), secondary: z.string(), accent: z.string() }),
+      mood: z.string(),
+      grade: z.object({ contrast: z.number(), saturation: z.number(), temperature: z.number() }),
+      cameraLanguage: z.string(),
+      lighting: z.string(),
+      descriptor: z.string(),
+      keywords: z.array(z.string()).optional(),
+    })
+    .partial()
+    .optional(),
 });
 
 export class BriefError extends Error {}

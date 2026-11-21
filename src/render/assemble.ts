@@ -3,10 +3,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { jobDir } from '../core/fsx.ts';
 import { writeArtifactFile } from '../agents/guard.ts';
-import { loadDefaults, loadThemes } from '../core/config.ts';
-import { pickTheme } from '../core/theme.ts';
+import { loadDefaults } from '../core/config.ts';
+import { resolveBriefLook } from '../core/brief-look.ts';
 import type { AgentContext } from '../agents/guard.ts';
-import type { AssetRecord, ScenePlan, Theme } from '../core/types.ts';
+import type { AssetRecord, Brief, ScenePlan, Theme } from '../core/types.ts';
 import { ffprobe, contactSheet, ffmpegHasFilter } from './ffmpeg.ts';
 import { buildMusicBed, buildEngineTrack, muxAudio } from './audio.ts';
 import { describeProfile } from './engine.ts';
@@ -193,12 +193,15 @@ function gradeFilters(theme: Theme): string[] {
 export async function assembleVideo(ctx: AgentContext): Promise<RenderResult> {
   const scenes = (ctx.readArtifact<ScenePlan[]>('storyboard.json') ?? []) as ScenePlan[];
   const assets = (ctx.readArtifact<AssetRecord[]>('assets.json') ?? []) as AssetRecord[];
-  const brief = ctx.brief as unknown as { model?: string; rasio?: string };
-  const { width, height } = aspectSize(brief.rasio ?? '16:9');
+  const brief = ctx.brief as unknown as Brief;
+  const look = resolveBriefLook(brief);
+  const { width, height } = aspectSize(look.aspect);
   const defaults = loadDefaults();
   const fps = defaults.render.fps;
-  const themes = loadThemes();
-  const theme = pickTheme(brief.model ?? '', themes.themes, themes.defaultTheme);
+  // Grade warna harus ikut tema yang dipilih (termasuk tema buatan AI), bukan
+  // tema kata kunci, supaya palet yang dilihat pengguna di UI benar-benar
+  // diterapkan ke video.
+  const theme = look.theme;
   const clipsDir = path.join(jobDir(ctx.jobId), 'clips');
   fs.mkdirSync(clipsDir, { recursive: true });
 

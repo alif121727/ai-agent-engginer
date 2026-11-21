@@ -5,6 +5,7 @@ import { artifactPath } from './guard.ts';
 import { loadThemes, loadDefaults, loadAdapters } from '../core/config.ts';
 import { pickTheme } from '../core/theme.ts';
 import { planScenes, estimateCost } from '../pipeline/scenes.ts';
+import { resolveBriefLook } from '../core/brief-look.ts';
 import { resolveSceneAsset } from '../visuals/index.ts';
 import { assetFolderSlug } from '../visuals/types.ts';
 import { sanitizePrompt } from '../visuals/sanitize.ts';
@@ -57,9 +58,15 @@ tool('plan_jobs', 'Susun rencana kerja dari brief', async (_args, ctx) => {
   const defaults = loadDefaults();
   const brief = ctx.brief as unknown as Brief;
   const { durationSec, bumped, originalDuration } = resolveDuration(brief, defaults.minDurasi, defaults.maxDurasi);
-  const themes = loadThemes();
-  const theme = pickTheme(brief.model, themes.themes, themes.defaultTheme);
-  const scenes = planScenes({ brief, durationSec, theme, aspect: brief.rasio ?? '16:9' });
+  const look = resolveBriefLook(brief);
+  const theme = look.theme;
+  const scenes = planScenes({
+    brief,
+    durationSec,
+    theme,
+    aspect: look.aspect,
+    sceneKeys: look.template?.sceneKeys,
+  });
   const adapters = loadAdapters();
   const withVideo = Object.values(adapters.adapters).some(
     (a) => a.kind === 'video-gen' && a.enabled && a.envKey && process.env[a.envKey],
@@ -154,9 +161,15 @@ tool('write_script', 'Tulis narasi dan teks layar', async (_args, ctx) => {
   const research = ctx.readArtifact<{ specs: { text: string }[] }>('research.json');
   const defaults = loadDefaults();
   const { durationSec } = resolveDuration(brief, defaults.minDurasi, defaults.maxDurasi);
-  const themes = loadThemes();
-  const theme = pickTheme(brief.model, themes.themes, themes.defaultTheme);
-  const scenes = planScenes({ brief, durationSec, theme, aspect: brief.rasio ?? '16:9' });
+  const look = resolveBriefLook(brief);
+  const theme = look.theme;
+  const scenes = planScenes({
+    brief,
+    durationSec,
+    theme,
+    aspect: look.aspect,
+    sceneKeys: look.template?.sceneKeys,
+  });
   const specs = research?.specs ?? [];
   const entry = findModel(brief.model);
   const detail = entry
@@ -243,9 +256,15 @@ tool('write_storyboard', 'Tulis storyboard per scene', async (_args, ctx) => {
   const brief = ctx.brief as unknown as Brief;
   const defaults = loadDefaults();
   const { durationSec } = resolveDuration(brief, defaults.minDurasi, defaults.maxDurasi);
-  const themes = loadThemes();
-  const theme = pickTheme(brief.model, themes.themes, themes.defaultTheme);
-  const scenes = planScenes({ brief, durationSec, theme, aspect: brief.rasio ?? '16:9' });
+  const look = resolveBriefLook(brief);
+  const theme = look.theme;
+  const scenes = planScenes({
+    brief,
+    durationSec,
+    theme,
+    aspect: look.aspect,
+    sceneKeys: look.template?.sceneKeys,
+  });
   const script = ctx.readArtifact<{ lines: { sceneIndex: number; voiceover: string }[] }>('script.json');
   const voByScene = new Map((script?.lines ?? []).map((l) => [l.sceneIndex, l.voiceover]));
   const storyboard = scenes.map((scene) => ({ ...scene, voiceover: voByScene.get(scene.index) ?? '' }));
@@ -273,8 +292,7 @@ async function generateAssets(ctx: AgentContext, wantVideo: boolean): Promise<As
   const scenes = scenesFrom(ctx);
   const defaults = loadDefaults();
   const adapters = loadAdapters();
-  const themes = loadThemes();
-  const theme = pickTheme(brief.model, themes.themes, themes.defaultTheme);
+  const theme = resolveBriefLook(brief).theme;
   const outDir = path.join(jobDir(ctx.jobId), 'assets');
   const done = new Set(readSceneCheckpoint(ctx.jobId, 'aset-visual').done);
   const existing = ctx.readArtifact<AssetRecord[]>('assets.json') ?? [];
@@ -364,9 +382,8 @@ tool('read_assets', 'Baca daftar aset', async (_args, ctx) => ctx.readArtifact('
 
 tool('write_motion', 'Tulis parameter animasi dan color grade', async (_args, ctx) => {
   const scenes = scenesFrom(ctx);
-  const themes = loadThemes();
   const brief = ctx.brief as unknown as Brief;
-  const theme = pickTheme(brief.model, themes.themes, themes.defaultTheme);
+  const theme = resolveBriefLook(brief).theme;
   const motion = {
     grade: theme.grade,
     palette: theme.palette,

@@ -47,15 +47,7 @@ if (!fs.existsSync(cssOut)) {
   process.exit(1);
 }
 
-// index.html: ambil dari studio, tapi pertahankan versi lama sebagai cadangan
 const oldIndex = path.join(out, 'index.html');
-if (fs.existsSync(oldIndex)) {
-  const prev = fs.readFileSync(oldIndex, 'utf8');
-  if (!prev.includes('assets/studio.js')) {
-    fs.writeFileSync(path.join(root, 'netlify-site', 'galeri-lama.html'), prev);
-    console.log('· galeri lama disimpan sebagai galeri-lama.html');
-  }
-}
 fs.copyFileSync(path.join(src, 'index.html'), oldIndex);
 // 404.html statis: dipakai Netlify dan GitHub Pages apa adanya.
 fs.copyFileSync(path.join(src, '404.html'), path.join(out, '404.html'));

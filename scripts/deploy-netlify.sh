@@ -25,14 +25,13 @@ HASH=$(grep -o 'studio.js?v=[a-f0-9]*' "$ROOT/netlify-site/index.html" | head -1
 echo "Bundel lokal: v=$HASH"
 
 cd "$ROOT" || exit 1
-"$CLI" unlink >/dev/null 2>&1
-rm -rf "$ROOT/.netlify"
-"$CLI" link --id "$SITE_ID" >/dev/null || { echo "Gagal menautkan situs $SITE_ID"; exit 1; }
 
-# `status --json` keluar non-zero saat folder belum tertaut, dan `pipefail`
-# meneruskan kegagalan itu, jadi periksa isi outputnya, bukan exit code.
-STATUS_JSON=$("$CLI" status --json 2>/dev/null)
-TOKEN=$(python3 - <<'PY'
+# Token bisa datang dari environment (paling tahan restart) atau dari config
+# CLI. Sandbox ini pernah me-reset ~/.config/netlify sehingga config kosong,
+# jadi NETLIFY_AUTH_TOKEN harus didahulukan.
+TOKEN="${NETLIFY_AUTH_TOKEN:-}"
+if [ -z "$TOKEN" ]; then
+  TOKEN=$(python3 - <<'PY'
 import json, os
 try:
     cfg = json.load(open(os.path.expanduser("~/.config/netlify/config.json")))
@@ -41,15 +40,60 @@ except Exception:
     print("")
 PY
 )
-case "$STATUS_JSON" in
-  *'"loggedIn": true'*) [ -n "$TOKEN" ] || { echo "Token login tidak terbaca"; exit 1; } ;;
-  *) echo "Belum login. Jalankan: $CLI login"; exit 1 ;;
-esac
+fi
 
+if [ -z "$TOKEN" ]; then
+  cat <<EOF
+Belum ada kredensial Netlify. Pilih salah satu:
+
+  1) Login lewat browser (tanpa menyalin token):
+       $CLI login --request "Deploy Studio AI"
+     Buka Authorize URL yang tercetak, setujui, lalu:
+       $CLI login --check <ticket>
+
+  2) Pakai personal access token:
+       NETLIFY_AUTH_TOKEN=xxx $0
+
+Catatan: build Netlify dari GitHub di-skip (kredit habis), jadi push tidak
+memperbarui situs. Tanpa token, deploy tidak bisa dijalankan.
+EOF
+  exit 1
+fi
+
+# Diekspor supaya `link`, `deploy`, dan panggilan CLI lain memakai token yang
+# sama; tanpa ini `deploy` mengeluh "No project linked" meski state.json ada.
+export NETLIFY_AUTH_TOKEN="$TOKEN"
+
+"$CLI" unlink >/dev/null 2>&1
+rm -rf "$ROOT/.netlify"
+"$CLI" link --id "$SITE_ID" >/dev/null \
+  || { echo "Gagal menautkan situs $SITE_ID (token ditolak?)"; exit 1; }
+
+# `link` bisa keluar dengan kode 0 tanpa menulis state (mis. token tidak sah),
+# dan kegagalannya baru muncul sebagai "No project linked" di langkah deploy.
+LINKED=$(python3 -c "
+import json
+try: print(json.load(open('$ROOT/.netlify/state.json')).get('siteId',''))
+except Exception: print('')
+")
+[ "$LINKED" = "$SITE_ID" ] || {
+  echo "Tautan situs tidak tersimpan (siteId='$LINKED'). Token kemungkinan tidak sah."
+  exit 1
+}
+echo "Tertaut ke $SITE_ID"
+
+# --site eksplisit: `deploy` sempat mengabaikan tautan lokal dan mengeluh
+# "No project linked" walau .netlify/state.json sudah benar.
 OUT=$("$CLI" deploy --no-build --dir netlify-site --allow-anonymous --json \
-      --message "Studio AI v=$HASH" 2>&1)
+      --site "$SITE_ID" --message "Studio AI v=$HASH" 2>&1)
 DEPLOY_ID=$(printf '%s' "$OUT" | python3 -c "import sys,json;print(json.load(sys.stdin).get('deploy_id',''))" 2>/dev/null)
-[ -n "$DEPLOY_ID" ] || { echo "$OUT" | tail -15; exit 1; }
+[ -n "$DEPLOY_ID" ] || {
+  echo "$OUT" | tail -5
+  case "$OUT" in
+    *Unauthorized*) echo "Token Netlify ditolak. Buat token baru di User settings -> Applications -> Personal access tokens." ;;
+  esac
+  exit 1
+}
 echo "Deploy preview: $DEPLOY_ID"
 
 if [ "${1:-}" = "--dry" ]; then

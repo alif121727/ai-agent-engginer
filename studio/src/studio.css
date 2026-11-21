@@ -204,7 +204,10 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
 .topbar__crumb { color: var(--text-3); font-size: 0.8rem; }
 .topbar__spacer { flex: 1; }
 
-.page { padding: var(--sp-6); max-width: 1500px; width: 100%; }
+/* padding-bottom ekstra: badge "Powered by Netlify" adalah iframe fixed di
+   pojok kanan bawah (211x64, z-index maksimum) dan menutupi tombol aksi
+   terakhir kalau kontennya pas mengisi layar. */
+.page { padding: var(--sp-6); padding-bottom: calc(var(--sp-6) + 56px); max-width: 1500px; width: 100%; }
 .page--wide { max-width: none; }
 
 /* ---------------------------------------------------------------- atoms */

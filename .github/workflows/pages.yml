@@ -1,9 +1,13 @@
 # Deploy studio statis ke GitHub Pages.
 #
-# Kenapa ada: situs Netlify `agent-studio-ai` memakai kredit yang sudah habis,
-# sehingga build dari Git di-skip dan push tidak memperbarui apa pun. GitHub
-# Pages tidak butuh kredit dan repo ini publik, jadi ini jalur deploy yang
-# selalu bisa dipakai.
+# Kenapa ada: situs Netlify `agent-studio-ai` kehabisan kredit, sehingga build
+# dari Git di-skip dan push tidak memperbarui apa pun. GitHub Pages tidak butuh
+# kredit dan repo ini publik, jadi ini jalur deploy yang selalu bisa dipakai.
+#
+# Situs Pages di repo ini berjalan dalam mode "legacy": sumbernya branch
+# `gh-pages`, bukan artifact Actions. Jadi workflow ini mem-build lalu
+# mem-push hasilnya ke branch itu; Pages membangun ulang sendiri setiap push.
+# actions/deploy-pages akan gagal di sini karena build_type bukan "workflow".
 name: Deploy ke GitHub Pages
 
 on:
@@ -12,48 +16,34 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
   group: pages
   cancel-in-progress: true
 
 jobs:
-  build:
+  publish:
     runs-on: ubuntu-latest
-    outputs:
-      pages-ready: ${{ steps.pages.outcome == 'success' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      # --include=dev: `npm ci` menghormati NODE_ENV, dan build butuh esbuild.
+      # --include=dev: npm menghormati NODE_ENV, dan build butuh esbuild.
       - run: npm install --include=dev --no-audit --no-fund
       - run: npm run build:studio
-      # enablement: true membuat Pages aktif sendiri lewat API. Token GitHub App
-      # yang tersedia di sini tidak punya izin itu, jadi kegagalannya ditoleransi:
-      # CI tetap hijau, dan workflow ini langsung bekerja begitu Pages diaktifkan
-      # sekali secara manual (Settings -> Pages -> Source: GitHub Actions).
-      - id: pages
-        uses: actions/configure-pages@v5
-        continue-on-error: true
-        with:
-          enablement: true
-      - if: steps.pages.outcome == 'success'
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: netlify-site
 
-  deploy:
-    needs: build
-    if: needs.build.outputs.pages-ready == 'true'
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Push hasil build ke gh-pages
+        run: |
+          cd netlify-site
+          # .nojekyll: Jekyll membuang file/folder berawalan garis bawah.
+          touch .nojekyll
+          git init -q -b gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Build ${GITHUB_SHA::7} dari main"
+          git push -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -268,3 +268,21 @@ yang sudah tertaut (jadi `unlink` dulu). CLI ada di `/workspace/tools`
   404 mandiri, versi package.json).
 - `netlify.toml` akar repo kini punya redirect 404; `[build] publish` tetap
   `netlify-site`.
+
+## Audio mesin (bug mahal, sudah diperbaiki)
+- Video terbit sempat **tanpa suara mesin**: yang terdengar hanya drone sine 55 Hz.
+  Dua sebab: `theta` (fase kumulatif) dipakai sebagai rpm → nada naik ke 41 kHz;
+  dan `rpmPoints()` mengembalikan rpm datar saat `scenes` kosong.
+- Sintesis **tidak akan pernah** terdengar seperti mesin. `assets/audio/*.m4a`
+  (6 rekaman CC BY 3.0, dipangkas 14 dtk, ~1.4 MB) dipakai lebih dulu lewat
+  `recordedSegmentFor()`; sintesis hanya cadangan.
+- Metrik pembeda: **jitter nada**. Drone 0–2%, mesin asli 57–227%. Tes
+  `suara mesin bergerak seperti mesin sungguhan` gagal di bawah 15%.
+- Verifikasi audio **dari browser** (WebAudio `AnalyserNode`), bukan dari file:
+  mesin asli menunjukkan deret harmonik (puncak berjarak ~12 Hz).
+- `netlify.toml` menetapkan `/video/*` `immutable` 1 tahun. URL mp4 **wajib**
+  ber-hash (`MEDIA_VERSION` dari `scripts/build-studio.ts`), kalau tidak
+  browser terus memutar audio lama. `Library.tsx` dulu menyusun URL sendiri —
+  pakai `videoSrc()`/`thumbSrc()` dari `data/rendered.ts`.
+- Video terbit diperbaiki dengan **remux** (`muxAudio`, `-c:v copy`): durasi dan
+  gambar utuh, hanya audio diganti. Jauh lebih murah daripada render ulang.

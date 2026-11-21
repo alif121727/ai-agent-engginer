@@ -31,7 +31,11 @@ jobs:
       # --include=dev: `npm ci` menghormati NODE_ENV, dan build butuh esbuild.
       - run: npm install --include=dev --no-audit --no-fund
       - run: npm run build:studio
+      # enablement: true membuat Pages aktif sendiri lewat API, karena repo ini
+      # belum pernah punya situs Pages (kalau tidak, aksi ini gagal "Not Found").
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: netlify-site

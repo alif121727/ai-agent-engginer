@@ -33,6 +33,18 @@ an mp4 using a team of AI agents with fixed job desks. Node + `--experimental-st
 - Jobs whose assets are flat placeholder PNGs legitimately fail QA. Test with
   real photos (e.g. picsum) instead of generated gradients.
 
+## Galeri statis (deploy GitHub Pages)
+- Situs live: `https://alif121727.github.io/ai-agent-engginer/` (workflow
+  `.github/workflows/pages.yml` build `npm run build:studio` lalu push ke `gh-pages`;
+  Pages berjalan mode legacy, jadi JANGAN pakai `actions/deploy-pages`).
+- `video/` = master (dipakai tombol Unduh), `video/web/` = versi putar 720p untuk
+  Feed. Tes menuntut ukuran web < 40% master.
+- `width`/`height` di `studio/src/data/rendered.ts` harus berasal dari `ffprobe`
+  berkas yang disajikan, bukan dari brief — dulu mengklaim 1080p untuk berkas 720p.
+- Badge kartu: `v.qa === 'tanpa-foto'` -> "AI-GENERATED", selain itu "FOTO ASLI".
+- Provenance foto: `jobs/<id>/artifacts/assets.json` (`provider: local`, `source`
+  menunjuk `assets/own/<slug>/`). Slug folder ≠ slug galeri.
+
 ## Commands that matter
 - `npm test` -> 37 checks, exits non-zero on failure.
 - `npm run api` (port 8080) + `npm run worker` — both needed; jobs stall without the worker.

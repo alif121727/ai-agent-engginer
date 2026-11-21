@@ -78,7 +78,7 @@ export function Library({ go }: { go: (r: Route) => void }) {
               <div className="vcard__media">
                 <video src={videoSrc(v)} poster={thumbSrc(v)} controls preload="metadata" playsInline />
                 <span className="vcard__badge">{v.dur}s</span>
-                <span className="vcard__ai">AI-GENERATED</span>
+                <span className="vcard__ai">{v.qa === 'tanpa-foto' ? 'AI-GENERATED' : 'FOTO ASLI'}</span>
               </div>
               <div className="vcard__body">
                 <div className="row row--between">

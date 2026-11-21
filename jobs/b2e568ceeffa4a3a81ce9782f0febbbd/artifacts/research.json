@@ -1,0 +1,49 @@
+{
+  "model": "Porsche Taycan Turbo S",
+  "catalog": {
+    "merk": "Porsche",
+    "seri": "Taycan Turbo S",
+    "tahun": "2019–sekarang",
+    "kategori": "sport",
+    "mesin": "dua motor listrik sinkron AC",
+    "tenaga": "tidak disebut di sumber",
+    "torsi": "tidak disebut di sumber",
+    "layout": "dual-motor, AWD",
+    "berat": "tidak disebut di sumber",
+    "nol100": "2,8 dtk",
+    "vmax": "tidak disebut di sumber",
+    "sumber": "https://en.wikipedia.org/wiki/Porsche_Taycan"
+  },
+  "specs": [
+    {
+      "text": "dual motor 761 cv",
+      "source": "brief"
+    },
+    {
+      "text": "800V charging",
+      "source": "brief"
+    },
+    {
+      "text": "sasis PASM",
+      "source": "brief"
+    },
+    {
+      "text": "dual-motor, AWD",
+      "source": "katalog"
+    },
+    {
+      "text": "0–100 km/jam 2,8 dtk",
+      "source": "katalog"
+    },
+    {
+      "text": "Produksi 2019–sekarang",
+      "source": "katalog"
+    },
+    {
+      "text": "Arsitektur 800 volt: tenaga penuh bertahan lebih lama, isi ulang lebih cepat.",
+      "source": "katalog"
+    }
+  ],
+  "missing": [],
+  "note": "angka dari brief didahulukan; sisanya dari katalog yang bersumber Wikipedia"
+}

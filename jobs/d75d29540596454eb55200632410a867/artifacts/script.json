@@ -1,0 +1,36 @@
+{
+  "model": "Jaguar E-Type",
+  "tagline": "",
+  "lines": [
+    {
+      "sceneIndex": 0,
+      "onScreenText": "Jaguar E-Type",
+      "voiceover": "Jaguar E-Type. Jaguar Seri 1 coupé, 1961–1975."
+    },
+    {
+      "sceneIndex": 1,
+      "onScreenText": "Jaguar E-Type",
+      "voiceover": "Ini Jaguar E-Type, 1961–1975. Mesin I6 3.8–4.2L naturally aspirated (XK6)."
+    },
+    {
+      "sceneIndex": 2,
+      "onScreenText": "desain 1961",
+      "voiceover": "Salah satu andalannya: ikon British."
+    },
+    {
+      "sceneIndex": 3,
+      "onScreenText": "inline-six",
+      "voiceover": "Kabin Jaguar Seri 1 coupé, semua tersusun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "onScreenText": "ikon British",
+      "voiceover": "Di jalan, 265 PS, nol sampai seratus ±7,1 dtk."
+    },
+    {
+      "sceneIndex": 5,
+      "onScreenText": "Jaguar E-Type",
+      "voiceover": "Jaguar E-Type."
+    }
+  ]
+}

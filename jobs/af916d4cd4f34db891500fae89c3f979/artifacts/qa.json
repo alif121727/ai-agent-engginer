@@ -1,0 +1,168 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "name": "berkas-video",
+      "ok": true,
+      "detail": "21.2 MB"
+    },
+    {
+      "name": "terbaca-ffprobe",
+      "ok": true,
+      "detail": "h264 1080x1920 30.0 dtk"
+    },
+    {
+      "name": "durasi-sesuai",
+      "ok": true,
+      "detail": "video 30.0 dtk vs rencana 30.0 dtk"
+    },
+    {
+      "name": "ada-audio",
+      "ok": true,
+      "detail": "codec aac"
+    },
+    {
+      "name": "resolusi",
+      "ok": true,
+      "detail": "1080x1920"
+    },
+    {
+      "name": "tanpa-fallback",
+      "ok": true,
+      "detail": "semua aset nyata"
+    },
+    {
+      "name": "frame-1",
+      "ok": true,
+      "detail": "ketajaman 16"
+    },
+    {
+      "name": "frame-2",
+      "ok": true,
+      "detail": "ketajaman 13"
+    },
+    {
+      "name": "frame-3",
+      "ok": true,
+      "detail": "ketajaman 9"
+    },
+    {
+      "name": "frame-4",
+      "ok": true,
+      "detail": "ketajaman 11"
+    },
+    {
+      "name": "frame-5",
+      "ok": true,
+      "detail": "ketajaman 12"
+    },
+    {
+      "name": "frame-6",
+      "ok": true,
+      "detail": "ketajaman 14"
+    },
+    {
+      "name": "tidak-kosong",
+      "ok": true,
+      "detail": "rata-rata ketajaman 12.5"
+    },
+    {
+      "name": "tidak-beku",
+      "ok": true,
+      "detail": "6 dari 6 frame berbeda"
+    },
+    {
+      "name": "gerakan-terukur",
+      "ok": true,
+      "detail": "skor 0.509 (min 0.2), global 0.458, lokal 0.227"
+    },
+    {
+      "name": "gerakan-scene-1",
+      "ok": true,
+      "detail": "hook: skor 0.358 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-2",
+      "ok": true,
+      "detail": "exterior: skor 0.693 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-3",
+      "ok": true,
+      "detail": "features: skor 0.312 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-4",
+      "ok": true,
+      "detail": "interior: skor 1 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-5",
+      "ok": true,
+      "detail": "action: skor 0.253 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-6",
+      "ok": true,
+      "detail": "cta: skor 0.397 (min 0.2)"
+    }
+  ],
+  "assets": {
+    "passed": true,
+    "issues": []
+  },
+  "motion": {
+    "score": 0.509,
+    "globalMotion": 0.458,
+    "localMotion": 0.227,
+    "localRatio": 0.496,
+    "frames": 240,
+    "passed": true
+  },
+  "motionPerScene": [
+    {
+      "scene": 0,
+      "key": "hook",
+      "score": 0.358,
+      "passed": true
+    },
+    {
+      "scene": 1,
+      "key": "exterior",
+      "score": 0.693,
+      "passed": true
+    },
+    {
+      "scene": 2,
+      "key": "features",
+      "score": 0.312,
+      "passed": true
+    },
+    {
+      "scene": 3,
+      "key": "interior",
+      "score": 1,
+      "passed": true
+    },
+    {
+      "scene": 4,
+      "key": "action",
+      "score": 0.253,
+      "passed": true
+    },
+    {
+      "scene": 5,
+      "key": "cta",
+      "score": 0.397,
+      "passed": true
+    }
+  ],
+  "video": {
+    "file": "/workspace/project/jobs/af916d4cd4f34db891500fae89c3f979/video.mp4",
+    "durationSec": 30,
+    "width": 1080,
+    "height": 1920,
+    "codec": "h264"
+  },
+  "checkedAt": "2026-11-21T15:28:08.873Z"
+}

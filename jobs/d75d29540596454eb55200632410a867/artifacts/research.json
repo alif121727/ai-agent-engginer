@@ -1,0 +1,53 @@
+{
+  "model": "Jaguar E-Type",
+  "catalog": {
+    "merk": "Jaguar",
+    "seri": "Seri 1 coupé",
+    "tahun": "1961–1975",
+    "kategori": "klasik",
+    "mesin": "I6 3.8–4.2L naturally aspirated (XK6)",
+    "tenaga": "265 PS",
+    "torsi": "tidak disebut di sumber",
+    "layout": "front-engine, RWD",
+    "berat": "1.315 kg",
+    "nol100": "±7,1 dtk",
+    "vmax": "240 km/jam",
+    "sumber": "https://en.wikipedia.org/wiki/Jaguar_E-Type"
+  },
+  "specs": [
+    {
+      "text": "desain 1961",
+      "source": "brief"
+    },
+    {
+      "text": "inline-six",
+      "source": "brief"
+    },
+    {
+      "text": "ikon British",
+      "source": "brief"
+    },
+    {
+      "text": "I6 3.8–4.2L naturally aspirated (XK6) · 265 PS",
+      "source": "katalog"
+    },
+    {
+      "text": "front-engine, RWD",
+      "source": "katalog"
+    },
+    {
+      "text": "0–100 km/jam ±7,1 dtk · top speed 240 km/jam",
+      "source": "katalog"
+    },
+    {
+      "text": "Berat 1.315 kg · produksi 1961–1975",
+      "source": "katalog"
+    },
+    {
+      "text": "Monokok, suspensi independen, dan rem cakram di keempat roda sejak 1961.",
+      "source": "katalog"
+    }
+  ],
+  "missing": [],
+  "note": "angka dari brief didahulukan; sisanya dari katalog yang bersumber Wikipedia"
+}

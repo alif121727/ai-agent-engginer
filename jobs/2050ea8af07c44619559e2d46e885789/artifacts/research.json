@@ -1,0 +1,53 @@
+{
+  "model": "Subaru Impreza 22B STi",
+  "catalog": {
+    "merk": "Subaru",
+    "seri": "22B STi (GC8)",
+    "tahun": "1998",
+    "kategori": "klasik",
+    "mesin": "flat-4 2.2L turbo (EJ22)",
+    "tenaga": "280 PS",
+    "torsi": "363 Nm",
+    "layout": "front-engine, AWD",
+    "berat": "1.270 kg",
+    "nol100": "4,7 dtk",
+    "vmax": "±240 km/jam",
+    "sumber": "https://en.wikipedia.org/wiki/Subaru_Impreza"
+  },
+  "specs": [
+    {
+      "text": "boxer turbo",
+      "source": "brief"
+    },
+    {
+      "text": "AWD simetris",
+      "source": "brief"
+    },
+    {
+      "text": "edisi 400 unit",
+      "source": "brief"
+    },
+    {
+      "text": "flat-4 2.2L turbo (EJ22) · 280 PS",
+      "source": "katalog"
+    },
+    {
+      "text": "Torsi 363 Nm · front-engine, AWD",
+      "source": "katalog"
+    },
+    {
+      "text": "0–100 km/jam 4,7 dtk · top speed ±240 km/jam",
+      "source": "katalog"
+    },
+    {
+      "text": "Berat 1.270 kg · produksi 1998",
+      "source": "katalog"
+    },
+    {
+      "text": "Perayaan tiga gelar WRC berturut-turut, dengan bodi lebar dan roda 17 inci.",
+      "source": "katalog"
+    }
+  ],
+  "missing": [],
+  "note": "angka dari brief didahulukan; sisanya dari katalog yang bersumber Wikipedia"
+}

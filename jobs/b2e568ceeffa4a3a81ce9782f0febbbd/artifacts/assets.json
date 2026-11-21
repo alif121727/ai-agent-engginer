@@ -1,0 +1,51 @@
+[
+  {
+    "sceneIndex": 0,
+    "kind": "image",
+    "path": "/workspace/project/jobs/b2e568ceeffa4a3a81ce9782f0febbbd/assets/scene-01.jpg",
+    "source": "/workspace/project/assets/own/porsche-taycan-turbo-s/foto-1.jpg",
+    "provider": "local"
+  },
+  {
+    "sceneIndex": 1,
+    "kind": "image",
+    "path": "/workspace/project/jobs/b2e568ceeffa4a3a81ce9782f0febbbd/assets/scene-02.jpg",
+    "source": "/workspace/project/assets/own/porsche-taycan-turbo-s/foto-2.jpg",
+    "provider": "local"
+  },
+  {
+    "sceneIndex": 2,
+    "kind": "image",
+    "path": "/workspace/project/jobs/b2e568ceeffa4a3a81ce9782f0febbbd/assets/scene-03.jpg",
+    "source": "/workspace/project/assets/own/porsche-taycan-turbo-s/foto-3.jpg",
+    "provider": "local"
+  },
+  {
+    "sceneIndex": 3,
+    "kind": "image",
+    "path": "/workspace/project/jobs/b2e568ceeffa4a3a81ce9782f0febbbd/assets/scene-04.jpg",
+    "source": "/workspace/project/assets/own/porsche-taycan-turbo-s/foto-4.jpg",
+    "provider": "local"
+  },
+  {
+    "sceneIndex": 4,
+    "kind": "image",
+    "path": "/workspace/project/jobs/b2e568ceeffa4a3a81ce9782f0febbbd/assets/scene-05.jpg",
+    "source": "/workspace/project/assets/own/porsche-taycan-turbo-s/foto-5.jpg",
+    "provider": "local"
+  },
+  {
+    "sceneIndex": 5,
+    "kind": "image",
+    "path": "/workspace/project/jobs/b2e568ceeffa4a3a81ce9782f0febbbd/assets/scene-06.jpg",
+    "source": "/workspace/project/assets/own/porsche-taycan-turbo-s/foto-1.jpg",
+    "provider": "local"
+  },
+  {
+    "sceneIndex": 6,
+    "kind": "image",
+    "path": "/workspace/project/jobs/b2e568ceeffa4a3a81ce9782f0febbbd/assets/scene-07.jpg",
+    "source": "/workspace/project/assets/own/porsche-taycan-turbo-s/foto-2.jpg",
+    "provider": "local"
+  }
+]

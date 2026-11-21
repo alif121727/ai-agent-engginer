@@ -1,0 +1,53 @@
+{
+  "model": "Ferrari 296 GTB",
+  "catalog": {
+    "merk": "Ferrari",
+    "seri": "296 GTB (F171)",
+    "tahun": "2022–2025",
+    "kategori": "sport",
+    "mesin": "V6 3.0L twin-turbo 120° (F163 BC) + motor listrik",
+    "tenaga": "830 PS (663 PS mesin + 167 PS listrik)",
+    "torsi": "740 Nm",
+    "layout": "mid-engine, RWD",
+    "berat": "1.470 kg",
+    "nol100": "2,9 dtk",
+    "vmax": ">330 km/jam",
+    "sumber": "https://en.wikipedia.org/wiki/Ferrari_296"
+  },
+  "specs": [
+    {
+      "text": "V6 hybrid 830 cv",
+      "source": "brief"
+    },
+    {
+      "text": "aerodinamika aktif",
+      "source": "brief"
+    },
+    {
+      "text": "desain Maranello",
+      "source": "brief"
+    },
+    {
+      "text": "V6 3.0L twin-turbo 120° (F163 BC) + motor listrik · 830 PS (663 PS mesin + 167 PS listrik)",
+      "source": "katalog"
+    },
+    {
+      "text": "Torsi 740 Nm · mid-engine, RWD",
+      "source": "katalog"
+    },
+    {
+      "text": "0–100 km/jam 2,9 dtk · top speed >330 km/jam",
+      "source": "katalog"
+    },
+    {
+      "text": "Berat 1.470 kg · produksi 2022–2025",
+      "source": "katalog"
+    },
+    {
+      "text": "V6 120 derajat yang dipadukan motor listrik, lahir dari DNA 250 LM.",
+      "source": "katalog"
+    }
+  ],
+  "missing": [],
+  "note": "angka dari brief didahulukan; sisanya dari katalog yang bersumber Wikipedia"
+}

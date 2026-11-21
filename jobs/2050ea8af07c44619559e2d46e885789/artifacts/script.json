@@ -1,0 +1,41 @@
+{
+  "model": "Subaru Impreza 22B STi",
+  "tagline": "",
+  "lines": [
+    {
+      "sceneIndex": 0,
+      "onScreenText": "Subaru Impreza 22B STi",
+      "voiceover": "Subaru Impreza 22B STi. Subaru 22B STi (GC8), 1998."
+    },
+    {
+      "sceneIndex": 1,
+      "onScreenText": "Subaru Impreza 22B STi",
+      "voiceover": "Ini Subaru Impreza 22B STi, 1998. Mesin flat-4 2.2L turbo (EJ22)."
+    },
+    {
+      "sceneIndex": 2,
+      "onScreenText": "boxer turbo",
+      "voiceover": "Salah satu andalannya: edisi 400 unit."
+    },
+    {
+      "sceneIndex": 3,
+      "onScreenText": "AWD simetris",
+      "voiceover": "Kabin Subaru 22B STi (GC8), semua tersusun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "onScreenText": "edisi 400 unit",
+      "voiceover": "Di jalan, 280 PS, nol sampai seratus 4,7 dtk."
+    },
+    {
+      "sceneIndex": 5,
+      "onScreenText": "",
+      "voiceover": "0–100 km/jam 4,7 dtk · top speed ±240 km/jam."
+    },
+    {
+      "sceneIndex": 6,
+      "onScreenText": "Subaru Impreza 22B STi",
+      "voiceover": "Subaru Impreza 22B STi."
+    }
+  ]
+}

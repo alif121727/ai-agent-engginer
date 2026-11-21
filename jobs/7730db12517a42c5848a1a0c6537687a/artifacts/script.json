@@ -1,0 +1,41 @@
+{
+  "model": "Mazda RX-7 FD3S",
+  "tagline": "",
+  "lines": [
+    {
+      "sceneIndex": 0,
+      "onScreenText": "Mazda RX-7 FD3S",
+      "voiceover": "Mazda RX-7 FD3S. Mazda FD3S, 1992–2002."
+    },
+    {
+      "sceneIndex": 1,
+      "onScreenText": "Mazda RX-7 FD3S",
+      "voiceover": "Ini Mazda RX-7 FD3S, 1992–2002. Mesin rotary twin-turbo 1.3L (13B-REW)."
+    },
+    {
+      "sceneIndex": 2,
+      "onScreenText": "rotary twin-turbo",
+      "voiceover": "Salah satu andalannya: desain pop-up."
+    },
+    {
+      "sceneIndex": 3,
+      "onScreenText": "sasis ringan",
+      "voiceover": "Kabin Mazda FD3S, semua tersusun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "onScreenText": "desain pop-up",
+      "voiceover": "Di jalan, 255–280 PS, nol sampai seratus 5,3 dtk."
+    },
+    {
+      "sceneIndex": 5,
+      "onScreenText": "",
+      "voiceover": "0–100 km/jam 5,3 dtk · top speed 250 km/jam."
+    },
+    {
+      "sceneIndex": 6,
+      "onScreenText": "Mazda RX-7 FD3S",
+      "voiceover": "Mazda RX-7 FD3S."
+    }
+  ]
+}

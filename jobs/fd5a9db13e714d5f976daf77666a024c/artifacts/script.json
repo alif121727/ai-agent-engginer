@@ -1,0 +1,36 @@
+{
+  "model": "Porsche 911 GT3 RS",
+  "tagline": "",
+  "lines": [
+    {
+      "sceneIndex": 0,
+      "onScreenText": "Porsche 911 GT3 RS",
+      "voiceover": "Porsche 911 GT3 RS. Porsche 992 GT3 RS, 2022–sekarang."
+    },
+    {
+      "sceneIndex": 1,
+      "onScreenText": "Porsche 911 GT3 RS",
+      "voiceover": "Ini Porsche 911 GT3 RS, 2022–sekarang. Mesin flat-6 4.0L naturally aspirated (MA2.75)."
+    },
+    {
+      "sceneIndex": 2,
+      "onScreenText": "4.0 flat-six 525 cv",
+      "voiceover": "Salah satu andalannya: PDK 7."
+    },
+    {
+      "sceneIndex": 3,
+      "onScreenText": "aero DRS",
+      "voiceover": "Kabin Porsche 992 GT3 RS, semua tersusun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "onScreenText": "PDK 7",
+      "voiceover": "Di jalan, 525 PS, nol sampai seratus 3,2 dtk."
+    },
+    {
+      "sceneIndex": 5,
+      "onScreenText": "Porsche 911 GT3 RS",
+      "voiceover": "Porsche 911 GT3 RS."
+    }
+  ]
+}

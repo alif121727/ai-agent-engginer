@@ -1,0 +1,112 @@
+{
+  "loudnessLufs": -14,
+  "music": {
+    "ducking": true,
+    "gain": -18
+  },
+  "engine": {
+    "profile": "motor listrik · hingga 16000 rpm ekuivalen",
+    "synthesizedLocally": true,
+    "externalPrompts": [
+      {
+        "id": "start",
+        "label": "Menyala & idle",
+        "scene": "Motor bay",
+        "prompt": "Electric car powering on, soft contactor click, inverter hum settling into idle, high-pitched electric motor whine, clean futuristic EV sound, Porsche Taycan Turbo S, high quality, studio recording, realistic, no music, no voice, dry signal"
+      },
+      {
+        "id": "rev",
+        "label": "Akselerasi",
+        "scene": "Driving",
+        "prompt": "Futuristic electric car acceleration, rising high-pitched electric motor whine, sci-fi whoosh, smooth and clean sound design, Porsche Taycan Turbo S, high quality, studio recording, realistic, no music, no voice, dry signal"
+      },
+      {
+        "id": "exhaust",
+        "label": "Motor & ban",
+        "scene": "Drivetrain",
+        "prompt": "Close-up of an electric drivetrain, faint motor whine and tyre roll on asphalt, no exhaust note, subtle regenerative whine, high quality, studio recording, realistic, no music, no voice, dry signal"
+      },
+      {
+        "id": "passby",
+        "label": "Melintas",
+        "scene": "Action",
+        "prompt": "Electric car passing by at speed, Doppler effect, aerodynamic whoosh, tyre roar on tarmac, no engine rumble, high quality, studio recording, realistic, no music, no voice, dry signal"
+      },
+      {
+        "id": "idle",
+        "label": "Diam",
+        "scene": "Interior",
+        "prompt": "Quiet electric car cabin at standstill, near-silent, faint battery cooling fan, premium EV silence, high quality, studio recording, realistic, no music, no voice, dry signal"
+      }
+    ],
+    "negativePrompt": "music, melody, voice, speech, singing, robotic voice, clipping audio, background hiss, wind noise, distortion, cartoon sound, synthesized beeps, phone recording"
+  },
+  "sfx": [
+    {
+      "sceneIndex": 0,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 1,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 2,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 3,
+      "bed": "cabin-ambience",
+      "promptId": "idle"
+    },
+    {
+      "sceneIndex": 4,
+      "bed": "engine-rev",
+      "promptId": "passby"
+    },
+    {
+      "sceneIndex": 5,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 6,
+      "bed": "studio-room",
+      "promptId": "rev"
+    }
+  ],
+  "subtitles": [
+    {
+      "sceneIndex": 0,
+      "text": "Porsche Taycan Turbo S. Porsche Taycan Turbo S, 2019–sekarang."
+    },
+    {
+      "sceneIndex": 1,
+      "text": "Ini Porsche Taycan Turbo S, 2019–sekarang. Mesin dua motor listrik sinkron AC."
+    },
+    {
+      "sceneIndex": 2,
+      "text": "Salah satu andalannya: sasis PASM."
+    },
+    {
+      "sceneIndex": 3,
+      "text": "Kabin Porsche Taycan Turbo S, semua tersusun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "text": "Di jalan, tidak disebut di sumber, nol sampai seratus 2,8 dtk."
+    },
+    {
+      "sceneIndex": 5,
+      "text": "Produksi 2019–sekarang."
+    },
+    {
+      "sceneIndex": 6,
+      "text": "Porsche Taycan Turbo S."
+    }
+  ],
+  "ttsAvailable": false
+}

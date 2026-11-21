@@ -1,0 +1,19 @@
+{
+  "durationSec": 45,
+  "bumped": false,
+  "originalDuration": 45,
+  "themeId": "generic",
+  "aspect": "16:9",
+  "sceneCount": 7,
+  "sceneKeys": [
+    "hook",
+    "exterior",
+    "features",
+    "interior",
+    "action",
+    "detail_wheel",
+    "cta"
+  ],
+  "costEstimate": 0.42,
+  "createdAt": "2026-11-21T15:39:43.257Z"
+}

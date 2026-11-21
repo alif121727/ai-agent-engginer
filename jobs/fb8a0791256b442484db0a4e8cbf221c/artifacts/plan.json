@@ -1,0 +1,18 @@
+{
+  "durationSec": 30,
+  "bumped": false,
+  "originalDuration": 30,
+  "themeId": "lamborghini",
+  "aspect": "16:9",
+  "sceneCount": 6,
+  "sceneKeys": [
+    "hook",
+    "exterior",
+    "features",
+    "interior",
+    "action",
+    "cta"
+  ],
+  "costEstimate": 0.33,
+  "createdAt": "2026-11-21T15:37:01.121Z"
+}

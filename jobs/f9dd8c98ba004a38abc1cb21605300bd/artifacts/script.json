@@ -1,0 +1,36 @@
+{
+  "model": "Nissan Skyline GT-R R34",
+  "tagline": "",
+  "lines": [
+    {
+      "sceneIndex": 0,
+      "onScreenText": "Nissan Skyline GT-R R34",
+      "voiceover": "Nissan Skyline GT-R R34. Nissan R34, 1999–2002."
+    },
+    {
+      "sceneIndex": 1,
+      "onScreenText": "Nissan Skyline GT-R R34",
+      "voiceover": "Ini Nissan Skyline GT-R R34, 1999–2002. Mesin I6 2.6L twin-turbo (RB26DETT)."
+    },
+    {
+      "sceneIndex": 2,
+      "onScreenText": "RB26DETT",
+      "voiceover": "Salah satu andalannya: ikon JDM."
+    },
+    {
+      "sceneIndex": 3,
+      "onScreenText": "ATTESA E-TS",
+      "voiceover": "Kabin Nissan R34, semua tersusun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "onScreenText": "ikon JDM",
+      "voiceover": "Di jalan, 280 PS (206 kW), nol sampai seratus 4,9 dtk."
+    },
+    {
+      "sceneIndex": 5,
+      "onScreenText": "Nissan Skyline GT-R R34",
+      "voiceover": "Nissan Skyline GT-R R34."
+    }
+  ]
+}

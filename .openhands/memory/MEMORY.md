@@ -227,23 +227,25 @@ yang sudah tertaut (jadi `unlink` dulu). CLI ada di `/workspace/tools`
   (bukan bug kode). Binari siap pakai: `/workspace/tools/bin` (dari
   imageio-ffmpeg + ffprobe-static); jalankan
   `PATH=/workspace/tools/bin:$PATH npm test` -> 93 lulus.
-## Deploy Netlify: token bisa hilang
-- Sandbox **restart menghapus `~/.config/netlify/config.json`**. Skrip deploy
-  sudah diperbaiki: `NETLIFY_AUTH_TOKEN` didahulukan, diekspor ke semua panggilan
-  CLI, `--site` eksplisit, dan tautan diverifikasi (`link` bisa exit 0 tanpa
-  menulis `.netlify/state.json`).
-- Pemulihan tanpa interaksi tidak mungkin. Dua jalan:
-  1. `netlify login --request "<pesan>"` -> kirim Authorize URL ke user, lalu
-     `netlify login --check <ticket>`.
-  2. User memberi personal access token -> `NETLIFY_AUTH_TOKEN=... ./scripts/deploy-netlify.sh`.
-- `netlify deploy --allow-anonymous` TIDAK menolong: ia membuat SITUS BARU
-  ber-password (HTTP 401), bukan memperbarui `agent-studio-ai`.
-- Build Netlify dari GitHub di-skip (kredit habis), jadi push tidak memperbarui
-  situs live.
-- GitHub Pages belum aktif; `configure-pages` gagal karena GitHub App di sini
-  tidak boleh membuat situs Pages. Workflow `.github/workflows/pages.yml` sudah
-  ada dan toleran (CI hijau); aktif otomatis setelah user mengaktifkan
-  Settings -> Pages -> Source: GitHub Actions. Semua path aset relatif, jadi
-  aman di subdirektori `/ai-agent-engginer/`.
-- Link sementara yang selalu segar: `setsid python3 -m http.server 12000
-  --directory netlify-site` lalu URL publik sandbox port 12000.
+## Deploy: Pages aktif, Netlify masih terblokir
+- **GitHub Pages AKTIF** dan ini jalur utama sekarang:
+  https://alif121727.github.io/ai-agent-engginer/
+  Cara mengaktifkannya (temuan penting): token GitHub App di sini **tidak boleh**
+  POST `/repos/:r/pages` (403 "Resource not accessible by integration"), TAPI
+  **push branch bernama `gh-pages` mengaktifkan Pages otomatis** (build_type
+  `legacy`, source `gh-pages`). Jadi tidak perlu klik manual di Settings.
+- Karena `build_type=legacy`, `actions/deploy-pages` TIDAK bisa dipakai
+  ("Get Pages site failed"). Workflow `.github/workflows/pages.yml` sekarang
+  mem-build studio lalu `git push -f` isi `netlify-site/` ke `gh-pages`
+  (+ `.nojekyll`). Jangan kembalikan ke upload-pages-artifact/deploy-pages.
+- Semua path aset relatif, jadi aplikasi aman di subdirektori
+  `/ai-agent-engginer/` (sudah diuji end-to-end).
+- Netlify `agent-studio-ai` masih menyajikan bundel lama `v=8d1690a1`.
+  Login Netlify terhapus saat sandbox restart; tiket `netlify login --request`
+  tetap `authorized: false` selama user tidak membuka Authorize URL.
+  `netlify deploy --allow-anonymous` TIDAK menolong (membuat situs BARU
+  ber-password, HTTP 401). Pemulihan: user setujui tiket lalu
+  `netlify login --check <ticket>`, atau `NETLIFY_AUTH_TOKEN=... ./scripts/deploy-netlify.sh`.
+- `scripts/deploy-netlify.sh` sudah diperbaiki: `NETLIFY_AUTH_TOKEN` didahulukan,
+  diekspor ke semua panggilan CLI, `--site` eksplisit, dan tautan diverifikasi
+  (`link` bisa exit 0 tanpa menulis `.netlify/state.json`).

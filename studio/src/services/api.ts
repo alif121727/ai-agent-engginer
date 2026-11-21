@@ -72,6 +72,8 @@ type ServerJob = {
   status?: string;
   created_at?: string;
   error?: string | null;
+  /** Dikirim /api/jobs dan /api/jobs/:id; nama tahap mengikuti server. */
+  stages?: { name: string; status: string; error?: string | null }[];
 };
 
 /**
@@ -103,7 +105,28 @@ export function projectFromServer(j: ServerJob): Project {
   const slug = j.brief_slug ?? '';
   const car = findCar(slug, j.model) ?? findResearched(slug)?.car ?? findResearched(j.model)?.car;
   const created = j.created_at ? Date.parse(j.created_at) : NaN;
-  const status = j.status === 'done' || j.status === 'running' || j.status === 'failed' ? j.status : 'draft';
+  // 'queued' berarti worker sudah menerima tugas: tampilkan sebagai berjalan,
+  // bukan draf, supaya pengguna tahu pekerjaannya sedang dikerjakan.
+  const status =
+    j.status === 'done'
+      ? 'done'
+      : j.status === 'failed'
+        ? 'failed'
+        : j.status === 'queued' || j.status === 'running'
+          ? 'running'
+          : 'draft';
+  const byName = new Map((j.stages ?? []).map((s) => [s.name, s.status]));
+  const stageState = (id: string, i: number): StageRun['state'] => {
+    const st = byName.get(SERVER_STAGE[id] ?? id);
+    if (st === 'done') return 'selesai';
+    if (st === 'skipped') return 'dilewati';
+    if (st === 'failed') return 'gagal';
+    if (st === 'running') return 'berjalan';
+    // Tanpa data tahap dari server (mis. job lama), pakai status job saja.
+    if (j.stages?.length) return 'menunggu';
+    if (status === 'done') return 'selesai';
+    return status === 'running' && i === 0 ? 'berjalan' : 'menunggu';
+  };
   return {
     id: j.id,
     createdAt: Number.isFinite(created) ? created : Date.now(),
@@ -122,11 +145,15 @@ export function projectFromServer(j: ServerJob): Project {
     stages: STAGES.map((s, i) => ({
       id: s.id,
       label: s.label,
-      state: status === 'done' ? 'selesai' : status === 'running' && i === 0 ? 'berjalan' : 'menunggu',
+      state: stageState(s.id, i),
       ms: 0,
     })),
     status,
     qaNote: j.error ?? undefined,
+    // Hanya job yang benar-benar selesai punya mp4. Tanpa ini pemutar di
+    // halaman detail tidak muncul walau file ada di disk.
+    videoUrl: status === 'done' ? `/api/jobs/${j.id}/file/video.mp4` : undefined,
+    thumbUrl: status === 'done' ? `/api/jobs/${j.id}/file/preview.jpg` : undefined,
   };
 }
 
@@ -410,6 +437,19 @@ export class DemoStudioApi implements StudioApi {
 /* -------------------------------------------------------------- http impl */
 // Dipakai kalau backend repo terjangkau (mis. saat dijalankan lokal).
 // Endpoint mengikuti src/api/server.ts yang sudah ada.
+/** Nama tahap di UI berbeda dari nama di server (lihat config/agents.json). */
+const SERVER_STAGE: Record<string, string> = {
+  pm: 'rencana',
+  research: 'riset',
+  script: 'naskah',
+  storyboard: 'storyboard',
+  visual: 'aset-visual',
+  motion: 'motion',
+  sound: 'audio',
+  render: 'render',
+  qa: 'qa',
+};
+
 export class HttpStudioApi implements StudioApi {
   kind = 'http' as const;
   private base: string;
@@ -437,7 +477,7 @@ export class HttpStudioApi implements StudioApi {
   async createProject(input: Partial<Project> & { carSlug: string }): Promise<Project> {
     const car = resolveCar(input.carSlug);
     if (!car) throw new Error('Mobil tidak ada di katalog');
-    const d = await this.j<{ job: Project }>('/api/jobs', {
+    const d = await this.j<{ job: ServerJob }>('/api/jobs', {
       method: 'POST',
       body: JSON.stringify({
         model: car.model,
@@ -446,7 +486,9 @@ export class HttpStudioApi implements StudioApi {
         resolusi: input.resolution,
       }),
     });
-    return d.job;
+    // Job dari server memakai nama kolom snake_case; tanpa pemetaan ini UI
+    // menampilkan durasi/rasio kosong dan tahap tidak bisa dicocokkan.
+    return projectFromServer(d.job);
   }
   async generateBrief(car: Car): Promise<Brief> {
     return buildBrief(car);
@@ -454,8 +496,31 @@ export class HttpStudioApi implements StudioApi {
   async generateShots(car: Car, dur: number, brief: Brief): Promise<Shot[]> {
     return buildShots(car, dur, brief);
   }
-  async runStage(): Promise<Partial<StageRun>> {
-    return { state: 'selesai' };
+  async runStage(project: Project, stageId: string): Promise<Partial<StageRun>> {
+    // Backend menjalankan seluruh pipeline di worker, bukan per tahap dari UI.
+    // Jadi UI menunggu tahap ini benar-benar 'done' di server, bukan mengaku
+    // selesai sendiri: tanpa ini "Jalankan pipeline" tampak sukses padahal
+    // worker belum/tidak pernah menulis video.mp4.
+    const serverName = SERVER_STAGE[stageId] ?? stageId;
+    const deadline = Date.now() + 10 * 60_000;
+    while (Date.now() < deadline) {
+      const d = await this.j<{
+        job: ServerJob;
+        stages: { name: string; status: string; error?: string | null }[];
+      }>(`/api/jobs/${project.id}`);
+      if (d.job?.status === 'failed') {
+        return { state: 'gagal', error: d.job.error ?? 'job gagal di backend' };
+      }
+      const stage = d.stages?.find((s) => s.name === serverName);
+      if (stage?.status === 'failed') {
+        return { state: 'gagal', error: stage.error ?? `tahap ${serverName} gagal` };
+      }
+      if (stage?.status === 'done' || stage?.status === 'skipped') {
+        return { state: 'selesai', artifact: stageId === 'visual' ? 'assets.json' : `${stageId}.json` };
+      }
+      await new Promise((r) => setTimeout(r, 1500));
+    }
+    return { state: 'gagal', error: `tahap ${serverName} melewati batas waktu 10 menit` };
   }
   async authenticate(account: string, password: string): Promise<{ ok: boolean; error?: string }> {
     try {

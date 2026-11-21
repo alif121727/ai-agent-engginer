@@ -83,6 +83,17 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     if (api && user) void refresh();
   }, [api, user, refresh]);
 
+  // Selama ada proyek yang dikerjakan worker, UI harus menyegarkan diri:
+  // tanpa polling, progres tahap tidak pernah bergerak karena server yang
+  // mengubah status, bukan browser.
+  useEffect(() => {
+    if (api?.kind !== 'http' || !user) return;
+    const active = projects.some((p) => p.status === 'running');
+    if (!active) return;
+    const t = window.setInterval(() => void refresh(), 3000);
+    return () => window.clearInterval(t);
+  }, [api, user, projects, refresh]);
+
   const toast = useCallback((t: Omit<Toast, 'id'>) => {
     const id = Math.random().toString(36).slice(2);
     setToasts((prev) => [...prev, { ...t, id }]);

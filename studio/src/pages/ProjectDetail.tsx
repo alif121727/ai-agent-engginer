@@ -257,20 +257,24 @@ export function ProjectDetail({ id, go, autoRun }: { id: string; go: (r: Route) 
         </div>
 
         <div className="rail stack workbench__right" style={{ gap: 12 }}>
-          <div className="card card--tight">
-            <div className="eyebrow" style={{ marginBottom: 8 }}>Brief</div>
-            {(['hook', 'problem', 'product', 'proof', 'cta'] as const).map((k) => (
-              <div key={k} style={{ marginBottom: 8 }}>
-                <div className="dim tiny" style={{ textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.62rem' }}>{k}</div>
-                <div className="small">{project.brief[k]}</div>
-              </div>
-            ))}
-          </div>
-          <div className="card card--tight">
-            <div className="eyebrow" style={{ marginBottom: 8 }}>Shot diterima</div>
-            <div className="mono" style={{ fontSize: '1.3rem', fontWeight: 700 }}>{project.shots.filter((s) => s.accepted).length}/{project.shots.length}</div>
-            <div className="dim tiny">Total {project.shots.filter((s) => s.accepted).reduce((a, s) => a + s.dur, 0)}s dari target {project.durationSec}s</div>
-          </div>
+          {(['hook', 'problem', 'product', 'proof', 'cta'] as const).some((k) => project.brief[k]) && (
+            <div className="card card--tight">
+              <div className="eyebrow" style={{ marginBottom: 8 }}>Brief</div>
+              {(['hook', 'problem', 'product', 'proof', 'cta'] as const).map((k) => (
+                <div key={k} style={{ marginBottom: 8 }}>
+                  <div className="dim tiny" style={{ textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.62rem' }}>{k}</div>
+                  <div className="small">{project.brief[k]}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          {project.shots.length > 0 && (
+            <div className="card card--tight">
+              <div className="eyebrow" style={{ marginBottom: 8 }}>Shot diterima</div>
+              <div className="mono" style={{ fontSize: '1.3rem', fontWeight: 700 }}>{project.shots.filter((s) => s.accepted).length}/{project.shots.length}</div>
+              <div className="dim tiny">Total {project.shots.filter((s) => s.accepted).reduce((a, s) => a + s.dur, 0)}s dari target {project.durationSec}s</div>
+            </div>
+          )}
           {car && (
             <div className="card card--tight">
               <div className="eyebrow" style={{ marginBottom: 8 }}>Siapkan unggahan</div>

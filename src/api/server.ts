@@ -397,7 +397,15 @@ export function createApp(opts: AppOptions = {}) {
   app.get('/api/jobs', async (req, res) => {
     const limit = Math.min(200, Number(req.query.limit ?? 50));
     const jobs = await listJobs(limit);
-    res.json({ jobs });
+    // UI menghitung progres dari status tahap, jadi sertakan tahap di sini;
+    // tanpa ini semua proyek tampak "Draf 0%" walau worker sedang bekerja.
+    const withStages = await Promise.all(
+      jobs.map(async (j) => ({
+        ...j,
+        stages: (await listStages(j.id)).map((s) => ({ name: s.name, status: s.status })),
+      })),
+    );
+    res.json({ jobs: withStages });
   });
 
   app.get('/api/jobs/:id', async (req, res) => {
@@ -692,6 +700,16 @@ export function createApp(opts: AppOptions = {}) {
   // ---- static UI ----
   const publicDir = paths.publicDir;
   const staticMaxAge = process.env.NODE_ENV === 'production' ? '1h' : 0;
+  // Galeri studio memakai path relatif `video/...` dan `thumb/...`. Saat studio
+  // disajikan backend, berkas itu harus datang dari netlify-site tanpa disalin
+  // (159 MB). Dipasang sebelum catch-all index.html di bawah.
+  const siteDir = path.join(paths.root, 'netlify-site');
+  if (fs.existsSync(path.join(siteDir, 'video'))) {
+    app.use('/video', express.static(path.join(siteDir, 'video'), { maxAge: staticMaxAge, etag: true }));
+  }
+  if (fs.existsSync(path.join(siteDir, 'thumb'))) {
+    app.use('/thumb', express.static(path.join(siteDir, 'thumb'), { maxAge: staticMaxAge, etag: true }));
+  }
   app.use(express.static(publicDir, { index: false, maxAge: staticMaxAge, etag: true }));
   app.use((req, res, next) => {
     if (req.method !== 'GET') return next();

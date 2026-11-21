@@ -75,6 +75,16 @@ fs.copyFileSync(path.join(src, 'index.html'), oldIndex);
 // 404.html statis: dipakai Netlify dan GitHub Pages apa adanya.
 fs.copyFileSync(path.join(src, '404.html'), path.join(out, '404.html'));
 
+// Salinan untuk backend: `npm run api` menyajikan public/, dan studio memilih
+// HttpStudioApi saat /api/health terjawab. Tanpa salinan ini studio hanya
+// tersedia sebagai mode demo statis, sehingga "Buat Video" tidak pernah
+// menghasilkan mp4. Media tidak disalin (159 MB); server.ts memasang
+// netlify-site/video dan /thumb sebagai static mount.
+const pub = path.join(root, 'public');
+fs.mkdirSync(path.join(pub, 'assets'), { recursive: true });
+for (const f of ['studio.js', 'studio.css']) {
+  fs.copyFileSync(path.join(assets, f), path.join(pub, 'assets', f));
+}
 const js = fs.statSync(path.join(assets, 'studio.js')).size;
 const css = fs.statSync(cssOut).size;
 
@@ -92,5 +102,6 @@ const html = fs.readFileSync(idxPath, 'utf8')
   .replace('assets/studio.js', `assets/studio.js?v=${hash}`)
   .replaceAll('__APP_VERSION__', pkg.version);
 fs.writeFileSync(idxPath, html);
+fs.copyFileSync(idxPath, path.join(pub, 'index.html'));
 
 console.log(`✓ studio dibangun: studio.js ${(js / 1024).toFixed(0)} kB, studio.css ${(css / 1024).toFixed(1)} kB, v=${hash}, media=${mediaHash}`);

@@ -242,6 +242,18 @@ export class Worker {
       }
 
       const stages = await listStages(job.id);
+      if (!stages.length) {
+        // Job tanpa tahap tidak pernah mengerjakan apa pun; menandainya 'done'
+        // membuat dashboard memamerkan video yang tidak ada.
+        await updateJob(job.id, { status: 'failed', error: 'job tidak punya tahap' });
+        await recordEvent({
+          jobId: job.id,
+          level: 'error',
+          scope: 'worker',
+          message: 'job ditolak: tidak punya tahap',
+        });
+        return;
+      }
       const failed = stages.filter((s) => s.status === 'failed');
       if (failed.length) {
         await updateJob(job.id, { status: 'failed', error: 'ada tahap gagal' });

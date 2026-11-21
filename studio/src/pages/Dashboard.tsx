@@ -16,7 +16,11 @@ export function Dashboard({ go }: { go: (r: Route) => void }) {
 
   const done = projects.filter((p) => p.status === 'done');
   const running = projects.filter((p) => p.status === 'running');
-  const totalSec = projects.reduce((a, p) => a + (p.durationSec || 0), 0);
+  const failed = projects.filter((p) => p.status === 'failed');
+  // Durasi hanya dihitung dari proyek yang benar-benar menghasilkan mp4;
+  // menjumlahkan proyek gagal membuat statistik terlihat lebih besar dari
+  // kenyataan.
+  const totalSec = done.reduce((a, p) => a + (p.durationSec || 0), 0);
   const model = VIDEO_MODELS.find((m) => m.id === settings.defaultModel);
 
   if (loading) {
@@ -48,7 +52,11 @@ export function Dashboard({ go }: { go: (r: Route) => void }) {
       </div>
 
       <div className="grid grid--4">
-        <Stat label="Proyek" value={String(projects.length)} meta={`${done.length} selesai · ${running.length} berjalan`} />
+        <Stat
+          label="Proyek"
+          value={String(projects.length)}
+          meta={`${done.length} selesai · ${running.length} berjalan${failed.length ? ` · ${failed.length} gagal` : ''}`}
+        />
         <Stat label="Total durasi" value={`${totalSec}s`} meta="akumulasi semua proyek" />
         <Stat label="Model default" value={model?.name.split(' ')[0] ?? '—'} meta={model?.ready ? 'siap dipakai' : 'butuh kunci API'} />
         <Stat label="Katalog" value={String(CATALOG.length)} meta="model mobil dengan data nyata" />
@@ -65,7 +73,7 @@ export function Dashboard({ go }: { go: (r: Route) => void }) {
         <QuickCard
           icon={<Icon.Library size={18} />}
           title="Lihat hasil jadi"
-          text="Delapan video yang benar-benar sudah dirender, lengkap dengan spesifikasi sumbernya."
+          text="Semua video yang benar-benar sudah dirender, lengkap dengan spesifikasi sumbernya."
           cta="Buka perpustakaan"
           onClick={() => go({ name: 'perpustakaan' })}
         />

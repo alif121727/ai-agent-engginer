@@ -65,6 +65,20 @@ export interface AppOptions {
   startWorker?: boolean;
 }
 
+/**
+ * Job 'done' hanya jujur kalau mp4-nya masih ada. Direktori job bisa hilang
+ * (dibersihkan manual, volume baru), dan melaporkannya selesai membuat UI
+ * menawarkan unduhan yang 404.
+ */
+function honestStatus<T extends { id: string; status: string }>(job: T): T {
+  if (job.status !== 'done') return job;
+  // path.join langsung, bukan jobDir(): jobDir() membuat direktori kosong
+  // untuk job yatim dan itu justru menutupi masalahnya.
+  const file = path.join(paths.jobs, job.id, 'video.mp4');
+  if (fs.existsSync(file)) return job;
+  return { ...job, status: 'failed' };
+}
+
 export function createApp(opts: AppOptions = {}) {
   wireBus();
   const app = express();
@@ -399,9 +413,12 @@ export function createApp(opts: AppOptions = {}) {
     const jobs = await listJobs(limit);
     // UI menghitung progres dari status tahap, jadi sertakan tahap di sini;
     // tanpa ini semua proyek tampak "Draf 0%" walau worker sedang bekerja.
+    // Job 'done' yang mp4-nya sudah tidak ada di disk dilaporkan gagal:
+    // menghitungnya selesai membuat dashboard mengklaim video yang tidak bisa
+    // dibuka.
     const withStages = await Promise.all(
       jobs.map(async (j) => ({
-        ...j,
+        ...honestStatus(j),
         stages: (await listStages(j.id)).map((s) => ({ name: s.name, status: s.status })),
       })),
     );
@@ -415,7 +432,7 @@ export function createApp(opts: AppOptions = {}) {
       return;
     }
     res.json({
-      job,
+      job: honestStatus(job),
       stages: await listStages(job.id),
       events: await listEvents(job.id, 200),
       artifacts: listArtifacts(job.id),

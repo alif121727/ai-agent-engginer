@@ -110,6 +110,12 @@ class PostgresDb implements Db {
 let instance: Db | null = null;
 
 export function openDb(overrides?: { kind?: 'sqlite' | 'postgres'; file?: string; url?: string }): Db {
+  // Salah tipe di sini pernah membuat test menulis ke DB produksi: string
+  // dianggap objek overrides, `overrides?.file` jadi undefined, dan jalur
+  // default dipakai tanpa error. Gagal keras lebih baik daripada menimpa data.
+  if (typeof overrides === 'string') {
+    throw new TypeError("openDb menerima { file }, bukan string. Pakai openDb({ file: '...' }).");
+  }
   const kind = overrides?.kind ?? (process.env.DB_KIND === 'postgres' ? 'postgres' : 'sqlite');
   if (kind === 'postgres') {
     const url = overrides?.url ?? process.env.DATABASE_URL;

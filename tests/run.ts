@@ -1843,7 +1843,7 @@ await check('prompt I2V hanya berisi gerakan, bukan deskripsi gambar', async () 
 
 await check('job baru langsung memakai kebijakan gerak terbaru', async () => {
   const dbFile = path.join(os.tmpdir(), `studio-motion-${Date.now()}.db`);
-  await openDb(dbFile);
+  openDb({ kind: 'sqlite', file: dbFile });
   const job = await createJob({
     briefSlug: 'porsche-911-gt3-rs-992',
     title: 'Tes gerak',

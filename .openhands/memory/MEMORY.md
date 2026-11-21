@@ -227,25 +227,27 @@ yang sudah tertaut (jadi `unlink` dulu). CLI ada di `/workspace/tools`
   (bukan bug kode). Binari siap pakai: `/workspace/tools/bin` (dari
   imageio-ffmpeg + ffprobe-static); jalankan
   `PATH=/workspace/tools/bin:$PATH npm test` -> 93 lulus.
-## Deploy: Pages aktif, Netlify masih terblokir
-- **GitHub Pages AKTIF** dan ini jalur utama sekarang:
-  https://alif121727.github.io/ai-agent-engginer/
-  Cara mengaktifkannya (temuan penting): token GitHub App di sini **tidak boleh**
-  POST `/repos/:r/pages` (403 "Resource not accessible by integration"), TAPI
-  **push branch bernama `gh-pages` mengaktifkan Pages otomatis** (build_type
-  `legacy`, source `gh-pages`). Jadi tidak perlu klik manual di Settings.
-- Karena `build_type=legacy`, `actions/deploy-pages` TIDAK bisa dipakai
-  ("Get Pages site failed"). Workflow `.github/workflows/pages.yml` sekarang
-  mem-build studio lalu `git push -f` isi `netlify-site/` ke `gh-pages`
-  (+ `.nojekyll`). Jangan kembalikan ke upload-pages-artifact/deploy-pages.
-- Semua path aset relatif, jadi aplikasi aman di subdirektori
-  `/ai-agent-engginer/` (sudah diuji end-to-end).
-- Netlify `agent-studio-ai` masih menyajikan bundel lama `v=8d1690a1`.
-  Login Netlify terhapus saat sandbox restart; tiket `netlify login --request`
-  tetap `authorized: false` selama user tidak membuka Authorize URL.
-  `netlify deploy --allow-anonymous` TIDAK menolong (membuat situs BARU
-  ber-password, HTTP 401). Pemulihan: user setujui tiket lalu
-  `netlify login --check <ticket>`, atau `NETLIFY_AUTH_TOKEN=... ./scripts/deploy-netlify.sh`.
-- `scripts/deploy-netlify.sh` sudah diperbaiki: `NETLIFY_AUTH_TOKEN` didahulukan,
-  diekspor ke semua panggilan CLI, `--site` eksplisit, dan tautan diverifikasi
-  (`link` bisa exit 0 tanpa menulis `.netlify/state.json`).
+## Deploy: DUA situs sudah live
+- **GitHub Pages** (utama): https://alif121727.github.io/ai-agent-engginer/
+- **Netlify** (juga live): https://agent-studio-ai.netlify.app
+- Cara mengaktifkan Pages tanpa izin API (temuan penting): token GitHub App
+  ditolak saat POST `/repos/:r/pages` (403), TAPI **push branch `gh-pages`
+  mengaktifkan Pages otomatis** (build_type `legacy`, source `gh-pages`).
+- Karena `build_type=legacy`, `actions/deploy-pages` TIDAK bisa dipakai.
+  `.github/workflows/pages.yml` mem-build studio lalu `git push -f` isi
+  `netlify-site/` ke `gh-pages` (+ `.nojekyll`). Jangan dikembalikan ke
+  upload-pages-artifact/deploy-pages.
+- Semua path aset relatif -> aman di subdirektori `/ai-agent-engginer/`.
+
+## Netlify: badge menutupi tombol (bug tata letak)
+- Badge "Powered by Netlify" = `<iframe id="nl-badge-frame">` **fixed** di
+  pojok kanan bawah, 211x64, `z-index: 2147483645`, `pointer-events: auto`.
+  Ia menimpa tombol aksi terakhir (mis. "Lanjut" di wizard) sehingga klik
+  pengguna tidak jalan — ketahuan hanya dengan `page.click()` tanpa `force`.
+- Perbaikan: `.page { padding-bottom: calc(var(--sp-6) + 56px) }` di
+  `studio/src/studio.css`. Kalau menambah tombol aksi di dasar halaman,
+  pastikan ada jarak >= ~64px dari tepi bawah.
+- Deploy Netlify: `NETLIFY_AUTH_TOKEN` dari env didahulukan (config CLI bisa
+  terhapus saat sandbox restart). `netlify deploy --allow-anonymous` TIDAK
+  menolong: ia membuat situs BARU ber-password (HTTP 401), bukan memperbarui
+  `agent-studio-ai`.

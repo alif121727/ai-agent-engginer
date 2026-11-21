@@ -1,14 +1,11 @@
 import React from 'react';
 import { EmptyState, Icon, Skeleton } from '../components/ui';
 import type { Route } from '../components/shell';
-import { RENDERED, VIDEO_BASE, THUMB_BASE, specsOf, type RenderedVideo } from '../data/rendered';
+import { RENDERED, specsOf, videoSrc, thumbSrc, type RenderedVideo } from '../data/rendered';
 
 // Metadata video nyata ada di data/rendered.ts supaya Perpustakaan dan benih
 // proyek demo memakai angka yang sama.
 export type LibItem = RenderedVideo;
-
-const BASE = VIDEO_BASE;
-const THUMB = THUMB_BASE;
 
 export function Library({ go }: { go: (r: Route) => void }) {
   const [q, setQ] = React.useState('');
@@ -79,7 +76,7 @@ export function Library({ go }: { go: (r: Route) => void }) {
           {list.map((v) => (
             <article key={v.slug} className="vcard">
               <div className="vcard__media">
-                <video src={BASE + v.slug + '.mp4'} poster={THUMB + v.slug + '.jpg'} controls preload="metadata" playsInline />
+                <video src={videoSrc(v)} poster={thumbSrc(v)} controls preload="metadata" playsInline />
                 <span className="vcard__badge">{v.dur}s</span>
                 <span className="vcard__ai">AI-GENERATED</span>
               </div>
@@ -96,7 +93,7 @@ export function Library({ go }: { go: (r: Route) => void }) {
                 </div>
               </div>
               <div className="vcard__foot">
-                <a className="btn btn--sm" href={BASE + v.slug + '.mp4'} download><Icon.Download size={13} /> Unduh</a>
+                <a className="btn btn--sm" href={videoSrc(v)} download><Icon.Download size={13} /> Unduh</a>
                 <button className="btn btn--ghost btn--sm" onClick={() => go({ name: 'baru' })}>Buat versi baru</button>
               </div>
             </article>

@@ -1,0 +1,53 @@
+{
+  "keterangan": "Rekaman mesin & knalpot ASLI untuk model yang punya berkasnya. Tiap berkas sudah dipotong ke segmen terbaiknya (14 detik, mulai 0) supaya repo tetap kecil. Dipakaikan lebih dulu daripada sintesis, karena sintesis tidak pernah terdengar seperti mesin sungguhan. Lisensi CC BY 3.0 dari Wikimedia Commons — atribusi wajib bila video dipublikasikan.",
+  "segments": {
+    "ferrari-296-gtb": {
+      "file": "ferrari-296.m4a",
+      "start": 0.0,
+      "duration": 14.0,
+      "source": "https://commons.wikimedia.org/wiki/File:Ferrari_296_-_engine_and_exhaust_sound_(YouTube_b9Qx9rpCsA0).opus",
+      "artist": "Supercars and beyond (YouTube)",
+      "license": "CC BY 3.0"
+    },
+    "lamborghini-huracan-sto": {
+      "file": "lamborghini-huracan-performante.m4a",
+      "start": 0.0,
+      "duration": 14.0,
+      "source": "https://commons.wikimedia.org/wiki/File:Lamborghini_Huracan_Performante_-_engine_and_exhaust_sound_(YouTube_QsDJ3Y7k4qg).opus",
+      "artist": "NewsTechCars (YouTube)",
+      "license": "CC BY 3.0"
+    },
+    "mazda-rx7-fd": {
+      "file": "mazda-rx-7.m4a",
+      "start": 0.0,
+      "duration": 14.0,
+      "source": "https://commons.wikimedia.org/wiki/File:Mazda_RX-7_-_engine_and_exhaust_sound_(YouTube_4z0y1H2REvE).opus",
+      "artist": "Taz Ringer (YouTube)",
+      "license": "CC BY 3.0"
+    },
+    "nissan-skyline-r34-gtr": {
+      "file": "nissan-skyline-gt-r-r34.m4a",
+      "start": 0.0,
+      "duration": 14.0,
+      "source": "https://commons.wikimedia.org/wiki/File:Nissan_Skyline_GT-R_R34_-_engine_and_exhaust_sound_(YouTube_GWgYGT9IM4E).opus",
+      "artist": "Matteo Torrisi Officina Del Pilota (YouTube)",
+      "license": "CC BY 3.0"
+    },
+    "porsche-911-gt3-rs-992": {
+      "file": "porsche-911-gt3-rs.m4a",
+      "start": 0.0,
+      "duration": 14.0,
+      "source": "https://commons.wikimedia.org/wiki/File:Porsche_911_GT3_RS_-_engine_and_exhaust_sound_(YouTube_1t2wz1iLHJ4).opus",
+      "artist": "Supercars67 (YouTube)",
+      "license": "CC BY 3.0"
+    },
+    "subaru-impreza-22b": {
+      "file": "subaru-wrx-sti.m4a",
+      "start": 0.0,
+      "duration": 14.0,
+      "source": "https://commons.wikimedia.org/wiki/File:Subaru_WRX_STI_-_engine_and_exhaust_sound_(YouTube--bynUdphkbc).opus",
+      "artist": "Hungarian Supercar Spotters (YouTube)",
+      "license": "CC BY 3.0"
+    }
+  }
+}

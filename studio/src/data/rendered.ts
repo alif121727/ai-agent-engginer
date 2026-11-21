@@ -114,8 +114,16 @@ export function specsOf(v: RenderedVideo): string[] {
 export const VIDEO_BASE = 'video/';
 export const THUMB_BASE = 'thumb/';
 
-export const videoSrc = (v: RenderedVideo) => `${VIDEO_BASE}${v.slug}.mp4`;
-export const thumbSrc = (v: RenderedVideo) => `${THUMB_BASE}${v.slug}.jpg`;
+/**
+ * Versi aset media, disuntik build dari hash isi `video/`. Tanpa ini URL mp4
+ * tidak pernah berubah walau berkasnya diganti, dan browser terus memutar
+ * audio lama dari cache.
+ */
+declare const __MEDIA_VERSION__: string;
+export const MEDIA_VERSION = typeof __MEDIA_VERSION__ === 'string' ? __MEDIA_VERSION__ : 'dev';
+
+export const videoSrc = (v: RenderedVideo) => `${VIDEO_BASE}${v.slug}.mp4?v=${MEDIA_VERSION}`;
+export const thumbSrc = (v: RenderedVideo) => `${THUMB_BASE}${v.slug}.jpg?v=${MEDIA_VERSION}`;
 
 export const byJobId = (jobId: string) => RENDERED.find((v) => v.jobId === jobId);
 export const bySlug = (slug: string) => RENDERED.find((v) => v.slug === slug);

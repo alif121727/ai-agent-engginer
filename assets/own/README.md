@@ -27,3 +27,22 @@ CC BY-SA 4.0:
 - `porsche-911-gt3`: Porsche 911 GT3 992 (EMS 2024, 1X7A7256, 992 GT3 touring)
 
 Sertakan atribusi lisensi bila video dipublikasikan.
+
+## Audio mesin
+
+`assets/audio/` berisi rekaman mesin & knalpot asli (CC BY 3.0, Wikimedia
+Commons) yang dipakai lebih dulu daripada sintesis:
+
+- `ferrari-296.m4a` — Supercars and beyond (YouTube)
+- `lamborghini-huracan-performante.m4a` — NewsTechCars (YouTube)
+- `mazda-rx-7.m4a` — Taz Ringer (YouTube)
+- `nissan-skyline-gt-r-r34.m4a` — Matteo Torrisi Officina Del Pilota (YouTube)
+- `porsche-911-gt3-rs.m4a` — Supercars67 (YouTube)
+- `subaru-wrx-sti.m4a` — Hungarian Supercar Spotters (YouTube)
+
+Pemetaan model → berkas + titik potong ada di `assets/audio/manifest.json`.
+Atribusi di atas wajib disertakan bila video dipublikasikan.
+
+Model yang belum punya rekaman memakai sintesis cadangan di
+`src/render/audio.ts`. Sintesis itu tidak pernah terdengar seperti mesin
+sungguhan; anggap ia pengisi sementara, bukan pengganti rekaman.

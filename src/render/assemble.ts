@@ -304,7 +304,12 @@ export async function assembleVideo(ctx: AgentContext): Promise<RenderResult> {
     scenes,
   });
   if (engine) {
-    await ctx.log('info', `suara mesin: ${describeProfile(engine.profile)}`);
+    await ctx.log(
+      'info',
+      engine.recorded
+        ? `suara mesin: rekaman asli (${describeProfile(engine.profile)})`
+        : `suara mesin: sintesis cadangan (${describeProfile(engine.profile)})`,
+    );
   }
   const music = buildMusicBed({
     jobId: ctx.jobId,

@@ -1,9 +1,108 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { jobDir } from '../core/fsx.ts';
+import { jobDir, paths } from '../core/fsx.ts';
+import { findModel } from '../core/catalog.ts';
 import type { ScenePlan, Theme } from '../core/types.ts';
 import { engineProfileFor, type EngineProfile } from './engine.ts';
+
+/**
+ * Rekaman mesin asli menang atas sintesis.
+ *
+ * Sintesis pernah dicoba dan hasilnya selalu terbaca sebagai "bukan mobil" saat
+ * diukur: nada dasarnya nyaris tidak bergerak dan spektrumnya terlalu tonal.
+ * Mesin sungguhan punya jitter f0 57-227% antar frame, sintesis hanya 38%.
+ * Karena itu `assets/audio/manifest.json` memetakan model ke potongan rekaman
+ * CC BY 3.0 yang sudah diperiksa berisi mesin, dan itulah jalur utama.
+ * Sintesis hanya cadangan untuk model yang belum punya rekaman.
+ */
+interface RecordedSegment {
+  file: string;
+  start: number;
+  duration: number;
+  source: string;
+  artist: string;
+  license: string;
+}
+
+interface AudioManifest {
+  segments: Record<string, RecordedSegment>;
+}
+
+let manifestCache: AudioManifest | null = null;
+
+function manifest(): AudioManifest {
+  if (!manifestCache) {
+    const p = path.join(paths.assets, 'audio', 'manifest.json');
+    manifestCache = fs.existsSync(p)
+      ? (JSON.parse(fs.readFileSync(p, 'utf8')) as AudioManifest)
+      : { segments: {} };
+  }
+  return manifestCache;
+}
+
+/** Potongan rekaman asli untuk model ini, bila katalog mengenalinya. */
+export function recordedSegmentFor(model: string): (RecordedSegment & { slug: string }) | null {
+  const entry = findModel(model);
+  if (!entry) return null;
+  const seg = manifest().segments[entry.slug];
+  if (!seg) return null;
+  const abs = path.join(paths.assets, 'audio', seg.file);
+  if (!fs.existsSync(abs)) return null;
+  return { ...seg, slug: entry.slug };
+}
+
+/**
+ * Memotong rekaman asli lalu mengulanginya sampai menutupi durasi video.
+ *
+ * Segmen diekstrak dulu ke berkas sementara, lalu diulang dengan `-stream_loop`
+ * dan diberi fade hanya di awal/akhir trek — bukan di tiap ulangan, karena fade
+ * per ulangan justru membuat suara mesin "megap-megap" tiap 14 detik.
+ * Nada tidak diubah: rekaman ini memang mobil yang benar, jadi menggeser pitch
+ * hanya akan membuatnya terdengar palsu.
+ */
+function buildRecordedTrack(input: {
+  jobId: string;
+  durationSec: number;
+  seg: RecordedSegment;
+}): string | null {
+  const dir = path.join(jobDir(input.jobId), 'audio');
+  fs.mkdirSync(dir, { recursive: true });
+  const out = path.join(dir, 'engine.m4a');
+  const tmp = path.join(dir, 'engine-seg.wav');
+  const src = path.join(paths.assets, 'audio', input.seg.file);
+  const dur = Math.max(1, input.durationSec);
+  const segDur = Math.min(input.seg.duration, dur);
+
+  const cut = spawnSync(
+    'ffmpeg',
+    [
+      '-v', 'error', '-y',
+      '-ss', String(input.seg.start), '-t', segDur.toFixed(2), '-i', src,
+      '-ac', '2', '-ar', '48000', tmp,
+    ],
+    { encoding: 'utf8' },
+  );
+  if (cut.status !== 0 || !fs.existsSync(tmp)) return null;
+
+  const res = spawnSync(
+    'ffmpeg',
+    [
+      '-v', 'error', '-y',
+      '-stream_loop', '-1', '-i', tmp,
+      '-af',
+      `highpass=f=35,lowpass=f=15000,` +
+        `afade=t=in:st=0:d=0.3,` +
+        `afade=t=out:st=${Math.max(0, dur - 0.5).toFixed(2)}:d=0.5`,
+      '-ac', '2', '-ar', '48000', '-c:a', 'aac', '-b:a', '192k', '-t', String(dur),
+      out,
+    ],
+    { encoding: 'utf8' },
+  );
+  fs.rmSync(tmp, { force: true });
+  if (res.status !== 0 || !fs.existsSync(out)) return null;
+  return out;
+}
 
 /**
  * Music is synthesised with ffmpeg instead of shipped as a binary asset: the
@@ -134,10 +233,49 @@ function phaseExpression(points: { t: number; rpm: number }[], firingPerRev: num
   return expr;
 }
 
-/** Kurva rpm: tiap scene punya target, dicapai pada 45% durasi scene. */
-function rpmPoints(scenes: ScenePlan[], p: EngineProfile): { t: number; rpm: number }[] {
-  if (!scenes.length) return [{ t: 0, rpm: p.idle }, { t: 1, rpm: p.idle }];
+/**
+ * rpm ternormalisasi 0..1 sebagai ekspresi ffmpeg terhadap `t`.
+ *
+ * Berbeda dari `phaseExpression` yang menghasilkan fase kumulatif, ini benar-
+ * benar level rpm saat itu: interpolasi linear antar titik, dijepit 0..1.
+ */
+function rpmNormalizedExpr(points: { t: number; rpm: number }[], p: EngineProfile): string {
   const span = Math.max(1, p.redline - p.idle);
+  const norm = (rpm: number) => Math.min(1, Math.max(0, (rpm - p.idle) / span));
+  let expr = norm(points[points.length - 1].rpm).toFixed(4);
+  for (let i = points.length - 1; i > 0; i--) {
+    const a = points[i - 1];
+    const b = points[i];
+    const dt = Math.max(0.05, b.t - a.t);
+    const na = norm(a.rpm);
+    const slope = (norm(b.rpm) - na) / dt;
+    const local = `${na.toFixed(4)}+${slope.toFixed(6)}*(t-${a.t.toFixed(3)})`;
+    expr = `if(lt(t,${b.t.toFixed(3)}),${local},${expr})`;
+  }
+  return expr;
+}
+
+/** Kurva rpm: tiap scene punya target, dicapai pada 45% durasi scene. */
+function rpmPoints(
+  scenes: ScenePlan[],
+  p: EngineProfile,
+  durationSec: number,
+): { t: number; rpm: number }[] {
+  const span = Math.max(1, p.redline - p.idle);
+  // Tanpa rencana scene, rpm datar di idle menghasilkan drone konstan — bukan
+  // mesin. Pakai satu tarikan gas yang wajar supaya tetap terdengar hidup.
+  if (!scenes.length) {
+    const dur = Math.max(2, durationSec);
+    const peak = p.idle + span * 0.85;
+    return [
+      { t: 0, rpm: p.idle },
+      { t: dur * 0.22, rpm: peak },
+      { t: dur * 0.42, rpm: peak * 0.96 },
+      { t: dur * 0.62, rpm: p.idle + span * 0.3 },
+      { t: dur * 0.82, rpm: peak },
+      { t: dur, rpm: p.idle + span * 0.45 },
+    ];
+  }
   const points: { t: number; rpm: number }[] = [{ t: 0, rpm: p.idle }];
   for (const scene of scenes) {
     const target = p.idle + span * loadFor(scene);
@@ -163,25 +301,50 @@ export function buildEngineTrack(input: {
   durationSec: number;
   model: string;
   scenes: ScenePlan[];
-}): { file: string; profile: EngineProfile } | null {
+}): { file: string; profile: EngineProfile; recorded: boolean } | null {
+  const profile = engineProfileFor(input.model);
+
+  // Jalur utama: rekaman mesin asli untuk model ini.
+  const seg = recordedSegmentFor(input.model);
+  if (seg) {
+    const file = buildRecordedTrack({ jobId: input.jobId, durationSec: input.durationSec, seg });
+    if (file) return { file, profile, recorded: true };
+  }
+
+  const synth = buildSynthTrack(input, profile);
+  return synth ? { ...synth, recorded: false } : null;
+}
+
+/**
+ * Cadangan sintesis untuk model yang belum punya rekaman asli.
+ *
+ * `rpmNorm` sengaja diturunkan dari kurva rpm, BUKAN dari `theta`. Fase
+ * kumulatif tumbuh tanpa batas terhadap waktu, jadi memakainya sebagai
+ * "rpm ternormalisasi" membuat level dan frekuensi terus naik (terukur:
+ * rasio 1.0 pada detik ke-1, 12.0 pada detik ke-12, whistle menembus 41 kHz).
+ */
+function buildSynthTrack(
+  input: { jobId: string; durationSec: number; model: string; scenes: ScenePlan[] },
+  profile: EngineProfile,
+): { file: string; profile: EngineProfile } | null {
   const dir = path.join(jobDir(input.jobId), 'audio');
   fs.mkdirSync(dir, { recursive: true });
   const out = path.join(dir, 'engine.m4a');
-  const profile = engineProfileFor(input.model);
   const dur = Math.max(1, input.durationSec);
   const redline = Math.max(1, profile.redline);
-  const points = rpmPoints(input.scenes, profile);
+  const points = rpmPoints(input.scenes, profile, dur);
   const theta = phaseExpression(points, profile.firingPerRev);
   // Fraksi siklus 0..1: dasar untuk pulsa per silinder.
   const cycle = `mod((${theta})/6.283185,1)`;
-  const rpmExpr = `(${theta})`;
+  // rpm ternormalisasi 0..1 dari kurva, dijepit agar tidak pernah >1.
+  const rpmExpr = `min(1,max(0,${rpmNormalizedExpr(points, profile)}))`;
 
   const sources: string[] = [];
   const parts: string[] = [];
 
   if (profile.aspiration === 'electric') {
     // EV tidak punya knalpot: desis inverter yang naik + noise ban.
-    const sweep = `260+2400*(${rpmExpr})/(6.283185*${(profile.redline / 60) * 1})`;
+    const sweep = `260+2400*(${rpmExpr})`;
     const tone =
       `0.20*sin(2*PI*(${sweep})*t)+0.09*sin(4*PI*(${sweep})*t)+0.05*sin(6*PI*(${sweep})*t)`;
     sources.push(`aevalsrc='${tone}|${tone}':d=${dur}:s=48000:c=stereo`);
@@ -211,7 +374,7 @@ export function buildEngineTrack(input: {
     const rasp = (0.16 * profile.rasp).toFixed(3);
     const raspSig = `${rasp}*(random(0)-0.5)*(0.25+0.75*exp(-6*${cycle}))`;
     // Intake honk: harmonisa ke-2 yang digeser sedikit -> terdengar "berongga".
-    const intake = `0.06*sin(2.02*(${theta}))*(0.25+0.75*(${rpmExpr})/${(2 * Math.PI * profile.firingPerRev * redline) / 60})`;
+    const intake = `0.06*sin(2.02*(${theta}))*(0.25+0.75*(${rpmExpr}))`;
 
     sources.push(`aevalsrc='${pulseL}+${sub}+${harmonics}+${raspSig}+${intake}|${pulseR}+${sub}+${harmonics}+${raspSig}+${intake}':d=${dur}:s=48000:c=stereo`);
     parts.push(`[0:a]highpass=f=45,lowpass=f=${Math.round(3200 + 5200 * profile.brightness)},volume=0.8[a0]`);
@@ -220,7 +383,7 @@ export function buildEngineTrack(input: {
     if (profile.whine > 0.12) {
       const base = profile.aspiration === 'supercharged' ? 2400 : 4200;
       const span = profile.aspiration === 'supercharged' ? 2200 : 3600;
-      const mod = `(0.15+0.85*(${rpmExpr})/${(2 * Math.PI * profile.firingPerRev * redline) / 60})`;
+      const mod = `(0.15+0.85*(${rpmExpr}))`;
       const whistle = `${(0.07 * profile.whine).toFixed(3)}*sin(2*PI*(${base}+${span}*${mod})*t)*${mod}`;
       sources.push(`aevalsrc='${whistle}|${whistle}':d=${dur}:s=48000:c=stereo`);
       parts.push(`[1:a]highpass=f=2000,volume=0.55[a1]`);
@@ -231,7 +394,7 @@ export function buildEngineTrack(input: {
 
     // Overrun: letupan knalpot sporadis, hanya untuk mesin yang memang berisik.
     if (profile.rasp > 0.3) {
-      const pops = `${(0.5 * profile.rasp).toFixed(2)}*(random(1)-0.5)*gt(random(2),0.9975)*gt(${rpmExpr},${(2 * Math.PI * profile.firingPerRev * redline * 0.45) / 60})`;
+      const pops = `${(0.5 * profile.rasp).toFixed(2)}*(random(1)-0.5)*gt(random(2),0.9975)*gt(${rpmExpr},0.45)`;
       sources.push(`aevalsrc='${pops}|${pops}':d=${dur}:s=48000:c=stereo`);
       parts.push(`[${sources.length - 1}:a]bandpass=f=1400:w=2400,volume=0.5,aformat=channel_layouts=stereo[pop]`);
       parts.push(`[eng][pop]amix=inputs=2:duration=first:normalize=0[eng3]`);

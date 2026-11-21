@@ -2,6 +2,7 @@
 // Video & thumb tidak disentuh di sini; keduanya ikut git karena Netlify
 // membangun dari checkout bersih.
 import { build } from 'esbuild';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -25,6 +26,25 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
+// Hash isi media dihitung sebelum bundel dibangun, karena nilainya disuntik ke
+// dalam JS. Tanpa ini URL mp4 tidak berubah saat berkasnya diganti, jadi
+// browser terus memutar audio lama dari cache — persis bug suara mesin.
+const mediaDir = path.join(out, 'video');
+const mediaHash = crypto
+  .createHash('sha1')
+  .update(
+    fs
+      .readdirSync(mediaDir)
+      .sort()
+      .map((f) => {
+        const st = fs.statSync(path.join(mediaDir, f));
+        return `${f}:${st.size}:${Math.round(st.mtimeMs)}`;
+      })
+      .join('|'),
+  )
+  .digest('hex')
+  .slice(0, 8);
+
 const res = await build({
   entryPoints: [path.join(src, 'src/main.tsx')],
   bundle: true,
@@ -37,7 +57,10 @@ const res = await build({
   outfile: path.join(assets, 'studio.js'),
   metafile: true,
   logLevel: 'warning',
-  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+    __MEDIA_VERSION__: JSON.stringify(mediaHash),
+  },
 });
 
 // esbuild menaruh CSS hasil impor di file .css terpisah
@@ -57,7 +80,6 @@ const css = fs.statSync(cssOut).size;
 
 // Sisipkan hash isi ke index.html supaya cache-busting otomatis dan
 // deploy baru langsung terlihat walau CDN masih menyimpan versi lama.
-const crypto = await import('node:crypto');
 const hash = crypto
   .createHash('sha1')
   .update(fs.readFileSync(path.join(assets, 'studio.js')))
@@ -71,4 +93,4 @@ const html = fs.readFileSync(idxPath, 'utf8')
   .replaceAll('__APP_VERSION__', pkg.version);
 fs.writeFileSync(idxPath, html);
 
-console.log(`✓ studio dibangun: studio.js ${(js / 1024).toFixed(0)} kB, studio.css ${(css / 1024).toFixed(1)} kB, v=${hash}`);
+console.log(`✓ studio dibangun: studio.js ${(js / 1024).toFixed(0)} kB, studio.css ${(css / 1024).toFixed(1)} kB, v=${hash}, media=${mediaHash}`);

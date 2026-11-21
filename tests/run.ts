@@ -898,6 +898,70 @@ await check('suara mesin benar-benar disintesis dan berbeda per model', async ()
   assert(hashes.size === models.length, 'suara tiap model harus berbeda, bukan file yang sama');
 });
 
+// Realisme suara mesin diukur, bukan diasumsikan. Versi lama lolos semua tes
+// di atas padahal yang terdengar hanyalah drone sine: nadanya diam di 55 Hz
+// dengan variasi 0.0% sepanjang 12 detik. Tes ini menangkap kasus itu.
+await check('suara mesin bergerak seperti mesin sungguhan, bukan drone', async () => {
+  const { buildEngineTrack } = await import('../src/render/audio.ts');
+  const { spawnSync } = await import('node:child_process');
+  const scenes = [
+    { index: 0, key: 'hook', start: 0, duration: 3 },
+    { index: 1, key: 'action', start: 3, duration: 5 },
+  ] as unknown as Parameters<typeof buildEngineTrack>[0]['scenes'];
+
+  // Nada dasar dilacak per frame lewat autokorelasi pada WAV 8 kHz.
+  const pitchJitter = (file: string): number => {
+    const wav = path.join(os.tmpdir(), `f0-${Date.now()}-${Math.random().toString(36).slice(2)}.wav`);
+    const res = spawnSync('ffmpeg', ['-v', 'error', '-y', '-i', file, '-ac', '1', '-ar', '8000', wav]);
+    if (res.status !== 0) return 0;
+    const buf = fs.readFileSync(wav);
+    fs.rmSync(wav, { force: true });
+    // Lompati header WAV 44 byte, baca PCM 16-bit mono.
+    const n = Math.floor((buf.length - 44) / 2);
+    const x = new Float64Array(n);
+    for (let i = 0; i < n; i++) x[i] = buf.readInt16LE(44 + i * 2) / 32768;
+    const win = 1024, hop = 512, sr = 8000;
+    const f0: number[] = [];
+    for (let s = 0; s + win < n; s += hop) {
+      let e0 = 0;
+      for (let i = 0; i < win; i++) e0 += x[s + i] * x[s + i];
+      if (e0 < 1e-6) continue;
+      let bestLag = 0, best = 0;
+      for (let lag = Math.floor(sr / 500); lag < Math.floor(sr / 40); lag++) {
+        let acc = 0;
+        for (let i = 0; i < win - lag; i++) acc += x[s + i] * x[s + i + lag];
+        if (acc > best) { best = acc; bestLag = lag; }
+      }
+      if (bestLag > 0 && best > 0.25 * e0) f0.push(sr / bestLag);
+    }
+    if (f0.length < 4) return 0;
+    const mean = f0.reduce((a, b) => a + b, 0) / f0.length;
+    const varr = f0.reduce((a, b) => a + (b - mean) ** 2, 0) / f0.length;
+    return (Math.sqrt(varr) / mean) * 100;
+  };
+
+  for (const model of ['Porsche 911 GT3 RS', 'Mazda RX-7 FD3S']) {
+    const r = buildEngineTrack({ jobId: `jitter-${model.split(' ').pop()}`, durationSec: 8, model, scenes });
+    assert(r !== null, `gagal membuat suara mesin untuk ${model}`);
+    const jitter = pitchJitter(r!.file);
+    // Rekaman mesin asli: 57-227%. Drone sine: 0-2%. Ambang 15% memisahkan keduanya.
+    assert(
+      jitter > 15,
+      `suara ${model} terlalu statis (jitter ${jitter.toFixed(1)}%) — terdengar seperti drone, bukan mesin`,
+    );
+  }
+});
+
+await check('model dengan rekaman asli memakai rekaman, bukan sintesis', async () => {
+  const { buildEngineTrack, recordedSegmentFor } = await import('../src/render/audio.ts');
+  const seg = recordedSegmentFor('Porsche 911 GT3 RS 992');
+  assert(seg !== null, 'GT3 RS harus punya rekaman asli di manifest');
+  assert(seg!.license === 'CC BY 3.0', 'lisensi rekaman harus tercatat');
+  assert(typeof seg!.artist === 'string' && seg!.artist.length > 3, 'artis rekaman harus tercatat');
+  const r = buildEngineTrack({ jobId: 'rec-uji', durationSec: 4, model: 'Porsche 911 GT3 RS 992', scenes: [] });
+  assert(r !== null && r!.recorded === true, 'jalur rekaman asli harus dipakai untuk GT3 RS');
+});
+
 await check('campuran mesin + musik menghasilkan audio stereo 48 kHz', async () => {
   const { buildMusicBed, buildEngineTrack, muxAudio } = await import('../src/render/audio.ts');
   const { loadThemes } = await import('../src/core/config.ts');

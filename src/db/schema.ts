@@ -103,3 +103,24 @@ export const SCHEMA_POSTGRES = SCHEMA_SQLITE.replace(/INTEGER NOT NULL DEFAULT 1
 /** Columns added after the first release; databases created earlier need them patched in. */
 export const USERNAME_COLUMN = 'username';
 export const USERNAME_INDEX = 'CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username)';
+
+/**
+ * Kolom kebijakan gerak. Ditambahkan sebagai migrasi supaya database lama tetap
+ * jalan; baris lama otomatis bernilai 0/'pending', yaitu tanda "belum upgrade",
+ * sehingga backfill bisa menemukannya tanpa daftar manual.
+ */
+export const MOTION_COLUMNS: { name: string; ddl: string }[] = [
+  { name: 'pipeline_version', ddl: 'ALTER TABLE jobs ADD COLUMN pipeline_version INTEGER NOT NULL DEFAULT 0' },
+  {
+    name: 'motion_prompt_schema_version',
+    ddl: 'ALTER TABLE jobs ADD COLUMN motion_prompt_schema_version INTEGER NOT NULL DEFAULT 0',
+  },
+  {
+    name: 'motion_upgrade_status',
+    ddl: "ALTER TABLE jobs ADD COLUMN motion_upgrade_status TEXT NOT NULL DEFAULT 'pending'",
+  },
+  { name: 'motion_upgraded_at', ddl: 'ALTER TABLE jobs ADD COLUMN motion_upgraded_at TEXT' },
+  { name: 'motion_score', ddl: 'ALTER TABLE jobs ADD COLUMN motion_score REAL' },
+];
+
+export const MOTION_INDEX = 'CREATE INDEX IF NOT EXISTS idx_jobs_motion_status ON jobs(motion_upgrade_status)';

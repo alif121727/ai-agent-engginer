@@ -1,5 +1,6 @@
 import { db, uuid, now, type Row } from './index.ts';
 import type { Brief, JobStatus, StageStatus } from '../core/types.ts';
+import { stampNewJob } from '../core/motion-policy.ts';
 
 export interface Job {
   id: string;
@@ -23,6 +24,11 @@ export interface Job {
   published_at: string | null;
   created_at: string;
   updated_at: string;
+  pipeline_version: number;
+  motion_prompt_schema_version: number;
+  motion_upgrade_status: 'pending' | 'in_progress' | 'done' | 'failed';
+  motion_upgraded_at: string | null;
+  motion_score: number | null;
 }
 
 export interface Stage {
@@ -54,10 +60,14 @@ export async function createJob(input: {
 }): Promise<Job> {
   const id = uuid();
   const ts = now();
+  // Job baru langsung di versi kebijakan terbaru: tidak ada job baru yang lahir
+  // dengan pipeline_version 0, sehingga tidak pernah ada kelas "job lama" baru.
+  const stamp = stampNewJob();
   await db().run(
     `INSERT INTO jobs (id, brief_slug, title, model, theme_id, mode, status, progress, duration_sec, aspect,
-      preset, brief_json, cost_estimate, cost_actual, scheduled_at, created_at, updated_at)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      preset, brief_json, cost_estimate, cost_actual, scheduled_at, created_at, updated_at,
+      pipeline_version, motion_prompt_schema_version, motion_upgrade_status, motion_upgraded_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       id,
       input.briefSlug,
@@ -76,6 +86,10 @@ export async function createJob(input: {
       input.scheduledAt ?? null,
       ts,
       ts,
+      stamp.pipeline_version,
+      stamp.motion_prompt_schema_version,
+      stamp.motion_upgrade_status,
+      stamp.motion_upgraded_at,
     ],
   );
   return (await getJob(id))!;

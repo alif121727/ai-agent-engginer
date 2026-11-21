@@ -922,6 +922,8 @@ interface QaReport {
   sharpness?: Record<string, number>;
   issues?: { sceneIndex: number; code: string; reason: string }[];
   video?: { ok?: boolean; width?: number; height?: number; durationSec?: number; expectedDurationSec?: number };
+  motion?: { score: number; globalMotion: number; localMotion: number; passed: boolean };
+  motionPerScene?: { scene: number; key: string; score: number; passed: boolean }[];
 }
 
 function ArtifactPanel({ jobId, artifacts }: { jobId: string; artifacts: string[] }) {
@@ -974,6 +976,32 @@ function ArtifactPanel({ jobId, artifacts }: { jobId: string; artifacts: string[
             <p className="muted" style={{ marginTop: 6, fontSize: 13 }}>
               {qa.video.width}×{qa.video.height} · {qa.video.durationSec.toFixed(1)} dtk
             </p>
+          )}
+          {qa.motion && (
+            <div style={{ marginTop: 14 }}>
+              <p className="muted" style={{ fontSize: 13 }}>
+                Gerakan {qa.motion.score.toFixed(2)} · kamera {qa.motion.globalMotion.toFixed(2)} · subjek{' '}
+                {qa.motion.localMotion.toFixed(2)}
+              </p>
+              {qa.motionPerScene && qa.motionPerScene.length > 0 && (
+                <ul style={{ marginTop: 8, paddingLeft: 0, listStyle: 'none', fontSize: 12 }}>
+                  {qa.motionPerScene.map((s) => (
+                    <li
+                      key={s.scene}
+                      className="muted"
+                      style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '2px 0' }}
+                    >
+                      <span>
+                        {s.scene + 1}. {s.key}
+                      </span>
+                      <span style={{ color: s.passed ? 'var(--cream)' : 'var(--orange)' }}>
+                        {s.score.toFixed(2)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           )}
           {qa.issues && qa.issues.length > 0 && (
             <ul style={{ marginTop: 10, paddingLeft: 18, fontSize: 13 }}>

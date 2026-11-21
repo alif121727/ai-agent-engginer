@@ -1,0 +1,32 @@
+{
+  "motion_policy": {
+    "version": 3,
+    "enforced": true,
+    "primary_provider": "seedance_i2v",
+    "fallback_provider": "wan_i2v",
+    "draft_provider": "ltx_i2v",
+    "pipeline": "two_stage",
+    "max_clip_seconds": 6,
+    "min_clip_seconds": 3,
+    "camera_moves_allowed": [
+      "slow_dolly_in",
+      "dolly_out",
+      "pan_left",
+      "pan_right",
+      "orbit_clockwise",
+      "crane_up",
+      "zoom_in",
+      "zoom_out",
+      "static"
+    ],
+    "require_motion_critic": true,
+    "min_motion_score": 0.2,
+    "backfill": {
+      "enabled": true,
+      "batch_size": 5,
+      "dry_run_default": true,
+      "stale_in_progress_hours": 24
+    },
+    "min_scene_motion_score": 0.2
+  }
+}

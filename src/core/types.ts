@@ -1,3 +1,5 @@
+import type { MotionPrompt } from './motion-prompt.ts';
+
 export type JobStatus =
   | 'queued'
   | 'running'
@@ -63,6 +65,10 @@ export interface ScenePlan {
   negativePrompt: string;
   onScreenText: string;
   voiceover: string;
+  /** Kontrak gerak terstruktur; wajib untuk job yang lolos kebijakan v2+. */
+  motionPrompt?: MotionPrompt;
+  /** Amplitudo gerakan 0.6-1.3 hasil pemetaan slider intensitas. */
+  motionStrength?: number;
 }
 
 export interface AssetRecord {

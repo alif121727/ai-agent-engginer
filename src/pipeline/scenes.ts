@@ -1,4 +1,10 @@
 import type { Brief, ScenePlan, Theme } from '../core/types.ts';
+import {
+  DEFAULT_NEGATIVES,
+  toPromptString,
+  type CameraMove,
+  type MotionPrompt,
+} from '../core/motion-prompt.ts';
 
 interface SceneSpec {
   key: string;
@@ -7,6 +13,12 @@ interface SceneSpec {
   camera: string;
   lens: string;
   weight: number;
+  /** Gerakan kamera untuk I2V. Satu per klip — lihat aturan di motion-prompt.ts. */
+  move: CameraMove;
+  /** Aksi subjek konkret; bukan deskripsi ulang gambar. */
+  action: string;
+  /** Gerakan ambient halus. */
+  ambient: string;
 }
 
 const BASE_SCENES: SceneSpec[] = [
@@ -17,6 +29,9 @@ const BASE_SCENES: SceneSpec[] = [
     camera: 'static dengan dorongan pelan',
     lens: '85mm',
     weight: 1,
+    move: 'slow_dolly_in',
+    action: 'headlight glass catches a slow sweep of light as the lens eases closer',
+    ambient: 'dust motes drift through the beam, reflections crawl across the paint',
   },
   {
     key: 'exterior',
@@ -25,6 +40,9 @@ const BASE_SCENES: SceneSpec[] = [
     camera: 'orbit lambat mengelilingi mobil',
     lens: '35mm',
     weight: 1.2,
+    move: 'orbit_clockwise',
+    action: 'the bodywork slides past as the viewpoint travels around the car',
+    ambient: 'wet ground mirrors the body, thin clouds move behind',
   },
   {
     key: 'features',
@@ -33,6 +51,9 @@ const BASE_SCENES: SceneSpec[] = [
     camera: 'slider horizontal dengan fokus rakitan',
     lens: '50mm',
     weight: 1.1,
+    move: 'pan_right',
+    action: 'the surface detail travels across frame, edges catching the key light',
+    ambient: 'fine dust settles slowly, reflections shift along the panel gaps',
   },
   {
     key: 'interior',
@@ -41,6 +62,9 @@ const BASE_SCENES: SceneSpec[] = [
     camera: 'dolly masuk perlahan',
     lens: '35mm',
     weight: 1,
+    move: 'crane_up',
+    action: 'the cabin rises into view as the lens lifts over the wheel',
+    ambient: 'soft daylight breathes through the windows, stitching glints',
   },
   {
     key: 'action',
@@ -49,6 +73,9 @@ const BASE_SCENES: SceneSpec[] = [
     camera: 'tracking rendah, speed ramp',
     lens: '35mm',
     weight: 1.3,
+    move: 'zoom_in',
+    action: 'the car surges forward, road surface streaking beneath it',
+    ambient: 'heat shimmer trails the body, roadside light flares past',
   },
   {
     key: 'cta',
@@ -57,6 +84,9 @@ const BASE_SCENES: SceneSpec[] = [
     camera: 'static dengan parallax halus',
     lens: '50mm',
     weight: 0.9,
+    move: 'dolly_out',
+    action: 'the car settles and the frame eases back to leave room for text',
+    ambient: 'indicator glow pulses gently, floor reflection softens',
   },
 ];
 
@@ -68,6 +98,9 @@ const EXTRA_SCENES: SceneSpec[] = [
     camera: 'pan melingkar pendek',
     lens: '85mm',
     weight: 1,
+    move: 'pan_left',
+    action: 'spokes slide past the lens, brake disc glinting between them',
+    ambient: 'brake dust drifts, highlights travel around the rim',
   },
   {
     key: 'detail_engine',
@@ -76,6 +109,9 @@ const EXTRA_SCENES: SceneSpec[] = [
     camera: 'tilt naik lambat',
     lens: '50mm',
     weight: 1,
+    move: 'crane_up',
+    action: 'the engine bay reveals itself as the camera lifts',
+    ambient: 'faint heat haze rises from the block',
   },
   {
     key: 'night',
@@ -84,6 +120,9 @@ const EXTRA_SCENES: SceneSpec[] = [
     camera: 'orbit rendah',
     lens: '35mm',
     weight: 1.2,
+    move: 'orbit_clockwise',
+    action: 'the silhouette turns slowly against the city glow',
+    ambient: 'neon reflections ripple on wet asphalt, distant traffic blurs past',
   },
   {
     key: 'lifestyle',
@@ -92,6 +131,9 @@ const EXTRA_SCENES: SceneSpec[] = [
     camera: 'handheld halus',
     lens: '50mm',
     weight: 1,
+    move: 'slow_dolly_in',
+    action: 'a hand settles on the wheel and tightens slightly',
+    ambient: 'cabin light shifts, fabric creases as weight settles',
   },
 ];
 
@@ -167,14 +209,24 @@ export function planScenes(input: {
   aspect: string;
   /** Resep scene dari template; kosong berarti alur bawaan. */
   sceneKeys?: string[];
+  /** Batas durasi per klip dari kebijakan gerak; default 6 detik. */
+  maxClipSeconds?: number;
+  /** Kekuatan gerakan 1-10 dari UI; memetakan ke amplitudo kamera. */
+  motionIntensity?: number;
 }): ScenePlan[] {
-  const specs = buildSceneList(input.durationSec, input.sceneKeys);
+  // Durasi NaN/infinite membuat perhitungan sisa durasi tak pernah mencapai 0,
+  // sehingga loop di bawah berputar selamanya. Nilai tak sah dijepit ke minimum
+  // kontrak video, bukan dibiarkan menggantung.
+  const durationSec = Number.isFinite(input.durationSec) && input.durationSec > 0
+    ? Math.round(input.durationSec)
+    : 30;
+  const specs = buildSceneList(durationSec, input.sceneKeys);
   const totalWeight = specs.reduce((sum, s) => sum + s.weight, 0);
 
   // Distribute duration by weight, then give the rounding remainder to the
   // longest scenes so the sum equals the requested duration exactly.
-  const durations = specs.map((spec) => Math.max(2, Math.round((spec.weight / totalWeight) * input.durationSec)));
-  let diff = input.durationSec - durations.reduce((a, b) => a + b, 0);
+  const durations = specs.map((spec) => Math.max(2, Math.round((spec.weight / totalWeight) * durationSec)));
+  let diff = durationSec - durations.reduce((a, b) => a + b, 0);
   while (diff !== 0) {
     const order = durations
       .map((d, i) => ({ i, d }))
@@ -189,9 +241,27 @@ export function planScenes(input: {
   }
 
   const advantages = input.brief.keunggulan ?? [];
+  const maxClip = input.maxClipSeconds ?? 6;
+  const intensity = Math.max(1, Math.min(10, input.motionIntensity ?? 5));
+  // Nilai tengah slider (5) HARUS 1.0, yaitu amplitudo yang sudah dikalibrasi
+  // lolos critic. Pemetaan linear 1..10 ke 0.6..1.3 membuat nilai tengah 0.91,
+  // dan itu cukup menurunkan dolly/zoom di bawah ambang.
+  const strength = Math.round(
+    (intensity <= 5 ? 0.7 + ((intensity - 1) / 4) * 0.3 : 1 + ((intensity - 5) / 5) * 0.3) * 100,
+  ) / 100;
+
   let start = 0;
   return specs.map((spec, index) => {
     const duration = durations[index];
+    const motionPrompt: MotionPrompt = {
+      subject_action: spec.action,
+      camera_move: spec.move,
+      environmental_effects: spec.ambient,
+      negative_constraints: DEFAULT_NEGATIVES,
+      // Klip panjang dipecah oleh renderer; nilai di sini sudah dijepit agar
+      // tidak ada prompt yang meminta gerakan lebih lama dari batas kebijakan.
+      duration_seconds: Math.max(3, Math.min(maxClip, duration)),
+    };
     const scene: ScenePlan = {
       index,
       key: spec.key,
@@ -218,6 +288,8 @@ export function planScenes(input: {
       negativePrompt: NEGATIVE_PROMPT,
       onScreenText: onScreenTextFor(baseKey(spec.key), input.brief, advantages),
       voiceover: '',
+      motionPrompt,
+      motionStrength: strength,
     };
     start += duration;
     return scene;
@@ -294,6 +366,21 @@ function buildPrompt(input: {
     'foto jurnalistik otomotif, warna akurat, tidak ada teks, tidak ada watermark',
     'tidak ada logo merek, tidak ada tulisan pada bodi',
   ].join(', ');
+}
+
+/**
+ * Prompt untuk image-to-video. Gambar referensi SUDAH mendefinisikan subjek,
+ * warna, dan latar; mengulanginya di sini membuat model meniru foto alih-alih
+ * menggerakkannya, dan gerakan melemah. Jadi isinya hanya gerakan.
+ */
+export function i2vPrompt(scene: ScenePlan): string {
+  if (scene.motionPrompt) return toPromptString(scene.motionPrompt);
+  return `${scene.camera}, smooth fluid motion at moderate speed`;
+}
+
+/** Prompt untuk text-to-image (keyframe). Di sini deskripsi subjek justru wajib. */
+export function t2iPrompt(scene: ScenePlan): string {
+  return scene.prompt;
 }
 
 /**

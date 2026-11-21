@@ -10,6 +10,10 @@ import type { AssetRecord, Brief, ScenePlan, Theme } from '../core/types.ts';
 import { ffprobe, contactSheet, ffmpegHasFilter } from './ffmpeg.ts';
 import { buildMusicBed, buildEngineTrack, muxAudio } from './audio.ts';
 import { describeProfile } from './engine.ts';
+import { cameraFilterFor } from './camera.ts';
+import type { CameraMove } from '../core/motion-prompt.ts';
+import { assertPolicyApplied, assertMotionAllowed, loadPolicy, PolicyViolation } from '../core/motion-policy.ts';
+import { validateMotionPrompt } from '../core/motion-prompt.ts';
 
 export interface RenderResult {
   file: string;
@@ -88,74 +92,41 @@ function writeAssFile(dir: string, scene: ScenePlan, width: number, height: numb
 }
 
 /**
- * Camera moves are chosen per scene key so consecutive shots never look alike.
- * Without this every clip is a still frame with the same slow push-in, which
- * reads as a slideshow rather than a video.
+ * Gerakan kamera diambil dari MotionPrompt scene, bukan ditebak dari kunci.
+ * Pemetaan kunci lama (hook=push-in, dst.) dihapus karena semua gerakan
+ * non-push-in ternyata nyaris beku; sekarang kebijakan yang menentukan.
  */
-type CameraMove = 'push-in' | 'pull-out' | 'pan-right' | 'pan-left' | 'tilt-up' | 'orbit' | 'speed-ramp';
-
 function cameraMoveFor(scene: ScenePlan): CameraMove {
-  switch (scene.key) {
-    case 'hook':
-      return 'push-in';
-    case 'exterior':
-      return 'orbit';
-    case 'features':
-      return 'pan-right';
-    case 'interior':
-      return 'tilt-up';
-    case 'action':
-      return 'speed-ramp';
-    case 'cta':
-      return 'pull-out';
-    case 'detail_wheel':
-      return 'pan-left';
-    case 'detail_engine':
-      return 'tilt-up';
-    case 'night':
-      return 'pan-right';
-    case 'lifestyle':
-      return 'push-in';
-    default:
-      return 'push-in';
-  }
+  return scene.motionPrompt?.camera_move ?? 'slow_dolly_in';
 }
 
 /**
- * zoompan works on the input frame; the x/y expressions animate the crop
- * window, which is what produces real lateral movement (a pan) instead of a
- * pure zoom. Values stay inside the frame so no black borders appear.
+ * Gate kebijakan gerak — choke point tunggal untuk semua render.
+ *
+ * Dipanggil sebelum satu frame pun dirender. Job lama (pipeline_version 0) dan
+ * job tanpa MotionPrompt terstruktur ditolak di sini, sehingga tidak ada jalur
+ * yang diam-diam menghasilkan video "foto berkedip".
  */
-function cameraFilter(move: CameraMove, frames: number, width: number, height: number, fps: number): string {
-  const total = Math.max(2, frames);
-  // Linear motion reads as a mechanical zoom; an ease-in-out curve is what
-  // makes a still photograph feel like a camera operator moved it.
-  const e = `(0.5-0.5*cos(PI*on/${total}))`;
-  const z = {
-    'push-in': `min(1+0.14*${e},1.14)`,
-    'pull-out': `max(1.14-0.14*${e},1.0)`,
-    orbit: `min(1.06+0.10*${e},1.16)`,
-    'speed-ramp': `min(1.0+0.22*${e},1.22)`,
-    'pan-right': '1.12',
-    'pan-left': '1.12',
-    'tilt-up': '1.12',
-  }[move];
-  const x = {
-    'pan-right': `(iw-iw/zoom)*${e}`,
-    'pan-left': `(iw-iw/zoom)*(1-${e})`,
-    orbit: `(iw-iw/zoom)*(0.5+0.35*sin(on/${total}*PI))`,
-    'speed-ramp': `(iw-iw/zoom)*0.5`,
-    'tilt-up': `(iw-iw/zoom)*0.5`,
-  }[move as string] ?? '(iw-iw/zoom)/2';
-  const y = {
-    'tilt-up': `(ih-ih/zoom)*(1-${e})`,
-    'speed-ramp': `(ih-ih/zoom)*0.5`,
-    'pan-right': `(ih-ih/zoom)*0.5`,
-    'pan-left': `(ih-ih/zoom)*0.5`,
-  }[move as string] ?? '(ih-ih/zoom)/2';
-  return (
-    `zoompan=z='${z}':x='${x}':y='${y}':d=${total}:s=${width}x${height}:fps=${fps}`
-  );
+export function assertMotionPolicyFor(scenes: ScenePlan[]): void {
+  const policy = loadPolicy();
+  for (const scene of scenes) {
+    if (!scene.motionPrompt) {
+      throw new PolicyViolation(
+        `scene ${scene.index + 1} tidak punya MotionPrompt; render video tanpa kontrak gerak ditolak`,
+        'MOTION_PROMPT_MISSING',
+        { sceneIndex: scene.index, key: scene.key },
+      );
+    }
+    assertMotionAllowed(scene.motionPrompt, policy);
+    const issues = validateMotionPrompt(scene.motionPrompt, { maxClipSeconds: policy.maxClipSeconds });
+    if (issues.length) {
+      throw new PolicyViolation(
+        `scene ${scene.index + 1}: ${issues.map((i) => i.message).join('; ')}`,
+        'MOTION_PROMPT_INVALID',
+        { sceneIndex: scene.index, issues },
+      );
+    }
+  }
 }
 
 /**
@@ -206,6 +177,9 @@ export async function assembleVideo(ctx: AgentContext): Promise<RenderResult> {
   fs.mkdirSync(clipsDir, { recursive: true });
 
   const byScene = new Map(assets.map((a) => [a.sceneIndex, a]));
+  // Gate kebijakan gerak: dijalankan sebelum validasi aset, karena job lama
+  // harus ditolak lebih awal dengan pesan yang jelas, bukan setelah render.
+  assertMotionPolicyFor(scenes);
   const missing = scenes.filter((s) => !byScene.has(s.index));
   if (missing.length) {
     throw new Error(`render ditolak: ${missing.length} scene belum punya aset realistis`);
@@ -250,7 +224,7 @@ export async function assembleVideo(ctx: AgentContext): Promise<RenderResult> {
       `scale=${Math.round(width * 1.15)}:${Math.round(height * 1.15)}:force_original_aspect_ratio=increase:flags=lanczos`,
       `crop=${Math.round(width * 1.15)}:${Math.round(height * 1.15)}`,
       `scale=${width * 2}:${height * 2}:flags=lanczos`,
-      cameraFilter(move, frames, width, height, fps),
+      cameraFilterFor(move, frames, width, height, fps, scene.motionStrength ?? 1),
       ...gradeFilters(theme),
     ];
     if (scene.onScreenText) {

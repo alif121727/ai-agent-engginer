@@ -2,7 +2,7 @@ import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import pg from 'pg';
 import { paths, ensureDir } from '../core/fsx.ts';
-import { SCHEMA_SQLITE, USERNAME_INDEX } from './schema.ts';
+import { SCHEMA_SQLITE, USERNAME_INDEX, MOTION_COLUMNS, MOTION_INDEX } from './schema.ts';
 
 export type Row = Record<string, unknown>;
 export type Param = string | number | boolean | null | undefined;
@@ -40,6 +40,12 @@ class SqliteDb implements Db {
       this.#db.exec('ALTER TABLE users ADD COLUMN username TEXT');
     }
     this.#db.exec(USERNAME_INDEX);
+
+    const jobColumns = (this.#db.prepare('PRAGMA table_info(jobs)').all() as { name: string }[]).map((c) => c.name);
+    for (const col of MOTION_COLUMNS) {
+      if (!jobColumns.includes(col.name)) this.#db.exec(col.ddl);
+    }
+    this.#db.exec(MOTION_INDEX);
   }
 
   async all<T extends Row = Row>(sql: string, params: Param[] = []): Promise<T[]> {

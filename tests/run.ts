@@ -23,6 +23,16 @@ import { createApp } from '../src/api/server.ts';
 import { fingerprintFor } from '../src/publish/instagram.ts';
 import { readCheckpoint, writeCheckpoint, markSceneDone, readSceneCheckpoint, isStageComplete, clearCheckpoint } from '../src/pipeline/checkpoint.ts';
 import { frameSharpness, perceptualHash } from '../src/render/ffmpeg.ts';
+import {
+  validateMotionPrompt,
+  splitLongClip,
+  DEFAULT_NEGATIVES,
+} from '../src/core/motion-prompt.ts';
+import { loadPolicy, assertPolicyApplied, PolicyViolation } from '../src/core/motion-policy.ts';
+import { assertMotionPolicyFor } from '../src/render/assemble.ts';
+import { cameraFilterFor } from '../src/render/camera.ts';
+import { measureMotion } from '../src/pipeline/motion-score.ts';
+import { i2vPrompt } from '../src/pipeline/scenes.ts';
 import type { Brief } from '../src/core/types.ts';
 
 let passed = 0;
@@ -1738,6 +1748,207 @@ await check('feed memutar versi web dan mengunduh master', async () => {
   assert(/feedDownloadSrc[^\n]*`video\/\$\{v\.slug\}\.mp4/.test(src), 'feedDownloadSrc tidak menunjuk master');
   const page = fs.readFileSync('studio/src/pages/Feed.tsx', 'utf8');
   assert(page.includes('feedDownloadSrc(v)'), 'tombol unduh tidak memakai feedDownloadSrc');
+});
+
+// ---------------------------------------------------------------- gerakan
+// Kebijakan gerak harus benar-benar menolak, bukan sekadar ada. Tes di bawah
+// memverifikasi penolakan itu, karena gate yang tidak pernah gagal tidak
+// menjaga apa pun.
+
+await check('MotionPrompt valid diterima tanpa keluhan', async () => {
+  const issues = validateMotionPrompt({
+    subject_action: 'the wheel turns slowly as the car settles',
+    camera_move: 'slow_dolly_in',
+    environmental_effects: 'dust drifts through the beam',
+    negative_constraints: DEFAULT_NEGATIVES,
+    duration_seconds: 5,
+  });
+  assert(issues.length === 0, `masih ada keluhan: ${JSON.stringify(issues)}`);
+});
+
+await check('dua gerakan kamera ditolak', async () => {
+  const issues = validateMotionPrompt({
+    subject_action: 'the camera pans left while dollying in on the car',
+    camera_move: 'slow_dolly_in',
+    environmental_effects: '',
+    negative_constraints: DEFAULT_NEGATIVES,
+    duration_seconds: 5,
+  });
+  assert(
+    issues.some((i) => i.code === 'multiple-camera-moves'),
+    'gerakan kamera ganda tidak tertangkap',
+  );
+});
+
+await check('prompt yang mendeskripsikan ulang gambar ditolak', async () => {
+  const issues = validateMotionPrompt({
+    subject_action: 'A photo of a red 2020 coupe shows the car in a dark studio',
+    camera_move: 'static',
+    environmental_effects: '',
+    negative_constraints: DEFAULT_NEGATIVES,
+    duration_seconds: 5,
+  });
+  assert(issues.some((i) => i.code === 'redescribes-image'), 'deskripsi ulang gambar tidak tertangkap');
+});
+
+await check('klip lebih dari 6 detik dipecah, bukan diperpanjang', async () => {
+  const parts = splitLongClip(
+    {
+      subject_action: 'the car rolls forward',
+      camera_move: 'pan_right',
+      environmental_effects: '',
+      negative_constraints: DEFAULT_NEGATIVES,
+      duration_seconds: 13,
+    },
+    6,
+  );
+  assert(parts.length === 3, `diharapkan 3 klip, dapat ${parts.length}`);
+  const total = parts.reduce((a, p) => a + p.duration_seconds, 0);
+  assert(total === 13, `total durasi ${total} tidak sama dengan 13`);
+  assert(parts.every((p) => p.duration_seconds <= 6), 'ada klip melebihi 6 detik');
+});
+
+await check('setiap scene punya MotionPrompt dengan satu gerakan kamera', async () => {
+  const defaults = loadDefaults();
+  const brief = parseBrief(JSON.stringify({ model: 'Porsche 911 GT3 RS (992)', durasi: 30, rasio: '9:16' }));
+  const themes = loadThemes();
+  const theme = pickTheme('Porsche 911 GT3 RS', themes.themes, themes.defaultTheme);
+  const scenes = planScenes({
+    brief,
+    durationSec: resolveDuration(brief, defaults.minDurasi, defaults.maxDurasi).durationSec,
+    theme,
+    aspect: '9:16',
+    maxClipSeconds: 6,
+  });
+  assert(scenes.length > 0, 'tidak ada scene');
+  for (const s of scenes) {
+    assert(s.motionPrompt, `scene ${s.index} tanpa motionPrompt`);
+    const issues = validateMotionPrompt(s.motionPrompt!, { maxClipSeconds: 6 });
+    assert(issues.length === 0, `scene ${s.index}: ${issues.map((i) => i.message).join('; ')}`);
+    assert(s.motionPrompt!.duration_seconds <= 6, `scene ${s.index} melebihi 6 detik`);
+  }
+});
+
+await check('prompt I2V hanya berisi gerakan, bukan deskripsi gambar', async () => {
+  const defaults = loadDefaults();
+  const brief = parseBrief(JSON.stringify({ model: 'Porsche 911 GT3 RS (992)', durasi: 30, rasio: '9:16' }));
+  const themes = loadThemes();
+  const theme = pickTheme('Porsche 911 GT3 RS', themes.themes, themes.defaultTheme);
+  const scenes = planScenes({ brief, durationSec: 30, theme, aspect: '9:16' });
+  const prompt = i2vPrompt(scenes[0]);
+  assert(/smooth fluid motion/i.test(prompt), 'prompt I2V tidak menyebut gerakan');
+  assert(!/fotografi otomotif realistis/i.test(prompt), 'prompt I2V masih mendeskripsikan foto');
+  assert(!/depth of field/i.test(prompt), 'prompt I2V membawa istilah foto, bukan gerakan');
+});
+
+await check('job baru langsung memakai kebijakan gerak terbaru', async () => {
+  const dbFile = path.join(os.tmpdir(), `studio-motion-${Date.now()}.db`);
+  await openDb(dbFile);
+  const job = await createJob({
+    briefSlug: 'porsche-911-gt3-rs-992',
+    title: 'Tes gerak',
+    model: 'Porsche 911 GT3 RS (992)',
+    themeId: 'porsche',
+    mode: 'draft',
+    durationSec: 30,
+    aspect: '9:16',
+    preset: '9-orang',
+    brief: { model: 'Porsche 911 GT3 RS (992)' } as Brief,
+    costEstimate: 0,
+  });
+  const policy = loadPolicy();
+  assert(job.pipeline_version === policy.version, `pipeline_version ${job.pipeline_version} != ${policy.version}`);
+  assert(job.motion_upgrade_status === 'done', `status ${job.motion_upgrade_status} bukan done`);
+  assert(job.motion_prompt_schema_version >= 1, 'schema version masih 0');
+  await closeDb();
+  fs.rmSync(dbFile, { force: true });
+});
+
+await check('gate kebijakan menolak job versi lama', async () => {
+  let rejected = false;
+  try {
+    assertPolicyApplied({ pipeline_version: 0, motion_prompt_schema_version: 0 });
+  } catch (err) {
+    rejected = err instanceof PolicyViolation && err.code === 'PIPELINE_OUTDATED';
+  }
+  assert(rejected, 'job versi 0 tidak ditolak');
+});
+
+await check('gate kebijakan menolak scene tanpa MotionPrompt', async () => {
+  const scene = {
+    index: 0, key: 'hook', label: 'Hook', start: 0, duration: 5, shot: '', camera: '', lens: '',
+    lighting: '', location: '', prompt: '', negativePrompt: '', onScreenText: '', voiceover: '',
+  };
+  let rejected = false;
+  try {
+    assertMotionPolicyFor([scene]);
+  } catch (err) {
+    rejected = err instanceof PolicyViolation && err.code === 'MOTION_PROMPT_MISSING';
+  }
+  assert(rejected, 'scene tanpa MotionPrompt tidak ditolak');
+});
+
+await check('durasi tidak sah tidak membuat perencanaan menggantung', async () => {
+  const themes = loadThemes();
+  const theme = pickTheme('Porsche 911 GT3 RS', themes.themes, themes.defaultTheme);
+  const brief = parseBrief(JSON.stringify({ model: 'Porsche 911 GT3 RS (992)', rasio: '9:16' }));
+  // NaN dulu membuat loop pembagian durasi berputar selamanya; tes ini menjaga
+  // agar nilai tak sah dijepit ke durasi minimum, bukan menggantung worker.
+  const scenes = planScenes({ brief, durationSec: Number.NaN, theme, aspect: '9:16' });
+  assert(scenes.length > 0, 'tidak ada scene');
+  const total = scenes.reduce((a, s) => a + s.duration, 0);
+  assert(total >= 30, `total durasi ${total} di bawah minimum 30 detik`);
+});
+
+await check('critic gerak tidak terkecoh filter gelap (vignette)', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'motion-inv-'));
+  const src = 'jobs/53d647327d3e4edca5b4d68b4a2ed328/qa-frames/frame-1.jpg';
+  if (!fs.existsSync(src)) {
+    fs.rmSync(dir, { recursive: true, force: true });
+    return;
+  }
+  const cam = cameraFilterFor('pan_right', 150, 1080, 1920, 30);
+  const pre = 'scale=2160:3840:force_original_aspect_ratio=increase:flags=lanczos,crop=2160:3840';
+  const plain = path.join(dir, 'plain.mp4');
+  const dark = path.join(dir, 'dark.mp4');
+  spawnSync('ffmpeg', ['-v', 'error', '-y', '-loop', '1', '-i', src, '-t', '5',
+    '-vf', `${pre},${cam}`, '-r', '30', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', plain]);
+  spawnSync('ffmpeg', ['-v', 'error', '-y', '-loop', '1', '-i', src, '-t', '5',
+    '-vf', `${pre},${cam},vignette=PI/4.5,eq=brightness=-0.12`, '-r', '30',
+    '-c:v', 'libx264', '-pix_fmt', 'yuv420p', dark]);
+
+  const a = measureMotion(plain, 0.2);
+  const b = measureMotion(dark, 0.2);
+  fs.rmSync(dir, { recursive: true, force: true });
+  // Metrik lama (beda piksel mentah) turun ~25% hanya karena frame digelapkan,
+  // dan itu membuat scene yang sama tiba-tiba gagal gate.
+  const drift = Math.abs(a.score - b.score) / Math.max(a.score, 0.001);
+  assert(drift < 0.2, `skor berubah ${(drift * 100).toFixed(0)}% hanya karena filter gelap (${a.score} vs ${b.score})`);
+});
+
+await check('critic gerak membedakan video beku dan bergerak', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'motion-critic-'));
+  const still = path.join(dir, 'still.jpg');
+  const src = 'jobs/53d647327d3e4edca5b4d68b4a2ed328/qa-frames/frame-1.jpg';
+  if (!fs.existsSync(src)) {
+    fs.rmSync(dir, { recursive: true, force: true });
+    return; // aset uji tidak ada di checkout ini
+  }
+  fs.copyFileSync(src, still);
+  const frozen = path.join(dir, 'frozen.mp4');
+  const moving = path.join(dir, 'moving.mp4');
+  spawnSync('ffmpeg', ['-v', 'error', '-y', '-loop', '1', '-i', still, '-t', '4',
+    '-vf', 'scale=1080:1920', '-r', '30', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', frozen]);
+  spawnSync('ffmpeg', ['-v', 'error', '-y', '-loop', '1', '-i', still, '-t', '4',
+    '-vf', `scale=1242:2208,crop=1242:2208,scale=2160:3840,${cameraFilterFor('slow_dolly_in', 120, 1080, 1920, 30)}`,
+    '-r', '30', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', moving]);
+
+  const a = measureMotion(frozen, 0.2);
+  const b = measureMotion(moving, 0.2);
+  fs.rmSync(dir, { recursive: true, force: true });
+  assert(!a.passed, `video beku lolos dengan skor ${a.score}`);
+  assert(a.score < 0.05, `skor video beku terlalu tinggi: ${a.score}`);
+  assert(b.passed, `video bergerak gagal dengan skor ${b.score}`);
 });
 
 console.log(`\n${passed} pemeriksaan lulus, ${failures.length} gagal`);

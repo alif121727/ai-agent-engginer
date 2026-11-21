@@ -6,6 +6,7 @@ import type { VisualAdapter, GenerateRequest, GenerateResult } from './types.ts'
 import { fileFor, userAssetsFor, validateAssetFile, withRetry, downloadToFile } from './types.ts';
 import type { VisualAdapterDef } from '../core/config.ts';
 import { paths } from '../core/fsx.ts';
+import { i2vPrompt } from '../pipeline/scenes.ts';
 
 function localCandidates(req: GenerateRequest): string[] {
   const own = userAssetsFor(req.model, path.join(paths.assets, 'own'));
@@ -94,7 +95,10 @@ export function videoGenAdapter(def: VisualAdapterDef): VisualAdapter {
         body: JSON.stringify({
           model: def.model,
           image: req.referenceImage,
-          prompt: `${req.scene.shot}, ${req.scene.camera}`,
+          // Prompt gerakan saja: "shot, camera" mendeskripsikan ulang gambar
+          // dan itu yang membuat klip I2V nyaris statis.
+          prompt: i2vPrompt(req.scene),
+          negative_prompt: req.scene.motionPrompt?.negative_constraints ?? req.scene.negativePrompt,
           duration: Math.min(5, Math.max(2, req.scene.duration)),
         }),
       });

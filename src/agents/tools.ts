@@ -15,6 +15,8 @@ import type { AssetRecord, Brief, ScenePlan } from '../core/types.ts';
 import { resolveDuration } from '../core/brief.ts';
 import { jobDir } from '../core/fsx.ts';
 import { checkAssets, isBelowMinimum } from '../pipeline/quality.ts';
+import { measureMotion } from '../pipeline/motion-score.ts';
+import { loadPolicy } from '../core/motion-policy.ts';
 import { ffprobe, contactSheet, frameSharpness, extractFrame, perceptualHash } from '../render/ffmpeg.ts';
 import type { RenderResult } from '../render/assemble.ts';
 import { markSceneDone, readSceneCheckpoint, markStageComplete } from '../pipeline/checkpoint.ts';
@@ -628,6 +630,50 @@ tool('approve_job', 'Verifikasi hasil akhir lalu setujui atau tolak', async (_ar
     detail: `${distinct} dari ${frameHashes.length} frame berbeda`,
   });
 
+  // Critic gerak: mengukur piksel, bukan niat prompt. Ambang dari kebijakan
+  // supaya semua job dinilai dengan bar yang sama.
+  //
+  // Dua tingkat, dan keduanya wajib. Skor seluruh video saja menyesatkan:
+  // satu klip dramatis bisa menutupi beberapa scene yang praktis beku, dan itu
+  // persis keluhan "videonya seperti slideshow". Jadi setiap klip diukur juga.
+  // Kalibrasi: beku 0.06, gerakan terlemah (dolly) 0.37.
+  const policy = loadPolicy();
+  let motion: ReturnType<typeof measureMotion> | null = null;
+  const perClip: { scene: number; key: string; score: number; passed: boolean }[] = [];
+  if (policy.requireMotionCritic) {
+    try {
+      motion = measureMotion(render.file, policy.minMotionScore);
+      checks.push({
+        name: 'gerakan-terukur',
+        ok: motion.passed,
+        detail: `skor ${motion.score} (min ${policy.minMotionScore}), global ${motion.globalMotion}, lokal ${motion.localMotion}`,
+      });
+    } catch (err) {
+      checks.push({ name: 'gerakan-terukur', ok: false, detail: `critic gagal: ${(err as Error).message}` });
+    }
+
+    const clipsDir = path.join(jobDir(ctx.jobId), 'clips');
+    for (const scene of scenes) {
+      const clip = path.join(clipsDir, `scene-${String(scene.index + 1).padStart(2, '0')}.mp4`);
+      if (!fs.existsSync(clip)) continue;
+      try {
+        const m = measureMotion(clip, policy.minSceneMotionScore);
+        perClip.push({ scene: scene.index, key: scene.key, score: m.score, passed: m.passed });
+        checks.push({
+          name: `gerakan-scene-${scene.index + 1}`,
+          ok: m.passed,
+          detail: `${scene.key}: skor ${m.score} (min ${policy.minSceneMotionScore})`,
+        });
+      } catch (err) {
+        checks.push({
+          name: `gerakan-scene-${scene.index + 1}`,
+          ok: false,
+          detail: `critic gagal: ${(err as Error).message}`,
+        });
+      }
+    }
+  }
+
   const assetReport = checkAssets({
     scenes,
     assets,
@@ -647,6 +693,8 @@ tool('approve_job', 'Verifikasi hasil akhir lalu setujui atau tolak', async (_ar
     passed: failed.length === 0,
     checks,
     assets: { passed: assetReport.passed, issues: assetReport.issues },
+    motion,
+    motionPerScene: perClip,
     video: {
       file: render.file,
       durationSec: probe.durationSec ?? 0,

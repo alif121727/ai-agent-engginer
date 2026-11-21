@@ -251,3 +251,20 @@ yang sudah tertaut (jadi `unlink` dulu). CLI ada di `/workspace/tools`
   terhapus saat sandbox restart). `netlify deploy --allow-anonymous` TIDAK
   menolong: ia membuat situs BARU ber-password (HTTP 401), bukan memperbarui
   `agent-studio-ai`.
+
+## Rilis 1.0.0 (final) — apa yang dikerjakan
+- `package.json` 1.0.0; versi disuntik esbuild (`define: __APP_VERSION__`) dan
+  dibaca lewat `studio/src/version.ts` (fallback 'dev'). Tampil di Pengaturan
+  sebagai kartu "Tentang". `index.html` juga memakai placeholder
+  `__APP_VERSION__` yang diganti saat build (untuk JSON-LD).
+- **Host kanonik = GitHub Pages**, bukan Netlify. canonical/OG/Twitter/JSON-LD,
+  `robots.txt`, dan `sitemap.xml` semuanya menunjuk
+  `https://alif121727.github.io/ai-agent-engginer/`.
+- `studio/404.html` (mandiri, tanpa bundel) disalin build ke `netlify-site/`;
+  Netlify memakainya lewat `[[redirects]] status = 404`, Pages otomatis.
+- Dihapus dari `netlify-site/`: `galeri-lama.html`, `tokens.css`,
+  `netlify.toml` (duplikat basi yang ikut terbit). Jangan dihidupkan lagi.
+- Tes naik 93 -> **97** (4 pemeriksaan rilis: meta kanonik, sitemap/robots,
+  404 mandiri, versi package.json).
+- `netlify.toml` akar repo kini punya redirect 404; `[build] publish` tetap
+  `netlify-site`.

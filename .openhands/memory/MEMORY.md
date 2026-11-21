@@ -127,6 +127,19 @@ an mp4 using a team of AI agents with fixed job desks. Node + `--experimental-st
 - Nama mobil selalu lewat `carName()`; bandingkan kata pertama merek supaya
   "Audi Sport Audi R8" tidak muncul. Judul proyek diturunkan dari `carSlug`.
 
+
+## Feed publik (studio statis)
+- `scripts/build-feed.ts <jobId>` menurunkan `studio/src/data/feed.json` dari
+  artefak job; hanya entri vertikal + QA lolos yang ditampilkan.
+- Pemutaran memakai `netlify-site/video/web/<slug>.mp4` (720x1280, ~4 MB,
+  ffmpeg crf 26). Master 1080x1920 (~23 MB) hanya untuk tombol unduh.
+  Setiap entri baru **wajib** di-encode ke `video/web/` atau `npm test` gagal.
+- `.shell:has(.feed)` harus `height: 100dvh`; tanpa itu `.shell` membesar
+  mengikuti isi, dua slide muat sekaligus, dan dua video autoplay bersamaan.
+  IntersectionObserver memilih satu pemenang per pembaruan untuk berjaga.
+- Di mode `demo` (situs statis) tidak ada backend untuk memverifikasi
+  kredensial, jadi Auth menampilkan tombol "Masuk sebagai tamu".
+
 ## Layout notes
 - `jobs/<id>/` (gitignored) holds `artifacts/`, `checkpoints/`, `assets/`, `video.mp4`.
 - `POST /api/jobs/:id/retry` accepts `{ from: '<stage name>' }` to rewind.

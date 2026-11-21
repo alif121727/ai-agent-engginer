@@ -1,8 +1,30 @@
 # Deploy — Agent Studio AI Otomotif
 
-Situs statis di Netlify: **https://agent-studio-ai.netlify.app**
+Dua situs menjalankan build yang sama (`netlify-site/`):
 
-## Cara kerja
+| Situs | URL | Deploy |
+| --- | --- | --- |
+| **GitHub Pages** (kanonik) | https://alif121727.github.io/ai-agent-engginer/ | Otomatis: workflow `.github/workflows/pages.yml` |
+| Netlify (cermin) | https://agent-studio-ai.netlify.app | Manual: `./scripts/deploy-netlify.sh` |
+
+URL kanonik (canonical, Open Graph, `sitemap.xml`) menunjuk GitHub Pages karena
+situs itu permanen dan tidak memakai kredit. Netlify tetap disajikan penuh,
+hanya tidak dijadikan kanonik.
+
+## GitHub Pages (jalur utama)
+
+Pages di repo ini berjalan dalam mode **legacy**: sumbernya branch `gh-pages`,
+bukan artifact Actions. Karena itu `actions/deploy-pages` tidak dipakai.
+Workflow mem-build studio lalu `git push -f` isi `netlify-site/` ke `gh-pages`.
+
+Mengaktifkan Pages pertama kali tidak butuh klik manual: cukup push branch
+bernama `gh-pages`. Token GitHub App di lingkungan ini ditolak saat
+`POST /repos/:r/pages` (403), tetapi push `gh-pages` membuat GitHub
+mengaktifkan Pages sendiri.
+
+## Netlify
+
+### Cara kerja
 
 Repo ini tersambung ke situs Netlify `agent-studio-ai` (site id
 `7c88850b-1563-4372-a2b9-f4aa1240c20d`). Setiap `git push` ke `main` memicu
@@ -33,8 +55,9 @@ disimpan di repo.
 | `/` | aplikasi (`studio/index.html`) |
 | `/assets/studio.js`, `/assets/studio.css` | bundel hasil esbuild |
 | `/video/*.mp4`, `/thumb/*.jpg` | 8 video hasil render nyata + poster |
-| `/manifest.webmanifest`, `/sw.js`, `/ikon/*` | PWA (bisa dipasang di ponsel) |
-| `/robots.txt`, `/sitemap.xml` | SEO dasar |
+| `/manifest.json`, `/sw.js`, `/ikon/*` | PWA (bisa dipasang di ponsel) |
+| `/robots.txt`, `/sitemap.xml` | SEO dasar (menunjuk URL kanonik) |
+| `/404.html` | Halaman 404 statis, dipakai Netlify maupun Pages |
 
 `netlify.toml` mengatur cache: aset ber-hash dan media di-cache lama,
 `index.html` dan `sw.js` selalu divalidasi ulang.

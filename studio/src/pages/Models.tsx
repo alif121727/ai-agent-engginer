@@ -2,6 +2,7 @@ import React from 'react';
 import { useStudio } from '../state/store';
 import { Icon } from '../components/ui';
 import { VIDEO_MODELS } from '../data/models';
+import { APP_VERSION } from '../version';
 
 export function Models() {
   const { settings, saveSettings, toast } = useStudio();
@@ -119,6 +120,21 @@ export function Settings() {
           <span className="note__icon"><Icon.Info size={14} /></span>
           <span>Kalau Anda memberi kunci API, saya bisa mengaktifkan adaptor platform di backend dengan mode <span className="mono">PUBLISHER_MODE=mock</span> dulu agar aman diuji tanpa benar-benar mengunggah.</span>
         </div>
+      </div>
+
+      <div className="card stack">
+        <h2>Tentang</h2>
+        <div className="row row--between">
+          <div>
+            <div className="small" style={{ fontWeight: 600 }}>Agent Studio AI Otomotif</div>
+            <div className="dim tiny">Rilis {APP_VERSION} · mode demo statis</div>
+          </div>
+          <span className="chip chip--accent">v{APP_VERSION}</span>
+        </div>
+        <p className="small muted" style={{ margin: 0 }}>
+          Sembilan tahap pipeline, artefak per agen, dan QA yang benar-benar memeriksa hasil.
+          Spesifikasi mobil hanya diambil dari katalog terverifikasi — tidak ada angka yang dikarang.
+        </p>
       </div>
 
       <div className="card stack">

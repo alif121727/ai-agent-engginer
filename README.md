@@ -5,6 +5,17 @@ dikerjakan oleh tim agen AI yang punya job desk masing-masing. Durasi bebas
 diatur, pekerjaan otomatis dijeda saat internet bermasalah, dan hasilnya bisa
 dipublikasikan ke Instagram (dry run sebagai default).
 
+## Situs live
+
+| Situs | URL | Catatan |
+| --- | --- | --- |
+| **GitHub Pages** (kanonik) | https://alif121727.github.io/ai-agent-engginer/ | Gratis, tanpa kredit, diperbarui otomatis tiap push ke `main` |
+| Netlify (cermin) | https://agent-studio-ai.netlify.app | Deploy manual; kredit build Netlify sudah habis |
+
+Masuk dengan `demo@studio.id` / `demo12345`. Keduanya menjalankan **mode demo**:
+pipeline disimulasikan di peramban (tanpa ffmpeg), dan UI mengatakannya terus
+terang. Untuk mp4 sungguhan, jalankan backend di bawah.
+
 ## Jalankan
 
 ```bash

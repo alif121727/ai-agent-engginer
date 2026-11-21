@@ -9,6 +9,7 @@ const root = process.cwd();
 const src = path.join(root, 'studio');
 const out = path.join(root, 'netlify-site');
 const assets = path.join(out, 'assets');
+const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
 
 fs.mkdirSync(assets, { recursive: true });
 
@@ -36,6 +37,7 @@ const res = await build({
   outfile: path.join(assets, 'studio.js'),
   metafile: true,
   logLevel: 'warning',
+  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
 });
 
 // esbuild menaruh CSS hasil impor di file .css terpisah
@@ -55,6 +57,8 @@ if (fs.existsSync(oldIndex)) {
   }
 }
 fs.copyFileSync(path.join(src, 'index.html'), oldIndex);
+// 404.html statis: dipakai Netlify dan GitHub Pages apa adanya.
+fs.copyFileSync(path.join(src, '404.html'), path.join(out, '404.html'));
 
 const js = fs.statSync(path.join(assets, 'studio.js')).size;
 const css = fs.statSync(cssOut).size;
@@ -71,7 +75,8 @@ const hash = crypto
 const idxPath = path.join(out, 'index.html');
 const html = fs.readFileSync(idxPath, 'utf8')
   .replace('assets/studio.css', `assets/studio.css?v=${hash}`)
-  .replace('assets/studio.js', `assets/studio.js?v=${hash}`);
+  .replace('assets/studio.js', `assets/studio.js?v=${hash}`)
+  .replaceAll('__APP_VERSION__', pkg.version);
 fs.writeFileSync(idxPath, html);
 
 console.log(`✓ studio dibangun: studio.js ${(js / 1024).toFixed(0)} kB, studio.css ${(css / 1024).toFixed(1)} kB, v=${hash}`);

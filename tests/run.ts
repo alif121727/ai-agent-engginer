@@ -1514,6 +1514,43 @@ await check('mobil berbeda menghasilkan suara mesin berbeda', async () => {
   assert(new Set(out).size === 3, 'suara tiga mobil berbeda harus unik');
 });
 
+// ------------------------------------------------------ rilis 1.0 (final)
+// Halaman yang diterbitkan harus bisa dibagikan dan tidak menunjuk ke host
+// yang salah. Dulu canonical/OG/sitemap masih menunjuk Netlify padahal situs
+// kanoniknya GitHub Pages.
+await check('index.html punya canonical, OG, dan JSON-LD ke URL kanonik', async () => {
+  const html = fs.readFileSync(path.join('studio', 'index.html'), 'utf8');
+  const canonical = 'https://alif121727.github.io/ai-agent-engginer/';
+  assert(html.includes(`rel="canonical" href="${canonical}"`), 'canonical tidak menunjuk URL kanonik');
+  assert(html.includes('property="og:title"'), 'og:title hilang');
+  assert(html.includes(`property="og:url" content="${canonical}"`), 'og:url tidak menunjuk URL kanonik');
+  assert(html.includes('name="twitter:card"'), 'twitter:card hilang');
+  assert(html.includes('application/ld+json'), 'JSON-LD hilang');
+  assert(html.includes('__APP_VERSION__'), 'placeholder versi tidak ada di template');
+  assert(!html.includes('agent-studio-ai.netlify.app'), 'template masih menunjuk Netlify');
+});
+
+await check('sitemap dan robots menunjuk URL kanonik', async () => {
+  const sitemap = fs.readFileSync(path.join('netlify-site', 'sitemap.xml'), 'utf8');
+  const robots = fs.readFileSync(path.join('netlify-site', 'robots.txt'), 'utf8');
+  assert(sitemap.includes('https://alif121727.github.io/ai-agent-engginer/'), 'sitemap salah host');
+  assert(!sitemap.includes('netlify.app'), 'sitemap masih menunjuk Netlify');
+  assert(robots.includes('https://alif121727.github.io/ai-agent-engginer/sitemap.xml'), 'robots menunjuk sitemap salah');
+});
+
+await check('404.html tersedia dan mandiri tanpa bundel', async () => {
+  const html = fs.readFileSync(path.join('studio', '404.html'), 'utf8');
+  assert(html.includes('404'), 'tidak menampilkan kode 404');
+  assert(!html.includes('assets/studio.js'), '404 tidak boleh bergantung pada bundel');
+  assert(html.includes('href="./"'), 'tidak ada jalan kembali ke studio');
+  assert(html.includes('noindex'), '404 sebaiknya noindex');
+});
+
+await check('versi rilis 1.0.0 konsisten di package.json', async () => {
+  const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+  assert(pkg.version === '1.0.0', `versi masih ${pkg.version}`);
+});
+
 console.log(`\n${passed} pemeriksaan lulus, ${failures.length} gagal`);
 if (failures.length) {
   for (const f of failures) console.log(`  - ${f}`);

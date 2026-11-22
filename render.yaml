@@ -1,0 +1,29 @@
+# Blueprint Render: satu service, satu disk. Worker berjalan di proses API
+# (WORKER_IN_PROCESS=1) karena Render tidak bisa menjalankan service worker
+# terpisah yang berbagi disk yang sama.
+services:
+  - type: web
+    name: studio-ai-otomotif
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: standard
+    region: singapore
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: WORKER_IN_PROCESS
+        value: "1"
+      # SQLite dan hasil render harus berada di disk, bukan filesystem container
+      # yang hilang setiap deploy. STUDIO_DATA_DIR mengarahkan jobs/ dan data/
+      # ke disk; DB_PATH ditulis eksplisit supaya tidak bergantung pada default.
+      - key: STUDIO_DATA_DIR
+        value: /var/data
+      - key: DB_KIND
+        value: sqlite
+      - key: DB_PATH
+        value: /var/data/db/studio.db
+    disk:
+      name: studio-data
+      mountPath: /var/data
+      sizeGB: 10

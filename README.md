@@ -35,7 +35,44 @@ Docker:
 ```bash
 docker compose up --build                       # api + worker (SQLite)
 docker compose --profile postgres up --build    # + Postgres
+docker compose --profile split up --build       # worker terpisah dari api
 ```
+
+## Alamat permanen
+
+Tautan sandbox (`work-*.prod-runtime.all-hands.dev`) mati saat sesi berakhir.
+Untuk alamat yang tetap hidup, jalankan image ini di host yang selalu menyala.
+Container sudah memuat ffmpeg, worker in-process, dan studio hasil build, jadi
+tidak perlu langkah tambahan.
+
+**Render** — tombol biru di bawah membuat service dari `render.yaml` di repo:
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/alif121727/ai-agent-engginer)
+
+Setelah service hidup, akun pertama dibuat lewat tab **Daftar** di halaman
+masuk (hanya akun pertama yang bisa mendaftar), atau:
+
+```bash
+curl -X POST https://<host-anda>/api/setup \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"admin@studio.id","password":"<min-8-karakter>","username":"admin"}'
+```
+
+**Railway / Fly / VPS** — pakai `Dockerfile` yang sama:
+
+```bash
+docker build -t studio-ai .
+docker run -d -p 8080:8080 -v studio-data:/app/data -v studio-jobs:/app/jobs studio-ai
+```
+
+Wajib: satu volume untuk `/app/data` (SQLite) dan `/app/jobs` (hasil render).
+Tanpa volume, akun dan video hilang setiap container dibuat ulang. Set
+`WORKER_IN_PROCESS=1` (default di image) kalau host hanya menjalankan satu
+container.
+
+Catatan sumber daya: render 1080p 30 detik butuh CPU cukup berat. Paket
+termurah dengan 1 vCPU biasanya butuh ~5-8 menit per video, dan memori di bawah
+1 GB bisa membuat ffmpeg terbunuh. Pilih minimal 2 GB RAM.
 
 ## Cara kerja
 

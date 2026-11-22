@@ -1,0 +1,14 @@
+# Konteks build harus kecil: `jobs/` berisi video hasil render (puluhan MB per
+# job) dan `assets/own/` sudah ikut git. Tanpa berkas ini setiap build
+# mengirim seluruh riwayat render ke daemon.
+node_modules
+jobs
+cache
+data
+input
+netlify-site
+.git
+.agents
+.openhands
+*.log
+tests

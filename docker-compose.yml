@@ -8,6 +8,10 @@ services:
       DB_KIND: ${DB_KIND:-sqlite}
       DB_PATH: /app/data/studio.db
       DATABASE_URL: ${DATABASE_URL:-}
+      # Worker di proses yang sama: host satu-container (Railway, Render, Fly)
+      # tidak bisa menjalankan service `worker` terpisah. Set 0 kalau memakai
+      # service worker di bawah supaya job tidak dikerjakan dua kali.
+      WORKER_IN_PROCESS: ${WORKER_IN_PROCESS:-1}
     ports:
       - "8080:8080"
     volumes:
@@ -21,9 +25,12 @@ services:
         condition: service_healthy
         required: false
 
+  # Profil "split": jalankan `docker compose --profile split up` kalau ingin
+  # worker terpisah dari API (mis. API di-restart tanpa memutus render).
   worker:
     build: .
     restart: unless-stopped
+    profiles: ["split"]
     env_file: [.env]
     command: ["node", "--experimental-strip-types", "src/worker/main.ts"]
     environment:

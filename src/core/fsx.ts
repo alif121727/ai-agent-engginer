@@ -9,14 +9,21 @@ export function ensureDir(dir: string): string {
   return dir;
 }
 
+// Host container memasang disk di luar /app, jadi direktori yang menyimpan data
+// pengguna (akun, hasil render) harus bisa dialihkan lewat env. Tanpa ini
+// semuanya ditulis ke filesystem container dan hilang setiap deploy.
+const dataRoot = process.env.STUDIO_DATA_DIR
+  ? path.resolve(process.env.STUDIO_DATA_DIR)
+  : ROOT;
+
 export const paths = {
   root: ROOT,
   config: path.join(ROOT, 'config'),
   input: path.join(ROOT, 'input'),
-  jobs: path.join(ROOT, 'jobs'),
+  jobs: process.env.STUDIO_JOBS_DIR ? path.resolve(process.env.STUDIO_JOBS_DIR) : path.join(dataRoot, 'jobs'),
   cache: path.join(ROOT, 'cache'),
   assets: path.join(ROOT, 'assets'),
-  data: path.join(ROOT, 'data'),
+  data: path.join(dataRoot, 'data'),
   publicDir: path.join(ROOT, 'public'),
   docsUi: path.join(ROOT, 'docs', 'ui'),
 };

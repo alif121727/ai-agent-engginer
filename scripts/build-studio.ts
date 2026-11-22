@@ -17,12 +17,15 @@ fs.mkdirSync(assets, { recursive: true });
 
 // Gagal keras kalau media tidak ada: Netlify mempertahankan deploy sukses
 // terakhir, jadi build gagal jauh lebih baik daripada menerbitkan galeri kosong.
+// Server container tidak menyajikan galeri statis itu (159 MB), jadi build di
+// sana melewati pemeriksaan ini lewat MEDIA_OPTIONAL=1.
+const mediaOptional = process.env.MEDIA_OPTIONAL === '1';
 const required = ['video', 'thumb'];
 const missing = required.filter((d) => {
   const p = path.join(out, d);
   return !fs.existsSync(p) || fs.readdirSync(p).length === 0;
 });
-if (missing.length > 0) {
+if (missing.length > 0 && !mediaOptional) {
   console.error(`Media hilang dari checkout: ${missing.join(', ')} di netlify-site/`);
   process.exit(1);
 }
@@ -31,20 +34,23 @@ if (missing.length > 0) {
 // dalam JS. Tanpa ini URL mp4 tidak berubah saat berkasnya diganti, jadi
 // browser terus memutar audio lama dari cache — persis bug suara mesin.
 const mediaDir = path.join(out, 'video');
-const mediaHash = crypto
-  .createHash('sha1')
-  .update(
-    fs
-      .readdirSync(mediaDir)
-      .sort()
-      .map((f) => {
-        const st = fs.statSync(path.join(mediaDir, f));
-        return `${f}:${st.size}:${Math.round(st.mtimeMs)}`;
-      })
-      .join('|'),
-  )
-  .digest('hex')
-  .slice(0, 8);
+let mediaHash = 'server';
+if (fs.existsSync(mediaDir)) {
+  mediaHash = crypto
+    .createHash('sha1')
+    .update(
+      fs
+        .readdirSync(mediaDir)
+        .sort()
+        .map((f) => {
+          const st = fs.statSync(path.join(mediaDir, f));
+          return `${f}:${st.size}:${Math.round(st.mtimeMs)}`;
+        })
+        .join('|'),
+    )
+    .digest('hex')
+    .slice(0, 8);
+}
 
 const res = await build({
   entryPoints: [path.join(src, 'src/main.tsx')],

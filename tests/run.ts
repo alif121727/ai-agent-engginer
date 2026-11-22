@@ -449,6 +449,47 @@ await check('API setup, login, dan buat job', async () => {
   }
 });
 
+await check('login: kuota per akun tidak mengunci akun lain', async () => {
+  const { app } = createApp({ startWorker: false });
+  const server = app.listen(0);
+  const port = (server.address() as { port: number }).port;
+  const base = `http://127.0.0.1:${port}`;
+  try {
+    const post = (path: string, body: unknown) =>
+      fetch(`${base}${path}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+    // Akun lain menebak password salah berkali-kali. Ini dulu mengunci
+    // semua pengunjung karena kuota dihitung per IP.
+    let last = 0;
+    for (let i = 0; i < 12; i++) {
+      const r = await post('/api/login', { email: 'penyusup', password: 'salah' });
+      last = r.status;
+    }
+    assert(last === 429, `akun penyerang harus kena batas, dapat ${last}`);
+
+    const ok = await post('/api/login', { email: 'uji@studio.id', password: 'rahasia123' });
+    assert(ok.status === 200, `akun sah harus tetap bisa masuk, dapat ${ok.status}`);
+    const cookie = (ok.headers.get('set-cookie') ?? '').split(';')[0];
+
+    const me = await fetch(`${base}/api/me`, { headers: { cookie } });
+    const meJson = (await me.json()) as { user: { email: string } | null };
+    assert(meJson.user?.email === 'uji@studio.id', 'me harus mengembalikan akun sesi');
+
+    const anon = await fetch(`${base}/api/me`);
+    const anonJson = (await anon.json()) as { user: unknown };
+    assert(anonJson.user === null, 'tanpa cookie, me harus null');
+
+    const out = await post('/api/logout', {});
+    assert(out.status === 200, `logout ${out.status}`);
+  } finally {
+    server.close();
+  }
+});
+
 await check('API mengembalikan 404 untuk job tak dikenal', async () => {
   const { app } = createApp({ startWorker: false });
   const server = app.listen(0);

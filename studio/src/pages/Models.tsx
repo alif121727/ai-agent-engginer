@@ -67,7 +67,7 @@ const LINK_ROWS: Array<{ key: keyof typeof LINKS; label: string; note: string }>
 ];
 
 export function Settings() {
-  const { settings, saveSettings, toast, user } = useStudio();
+  const { settings, saveSettings, toast, user, api } = useStudio();
 
   async function copy(url: string, label: string) {
     // navigator.clipboard butuh HTTPS + izin; kalau ditolak, pakai textarea
@@ -202,7 +202,9 @@ export function Settings() {
         <div className="row row--between">
           <div>
             <div className="small" style={{ fontWeight: 600 }}>Agent Studio AI Otomotif</div>
-            <div className="dim tiny">Rilis {APP_VERSION} · mode demo statis</div>
+            <div className="dim tiny">
+              Rilis {APP_VERSION} · {api.kind === 'http' ? 'backend aktif' : 'mode demo statis'}
+            </div>
           </div>
           <span className="chip chip--accent">v{APP_VERSION}</span>
         </div>
@@ -219,13 +221,14 @@ export function Settings() {
             <div className="small" style={{ fontWeight: 600 }}>{user?.name}</div>
             <div className="dim tiny">{user?.email}</div>
           </div>
-          <span className="chip">sesi lokal</span>
+          <span className="chip">{api.kind === 'http' ? 'sesi server' : 'sesi lokal'}</span>
         </div>
         <div className="note note--warn">
           <span className="note__icon"><Icon.Warn size={14} /></span>
           <span>
-            Akun di sini disimpan di peramban Anda (localStorage), bukan server. Jangan pakai kata sandi yang
-            Anda pakai di tempat lain — memang tidak ada kata sandi yang dikirim ke mana pun.
+            {api.kind === 'http'
+              ? 'Sesi disimpan sebagai cookie HttpOnly dan diverifikasi server setiap kali halaman dibuka. Keluar akan menghapus sesi di server juga.'
+              : 'Akun di sini disimpan di peramban Anda (localStorage), bukan server. Jangan pakai kata sandi yang Anda pakai di tempat lain — memang tidak ada kata sandi yang dikirim ke mana pun.'}
           </span>
         </div>
       </div>

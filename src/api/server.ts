@@ -149,7 +149,8 @@ export function createApp(opts: AppOptions = {}) {
   });
 
   app.post('/api/login', async (req, res) => {
-    if (!ipLoginLimiter.allow(req.ip ?? 'unknown')) {
+    const ip = req.ip ?? 'unknown';
+    if (!ipLoginLimiter.allow(ip)) {
       res.status(429).json({ error: 'terlalu banyak percobaan dari jaringan ini, coba lagi nanti' });
       return;
     }
@@ -158,15 +159,21 @@ export function createApp(opts: AppOptions = {}) {
       res.status(400).json({ error: 'username/email dan password wajib' });
       return;
     }
-    if (!loginLimiter.allow(parsed.data.email.trim().toLowerCase())) {
+    const account = parsed.data.email.trim().toLowerCase();
+    if (!loginLimiter.allow(account)) {
       res.status(429).json({ error: 'terlalu banyak percobaan untuk akun ini, coba lagi nanti' });
       return;
     }
     const user = await authenticate(parsed.data.email, parsed.data.password);
     if (!user) {
+      // Hanya percobaan gagal yang dihitung; login yang benar tidak boleh
+      // mempercepat kunci akun sendiri.
+      loginLimiter.fail(account);
+      ipLoginLimiter.fail(ip);
       res.status(401).json({ error: 'username/email atau password salah' });
       return;
     }
+    loginLimiter.clear(account);
     await purgeExpiredSessions();
     const token = await createSession(user.id);
     res.setHeader('Set-Cookie', cookieHeader(token));

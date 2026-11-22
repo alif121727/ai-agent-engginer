@@ -70,9 +70,13 @@ Tanpa volume, akun dan video hilang setiap container dibuat ulang. Set
 `WORKER_IN_PROCESS=1` (default di image) kalau host hanya menjalankan satu
 container.
 
-Catatan sumber daya: render 1080p 30 detik butuh CPU cukup berat. Paket
-termurah dengan 1 vCPU biasanya butuh ~5-8 menit per video, dan memori di bawah
-1 GB bisa membuat ffmpeg terbunuh. Pilih minimal 2 GB RAM.
+Catatan sumber daya: render 1080p 30 detik butuh CPU cukup berat. Pada 4 vCPU
+satu video selesai sekitar 2-3 menit; dengan 1 vCPU perkirakan 5-8 menit. Memori
+di bawah 1 GB bisa membuat ffmpeg terbunuh, jadi pilih minimal 2 GB RAM.
+
+Paket gratis Render tidak bisa memasang persistent disk. Tanpa disk, akun dan
+video hilang setiap deploy, jadi blueprint ini memakai `plan: 1c-2g` (1 CPU,
+2 GB) yang berbayar. Naikkan ke `2c-4g` kalau ingin render lebih cepat.
 
 ## Cara kerja
 

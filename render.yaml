@@ -1,12 +1,16 @@
 # Blueprint Render: satu service, satu disk. Worker berjalan di proses API
 # (WORKER_IN_PROCESS=1) karena Render tidak bisa menjalankan service worker
 # terpisah yang berbagi disk yang sama.
+# plan wajib paket berbayar: Render hanya mengizinkan persistent disk pada
+# service berbayar, dan tanpa disk akun serta video hilang setiap deploy.
+# 1c-2g = 1 CPU / 2 GB, batas bawah yang aman untuk ffmpeg 1080p.
+# Naikkan ke 2c-4g kalau render terasa lambat.
 services:
   - type: web
     name: studio-ai-otomotif
     runtime: docker
     dockerfilePath: ./Dockerfile
-    plan: standard
+    plan: 1c-2g
     region: singapore
     healthCheckPath: /api/health
     envVars:

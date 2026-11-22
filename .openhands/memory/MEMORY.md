@@ -338,3 +338,17 @@ yang sudah tertaut (jadi `unlink` dulu). CLI ada di `/workspace/tools`
 - `POST /api/jobs` requires a session cookie; `POST /api/login` expects the
   field **`email`** (not `account`), and accepts a username there too.
 - `ffmpeg` here has no `-vsync`; use `-fps_mode passthrough`.
+
+## PWA / static build gotchas (cost 3 real bugs)
+- CSP `script-src 'self'` **blocks inline `<script>`**. The SW registrar must stay
+  in `studio/sw-register.js` (external), copied by `build-studio.ts`.
+- `build-studio.ts` must copy **every** file the server serves into `public/`:
+  `sw.js`, `manifest.json`, `robots.txt`, `sitemap.xml`, `404.html`, `sw-register.js`,
+  and the whole `ikon/` folder. Missing files fall through to the catch-all
+  `index.html`, so they answer **200 with `text/html`** — looks fine in curl,
+  but the SW fails on MIME and `caches.addAll` dies on the 404 icon.
+- Verify statically-hosted output with a cache-bust (`?cb=$(date +%s)`); GitHub
+  Pages CDN keeps serving the old `index.html` for minutes after a deploy.
+  The source of truth is branch `gh-pages`, not the live URL.
+- `jobs/` dirs can be deleted while the DB row survives; `honestStatus()` then
+  reports such jobs as `failed` even though their QA passed. Not a bug.

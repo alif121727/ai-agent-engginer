@@ -19,6 +19,11 @@ an mp4 using a team of AI agents with fixed job desks. Node + `--experimental-st
 - **Rewind must clear the checkpoint** keyed by the *stage name*; otherwise the
   per-scene `done` list survives and assets are never regenerated.
 
+- **Skills**: `.agents/skills/` holds `media-generator` (foto/video) and
+  `anime-vfx-generator` (animasi/VFX). `quick_validate.py` from `skill-creator`
+  is stale — it rejects the `triggers:` key even though docs and bundled skills
+  use it. Validate a /tmp copy with the triggers block stripped.
+
 ## Environment quirks (expensive to learn)
 - **Never pass `-ss` to ffmpeg for a still image** — it yields 0 frames, so
   `frameSharpness`/`perceptualHash`/`detectText` all return 0/empty and every

@@ -138,6 +138,11 @@ for (const f of ['sw.js', 'manifest.json', 'robots.txt', 'sitemap.xml', '404.htm
   const from = path.join(out, f);
   if (fs.existsSync(from)) fs.copyFileSync(from, path.join(pub, f));
 }
+// Ikon PWA dipakai sw.js saat install (SHELL_FILES). Tanpa ini addAll gagal
+// dan service worker tidak pernah aktif, jadi manifest pun menunjuk 404.
+if (fs.existsSync(path.join(out, 'ikon'))) {
+  fs.cpSync(path.join(out, 'ikon'), path.join(pub, 'ikon'), { recursive: true });
+}
 // Server menyajikan public/ dan catch-all-nya mengirim index.html untuk path
 // tak dikenal, jadi tautan.html harus ikut disalin ke sini.
 fs.copyFileSync(path.join(src, 'tautan.html'), path.join(pub, 'tautan.html'));

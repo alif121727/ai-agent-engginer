@@ -5,6 +5,7 @@ import { build } from 'esbuild';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { LINKS } from '../studio/src/links.ts';
 
 const root = process.cwd();
 const src = path.join(root, 'studio');
@@ -79,7 +80,9 @@ fs.copyFileSync(path.join(src, '404.html'), path.join(out, '404.html'));
 // Alamatnya masih berupa placeholder di sumber, jadi diisi di sini memakai
 // STUDIO_URL yang sama dengan bundel; tanpa penggantian halaman ini akan
 // menampilkan tautan mati.
-const studioUrl = process.env.STUDIO_URL ?? '';
+// Tanpa env, pakai alamat yang sama dengan default bundel supaya halaman
+// tautan tidak pernah menampilkan href kosong.
+const studioUrl = process.env.STUDIO_URL ?? LINKS.studio;
 const fillStudioUrl = (dir: string, file: string) => {
   const p = path.join(dir, file);
   if (!fs.existsSync(p)) return;

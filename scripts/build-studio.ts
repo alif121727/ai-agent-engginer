@@ -60,6 +60,7 @@ const res = await build({
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
     __MEDIA_VERSION__: JSON.stringify(mediaHash),
+    __STUDIO_URL__: JSON.stringify(process.env.STUDIO_URL ?? ''),
   },
 });
 
@@ -75,7 +76,17 @@ fs.copyFileSync(path.join(src, 'index.html'), oldIndex);
 // 404.html statis: dipakai Netlify dan GitHub Pages apa adanya.
 fs.copyFileSync(path.join(src, '404.html'), path.join(out, '404.html'));
 // tautan.html sengaja tanpa JS: alamat studio tetap terbaca walau bundel gagal.
+// Alamatnya masih berupa placeholder di sumber, jadi diisi di sini memakai
+// STUDIO_URL yang sama dengan bundel; tanpa penggantian halaman ini akan
+// menampilkan tautan mati.
+const studioUrl = process.env.STUDIO_URL ?? '';
+const fillStudioUrl = (dir: string, file: string) => {
+  const p = path.join(dir, file);
+  if (!fs.existsSync(p)) return;
+  fs.writeFileSync(p, fs.readFileSync(p, 'utf8').replaceAll('__STUDIO_URL__', studioUrl));
+};
 fs.copyFileSync(path.join(src, 'tautan.html'), path.join(out, 'tautan.html'));
+fillStudioUrl(out, 'tautan.html');
 
 // Salinan untuk backend: `npm run api` menyajikan public/, dan studio memilih
 // HttpStudioApi saat /api/health terjawab. Tanpa salinan ini studio hanya
@@ -108,5 +119,6 @@ fs.copyFileSync(idxPath, path.join(pub, 'index.html'));
 // Server menyajikan public/ dan catch-all-nya mengirim index.html untuk path
 // tak dikenal, jadi tautan.html harus ikut disalin ke sini.
 fs.copyFileSync(path.join(src, 'tautan.html'), path.join(pub, 'tautan.html'));
+fillStudioUrl(pub, 'tautan.html');
 
 console.log(`✓ studio dibangun: studio.js ${(js / 1024).toFixed(0)} kB, studio.css ${(css / 1024).toFixed(1)} kB, v=${hash}, media=${mediaHash}`);

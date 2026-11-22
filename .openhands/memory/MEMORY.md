@@ -55,6 +55,12 @@ an mp4 using a team of AI agents with fixed job desks. Node + `--experimental-st
 - `npm run build:ui` after any `ui/app.tsx` change.
 - `scripts/autopush.sh` commits+pushes every 10 min (log: `/tmp/autopush.log`).
 
+- **Login (2026-11-22)**: kuota login harus **per akun**, bukan per IP (proxy
+  sandbox membuat semua orang satu IP -> 429 massal). `rateLimit()` hanya
+  menagih lewat `fail()`, dan `clear()` dipanggil setelah login sukses. UI
+  "Buat sekarang" wajib memanggil `/api/setup`, bukan menulis localStorage.
+  Boot memverifikasi `/api/me` sebelum percaya sesi tersimpan.
+
 ## Accounts
 - Seeded admin: `admin@studio.id`. Login accepts **username or email** in the same
   field (`users.username`, unique index, added by a migration in

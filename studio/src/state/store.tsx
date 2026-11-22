@@ -11,7 +11,7 @@ type Ctx = {
   api: StudioApi;
   user: User | null;
   login(account: string, password: string): Promise<{ ok: boolean; error?: string }>;
-  register(name: string, email: string): void;
+  register(name: string, email: string, password: string): Promise<{ ok: boolean; error?: string }>;
   logout(): void;
   projects: Project[];
   /** true selama daftar proyek pertama kali diambil dari server. */
@@ -57,13 +57,33 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     (async () => {
       const a = await pickApi();
       setApi(a);
+      let stored: User | null = null;
       try {
         const u = localStorage.getItem('asa.user');
-        if (u) setUser(JSON.parse(u));
+        if (u) stored = JSON.parse(u) as User;
         const s = localStorage.getItem('asa.settings');
         if (s) setSettings({ ...DEFAULTS, ...JSON.parse(s) });
       } catch {
         /* localStorage rusak -> mulai bersih */
+      }
+      // Backend sungguhan adalah sumber kebenaran: cookie bisa kedaluwarsa
+      // sementara localStorage masih menyimpan nama pengguna lama.
+      if (a.kind === 'http') {
+        try {
+          const live = await a.currentUser();
+          if (live) {
+            const u = { email: live.email, name: live.name };
+            localStorage.setItem('asa.user', JSON.stringify(u));
+            setUser(u);
+          } else {
+            localStorage.removeItem('asa.user');
+          }
+        } catch {
+          // Server tak terjangkau: jangan buang sesi, biarkan pengguna mencoba.
+          if (stored) setUser(stored);
+        }
+      } else if (stored) {
+        setUser(stored);
       }
       setReady(true);
     })();
@@ -122,17 +142,25 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     [api],
   );
 
-  const register = useCallback((name: string, email: string) => {
-    const u = { name, email };
-    localStorage.setItem('asa.user', JSON.stringify(u));
-    setUser(u);
-  }, []);
+  const register = useCallback(
+    async (name: string, email: string, password: string) => {
+      if (!api) return { ok: false, error: 'Studio belum siap.' };
+      const res = await api.register(name, email, password);
+      if (!res.ok) return res;
+      const u = { email, name };
+      localStorage.setItem('asa.user', JSON.stringify(u));
+      setUser(u);
+      return { ok: true };
+    },
+    [api],
+  );
 
   const logout = useCallback(() => {
+    void api?.logout();
     localStorage.removeItem('asa.user');
     setUser(null);
     setProjects([]);
-  }, []);
+  }, [api]);
 
   const upsert = useCallback(
     async (p: Project) => {

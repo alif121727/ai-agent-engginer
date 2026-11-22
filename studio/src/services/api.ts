@@ -175,6 +175,14 @@ export type StudioApi = {
   publish(jobId: string, platform: string, caption: string): Promise<PublishOutcome>;
   /** Login sungguhan bila ada backend; mode demo menerima apa saja (lokal). */
   authenticate(account: string, password: string): Promise<{ ok: boolean; error?: string }>;
+  /** Membuat akun baru di server. Mode demo cukup menyimpan sesi lokal. */
+  register(name: string, email: string, password: string): Promise<{ ok: boolean; error?: string }>;
+  /** Melupakan sesi; server menghapus cookie-nya. */
+  logout(): Promise<void>;
+  /** Sesi yang masih berlaku menurut server, bukan menurut localStorage. */
+  currentUser(): Promise<{ email: string; name: string } | null>;
+  /** true bila server belum punya akun sama sekali (pendaftaran masih terbuka). */
+  needsSetup(): Promise<boolean>;
 };
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -408,6 +416,18 @@ export class DemoStudioApi implements StudioApi {
   async authenticate(): Promise<{ ok: boolean; error?: string }> {
     return { ok: true };
   }
+  async register(): Promise<{ ok: boolean; error?: string }> {
+    return { ok: true };
+  }
+  async logout(): Promise<void> {
+    /* mode demo tidak punya sesi server */
+  }
+  async currentUser(): Promise<{ email: string; name: string } | null> {
+    return null;
+  }
+  async needsSetup(): Promise<boolean> {
+    return false;
+  }
   // Mode demo tidak punya kredensial maupun backend, jadi tidak pernah mengunggah.
   async publish(): Promise<PublishOutcome> {
     return {
@@ -535,6 +555,46 @@ export class HttpStudioApi implements StudioApi {
       return { ok: false, error: d.error ?? `login gagal (${r.status})` };
     } catch {
       return { ok: false, error: 'Tidak bisa menghubungi server.' };
+    }
+  }
+  async register(name: string, email: string, password: string): Promise<{ ok: boolean; error?: string }> {
+    try {
+      const r = await fetch(this.base + '/api/setup', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email, password, username: name }),
+      });
+      if (r.ok) return { ok: true };
+      const d = (await r.json().catch(() => ({}))) as { error?: string };
+      return { ok: false, error: d.error ?? `pendaftaran gagal (${r.status})` };
+    } catch {
+      return { ok: false, error: 'Tidak bisa menghubungi server.' };
+    }
+  }
+  async logout(): Promise<void> {
+    try {
+      await fetch(this.base + '/api/logout', { method: 'POST', credentials: 'include' });
+    } catch {
+      /* sesi lokal tetap dihapus pemanggil */
+    }
+  }
+  async currentUser(): Promise<{ email: string; name: string } | null> {
+    const r = await fetch(this.base + '/api/me', { credentials: 'include' });
+    if (r.status === 401) return null;
+    if (!r.ok) throw new Error(`/api/me -> ${r.status}`);
+    const d = (await r.json()) as { user?: { email: string; username: string | null } | null };
+    if (!d.user) return null;
+    return { email: d.user.email, name: d.user.username || d.user.email.split('@')[0] };
+  }
+  async needsSetup(): Promise<boolean> {
+    try {
+      const r = await fetch(this.base + '/api/bootstrap', { credentials: 'include' });
+      if (!r.ok) return false;
+      const d = (await r.json()) as { needsSetup?: boolean };
+      return d.needsSetup === true;
+    } catch {
+      return false;
     }
   }
   async publish(jobId: string, platform: string, caption: string): Promise<PublishOutcome> {

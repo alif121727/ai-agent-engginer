@@ -11,6 +11,23 @@ export function Auth() {
   const [password, setPassword] = React.useState('');
   const [err, setErr] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
+  // Server hanya menerima akun pertama. Menawarkan "Buat sekarang" saat akun
+  // sudah ada berarti menawarkan jalan buntu.
+  const [canRegister, setCanRegister] = React.useState(false);
+  React.useEffect(() => {
+    // Mode demo tidak punya server, jadi pendaftaran lokal selalu terbuka.
+    if (api.kind === 'demo') {
+      setCanRegister(true);
+      return;
+    }
+    let alive = true;
+    void api.needsSetup().then((ok) => {
+      if (alive) setCanRegister(ok);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [api]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -24,7 +41,14 @@ export function Auth() {
         setErr('Nama minimal 2 karakter.');
         return;
       }
-      register(name.trim(), email.trim());
+      if (api.kind === 'http' && password.length < 8) {
+        setErr('Password minimal 8 karakter.');
+        return;
+      }
+      setBusy(true);
+      const res = await register(name.trim(), email.trim(), password);
+      setBusy(false);
+      if (!res.ok) setErr(res.error ?? 'Gagal membuat ruang kerja.');
       return;
     }
     // Login nyata: backend memverifikasi kredensial lewat cookie sesi.
@@ -56,7 +80,9 @@ export function Auth() {
               ? api.kind === 'http'
                 ? 'Masuk dengan akun studio. Sesi diverifikasi server, bukan disimpan di peramban.'
                 : 'Mode demo: tidak ada server, jadi kredensial tidak diverifikasi.'
-              : 'Tidak perlu kata sandi — ini ruang kerja lokal untuk menyimpan proyek Anda.'}
+              : api.kind === 'http'
+                ? 'Akun dibuat di server studio ini. Minimal 8 karakter, dan hanya akun pertama yang bisa didaftarkan.'
+                : 'Tidak perlu kata sandi — ini ruang kerja lokal untuk menyimpan proyek Anda.'}
           </p>
         </div>
 
@@ -82,7 +108,7 @@ export function Auth() {
               aria-invalid={!!err}
             />
           </div>
-          {mode === 'login' && (
+          {(mode === 'login' || api.kind === 'http') && (
             <div className="field">
               <label className="field__label" htmlFor="pw">Password</label>
               <input
@@ -92,7 +118,7 @@ export function Auth() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                autoComplete="current-password"
+                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                 aria-invalid={!!err}
               />
               {err && <span className="field__error">{err}</span>}
@@ -106,9 +132,13 @@ export function Auth() {
 
         <div className="row" style={{ gap: 6, justifyContent: 'center' }}>
           <span className="dim tiny">{mode === 'login' ? 'Belum punya ruang kerja?' : 'Sudah punya?'}</span>
-          <button className="btn btn--ghost btn--sm" onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setErr(null); }}>
-            {mode === 'login' ? 'Buat sekarang' : 'Masuk'}
-          </button>
+          {mode === 'register' || canRegister ? (
+            <button className="btn btn--ghost btn--sm" onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setErr(null); }}>
+              {mode === 'login' ? 'Buat sekarang' : 'Masuk'}
+            </button>
+          ) : (
+            <span className="dim tiny">Akun studio sudah dibuat — hubungi admin untuk akun baru.</span>
+          )}
         </div>
 
         {/* Situs statis tidak punya server untuk memverifikasi kredensial, jadi
@@ -117,7 +147,7 @@ export function Auth() {
         {api.kind === 'demo' && (
           <button
             className="btn btn--sm"
-            onClick={() => register('Tamu', 'tamu@studio.id')}
+            onClick={() => void register('Tamu', 'tamu@studio.id', '')}
             data-testid="masuk-tamu"
           >
             Masuk sebagai tamu <Icon.ChevronR size={14} />

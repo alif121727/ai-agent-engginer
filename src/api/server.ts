@@ -57,7 +57,11 @@ declare global {
 }
 
 const COOKIE = 'studio_session';
+// Dua kuota terpisah: per akun supaya percobaan orang lain tidak mengunci
+// akun Anda, dan per IP dengan plafon jauh lebih tinggi karena di balik proxy
+// semua pengunjung berbagi satu alamat.
 const loginLimiter = rateLimit(10, 60_000);
+const ipLoginLimiter = rateLimit(60, 60_000);
 
 export interface AppOptions {
   worker?: Worker;
@@ -145,13 +149,17 @@ export function createApp(opts: AppOptions = {}) {
   });
 
   app.post('/api/login', async (req, res) => {
-    if (!loginLimiter.allow(req.ip ?? 'unknown')) {
-      res.status(429).json({ error: 'terlalu banyak percobaan, coba lagi nanti' });
+    if (!ipLoginLimiter.allow(req.ip ?? 'unknown')) {
+      res.status(429).json({ error: 'terlalu banyak percobaan dari jaringan ini, coba lagi nanti' });
       return;
     }
     const parsed = z.object({ email: z.string(), password: z.string() }).safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: 'username/email dan password wajib' });
+      return;
+    }
+    if (!loginLimiter.allow(parsed.data.email.trim().toLowerCase())) {
+      res.status(429).json({ error: 'terlalu banyak percobaan untuk akun ini, coba lagi nanti' });
       return;
     }
     const user = await authenticate(parsed.data.email, parsed.data.password);

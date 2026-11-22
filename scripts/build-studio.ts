@@ -80,6 +80,9 @@ if (!fs.existsSync(cssOut)) {
 
 const oldIndex = path.join(out, 'index.html');
 fs.copyFileSync(path.join(src, 'index.html'), oldIndex);
+// Pendaftar service worker dipisah dari index.html: CSP `script-src 'self'`
+// memblokir skrip inline, sehingga PWA shell tidak pernah aktif.
+fs.copyFileSync(path.join(src, 'sw-register.js'), path.join(out, 'sw-register.js'));
 // 404.html statis: dipakai Netlify dan GitHub Pages apa adanya.
 fs.copyFileSync(path.join(src, '404.html'), path.join(out, '404.html'));
 // tautan.html sengaja tanpa JS: alamat studio tetap terbaca walau bundel gagal.
@@ -125,6 +128,16 @@ const html = fs.readFileSync(idxPath, 'utf8')
   .replaceAll('__APP_VERSION__', pkg.version);
 fs.writeFileSync(idxPath, html);
 fs.copyFileSync(idxPath, path.join(pub, 'index.html'));
+fs.copyFileSync(path.join(src, 'sw-register.js'), path.join(pub, 'sw-register.js'));
+/**
+ * Berkas PWA dan SEO harus ikut ke public/. Tanpa ini `/sw.js` jatuh ke
+ * catch-all index.html dan dikirim sebagai `text/html`, sehingga pendaftaran
+ * service worker selalu gagal karena MIME salah; manifest dan sitemap juga 404.
+ */
+for (const f of ['sw.js', 'manifest.json', 'robots.txt', 'sitemap.xml', '404.html']) {
+  const from = path.join(out, f);
+  if (fs.existsSync(from)) fs.copyFileSync(from, path.join(pub, f));
+}
 // Server menyajikan public/ dan catch-all-nya mengirim index.html untuk path
 // tak dikenal, jadi tautan.html harus ikut disalin ke sini.
 fs.copyFileSync(path.join(src, 'tautan.html'), path.join(pub, 'tautan.html'));

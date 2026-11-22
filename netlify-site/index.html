@@ -49,13 +49,6 @@
     </script>
     <noscript>Studio ini memerlukan JavaScript untuk berjalan.</noscript>
     <script src="assets/studio.js?v=14cbaa7e" defer></script>
-    <script>
-      // Service worker hanya untuk app shell; video tetap diambil dari jaringan.
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function () {
-          navigator.serviceWorker.register('sw.js').catch(function () {});
-        });
-      }
-    </script>
+    <script src="sw-register.js" defer></script>
   </body>
 </html>

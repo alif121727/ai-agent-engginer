@@ -87,6 +87,27 @@ export function createApp(opts: AppOptions = {}) {
   wireBus();
   const app = express();
   app.disable('x-powered-by');
+  /**
+   * Header keamanan dasar. CSP sengaja mengizinkan `'unsafe-inline'` untuk gaya
+   * karena React menulis style inline untuk progress bar; skrip tetap hanya dari
+   * origin sendiri. `frame-ancestors 'none'` mencegah clickjacking pada panel
+   * admin, dan HSTS hanya dikirim saat benar-benar di HTTPS.
+   */
+  app.use((_req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader(
+      'Content-Security-Policy',
+      "default-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; " +
+        "style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; " +
+        "font-src 'self' data:; frame-ancestors 'none'; base-uri 'self'",
+    );
+    if (process.env.APP_URL?.startsWith('https') || process.env.SITE_URL?.startsWith('https')) {
+      res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    }
+    next();
+  });
   app.use(express.json({ limit: '2mb' }));
 
   const worker = opts.worker;
@@ -747,11 +768,43 @@ export function createApp(opts: AppOptions = {}) {
     if (req.method !== 'GET') return next();
     if (req.path.startsWith('/api')) return next();
     const index = path.join(publicDir, 'index.html');
-    if (fs.existsSync(index)) res.sendFile(index);
-    else res.status(503).send('UI belum dibangun. Jalankan: npm run build:ui');
+    if (!fs.existsSync(index)) {
+      res.status(503).send('UI belum dibangun. Jalankan: npm run build:ui');
+      return;
+    }
+    /**
+     * Halaman staging tidak boleh masuk indeks mesin pencari: URL sandbox
+     * berubah tiap sesi dan akan bersaing dengan domain produksi. `SITE_URL`
+     * yang berisi domain produksi mematikan noindex, jadi produksi tetap
+     * terindeks tanpa perlu mengubah berkas.
+     */
+    const html = fs.readFileSync(index, 'utf8');
+    if (!productionSite()) {
+      res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+      // Ganti tag robots yang sudah ada, bukan menambah: dua tag berlawanan
+      // membuat mesin pencari memilih yang paling permisif.
+      const noindex = '<meta name="robots" content="noindex, nofollow" />';
+      const patched = /<meta name="robots"[^>]*>/.test(html)
+        ? html.replace(/<meta name="robots"[^>]*>/, noindex)
+        : html.replace('<head>', `<head>\n    ${noindex}`);
+      res.type('html').send(patched);
+      return;
+    }
+    res.type('html').send(html);
   });
 
   return { app, worker };
+}
+
+/**
+ * Domain produksi dianggap sah hanya bila `SITE_URL` diset dan bukan host
+ * sandbox. Tanpa itu semua halaman ditandai noindex, sehingga URL pratinjau
+ * tidak pernah bersaing dengan situs asli di mesin pencari.
+ */
+function productionSite(): boolean {
+  const url = process.env.SITE_URL?.trim();
+  if (!url) return false;
+  return !/prod-runtime\.all-hands\.dev|localhost|127\.0\.0\.1/.test(url);
 }
 
 function cookieHeader(token: string): string {

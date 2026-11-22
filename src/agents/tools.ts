@@ -17,7 +17,14 @@ import { jobDir } from '../core/fsx.ts';
 import { checkAssets, isBelowMinimum } from '../pipeline/quality.ts';
 import { measureMotion } from '../pipeline/motion-score.ts';
 import { loadPolicy } from '../core/motion-policy.ts';
-import { ffprobe, contactSheet, frameSharpness, extractFrame, perceptualHash } from '../render/ffmpeg.ts';
+import {
+  ffprobe,
+  contactSheet,
+  frameSharpness,
+  extractFrame,
+  perceptualHash,
+  measureLoudness,
+} from '../render/ffmpeg.ts';
 import type { RenderResult } from '../render/assemble.ts';
 import { markSceneDone, readSceneCheckpoint, markStageComplete } from '../pipeline/checkpoint.ts';
 import { engineSfxPrompts, AUDIO_NEGATIVE } from '../core/prompts.ts';
@@ -405,6 +412,32 @@ tool('write_motion', 'Tulis parameter animasi dan color grade', async (_args, ct
 
 // ------------------------------------------------------------- sound tools
 
+/**
+ * Posisi kamera per jenis scene. Dipakai untuk memilih event audio yang masuk
+ * akal: kamera di kabin tidak mungkin merekam pass-by, dan close-up roda tidak
+ * punya rev exhaust dominan.
+ */
+const SHOT_FOR_SCENE: Record<string, 'interior' | 'eksterior-dekat' | 'eksterior-jauh' | 'pass-by' | 'onboard'> = {
+  hook: 'eksterior-jauh',
+  exterior: 'eksterior-dekat',
+  detail_engine: 'eksterior-dekat',
+  detail_wheel: 'eksterior-dekat',
+  interior: 'interior',
+  action: 'pass-by',
+  night: 'pass-by',
+  lifestyle: 'eksterior-jauh',
+  features: 'eksterior-dekat',
+  cta: 'eksterior-jauh',
+};
+
+const EVENT_FOR_SHOT: Record<string, string> = {
+  interior: 'idle',
+  'eksterior-dekat': 'rev',
+  'eksterior-jauh': 'idle',
+  'pass-by': 'akselerasi',
+  onboard: 'akselerasi',
+};
+
 tool('synthesize_speech', 'Siapkan rencana TTS', async (args, ctx) => {
   const text = String(args.text ?? '');
   return { text, engine: process.env.TTS_ENGINE ?? 'belum-dikonfigurasi' };
@@ -422,8 +455,37 @@ tool('write_audio_plan', 'Tulis rencana audio dan subtitle', async (_args, ctx) 
   const model = findModel(brief.model ?? '');
   const sfxPrompts = model ? engineSfxPrompts(model) : [];
   const profile = engineProfileFor(brief.model ?? '');
+  const isElectric = profile.aspiration === 'electric';
+  /**
+   * Rencana audio per scene. Nilainya diturunkan dari profil mesin katalog, jadi
+   * tidak ada jenis penggerak atau event yang dikarang: model di luar katalog
+   * memakai profil generik dan ditandai `unknown` pada `sumber`.
+   */
+  const audioPlan = scenes.map((scene) => {
+    const shot = SHOT_FOR_SCENE[scene.key] ?? 'eksterior-jauh';
+    return {
+      sceneIndex: scene.index,
+      sceneKey: scene.key,
+      penggerak: isElectric ? 'EV' : 'ICE',
+      posisiKamera: shot,
+      eventDominan: EVENT_FOR_SHOT[shot],
+      permukaan: 'aspal',
+      mesin: isElectric
+        ? { silinder: 0, firingPerRev: 0, rpm: null, catatan: 'motor listrik, tanpa exhaust' }
+        : {
+            silinder: profile.cylinders,
+            firingPerRev: profile.firingPerRev,
+            rpm: shot === 'interior' ? profile.idle : Math.round(profile.redline * 0.55),
+            redline: profile.redline,
+          },
+      sumber: model ? `katalog:${model.slug}` : 'unknown',
+    };
+  });
+
   const plan = {
-    loudnessLufs: -14,
+    loudnessLufs: -16,
+    truePeakDbtp: -1,
+    audioPlan,
     music: { ducking: true, gain: -18 },
     engine: {
       profile: describeProfile(profile),
@@ -584,6 +646,57 @@ tool('approve_job', 'Verifikasi hasil akhir lalu setujui atau tolak', async (_ar
     name: 'tanpa-fallback',
     ok: withFallback.length === 0,
     detail: withFallback.length ? `${withFallback.length} aset fallback` : 'semua aset nyata',
+  });
+
+  // --- Gerbang audio (16.5). Rencana audio wajib ada per scene, dan loudness
+  // diukur dari video jadi: nilai yang kita niatkan tidak membuktikan apa pun.
+  const audioPlan = ctx.readArtifact<{
+    loudnessLufs?: number;
+    truePeakDbtp?: number;
+    audioPlan?: { sceneIndex: number; penggerak: string; eventDominan: string }[];
+    engine?: { profile?: string };
+  }>('audio.json');
+
+  const planByScene = new Map((audioPlan?.audioPlan ?? []).map((p) => [p.sceneIndex, p]));
+  const missingPlan = scenes.filter((s) => !planByScene.has(s.index));
+  checks.push({
+    name: 'audio-plan-lengkap',
+    ok: missingPlan.length === 0,
+    detail: missingPlan.length
+      ? `scene tanpa audio-plan: ${missingPlan.map((s) => s.index).join(', ')}`
+      : `${planByScene.size}/${scenes.length} scene punya rencana audio`,
+  });
+
+  const loud = measureLoudness(render.file);
+  const target = audioPlan?.loudnessLufs ?? -16;
+  const lufsDrift = loud.ok && loud.integratedLufs !== undefined ? Math.abs(loud.integratedLufs - target) : 99;
+  checks.push({
+    name: 'loudness-sesuai',
+    ok: loud.ok && lufsDrift <= 1,
+    detail: loud.ok
+      ? `${loud.integratedLufs?.toFixed(1)} LUFS vs target ${target} (selisih ${lufsDrift.toFixed(1)} LU)`
+      : `gagal ukur: ${loud.error ?? '?'}`,
+  });
+
+  const peakOk = loud.ok && (loud.truePeakDbtp ?? 99) <= -1;
+  checks.push({
+    name: 'true-peak-aman',
+    ok: peakOk,
+    detail: loud.ok ? `${loud.truePeakDbtp?.toFixed(1)} dBTP (batas -1)` : 'tidak terukur',
+  });
+
+  // Mismatch penggerak: EV tidak boleh dinilai dengan profil ICE. Sumbernya
+  // profil mesin katalog, jadi perbandingan ini tidak menebak.
+  const planKinds = new Set((audioPlan?.audioPlan ?? []).map((p) => p.penggerak));
+  const engineProfile = audioPlan?.engine?.profile ?? '';
+  const profileIsEv = /listrik/i.test(engineProfile);
+  const mismatch = planKinds.size === 1 && !planKinds.has(profileIsEv ? 'EV' : 'ICE');
+  checks.push({
+    name: 'penggerak-konsisten',
+    ok: !mismatch,
+    detail: mismatch
+      ? `rencana menyebut ${[...planKinds].join('/')} tetapi profil mesin "${engineProfile}"`
+      : `profil "${engineProfile || 'tidak ada'}" cocok dengan rencana`,
   });
 
   // Real frames from the finished video, not the source stills: this catches a

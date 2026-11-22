@@ -186,3 +186,33 @@ export function contactSheet(images: string[], outFile: string, cols = 3): strin
   const res = spawnSync('ffmpeg', [...args, '-filter_complex', filter, '-frames:v', '1', outFile]);
   return res.status === 0 ? outFile : null;
 }
+
+/**
+ * Loudness terukur dari video jadi, bukan dari nilai yang kita niatkan. QA
+ * memakai angka ini supaya target -16 LUFS benar-benar diperiksa, bukan hanya
+ * ditulis di artefak.
+ */
+export function measureLoudness(file: string): {
+  ok: boolean;
+  integratedLufs?: number;
+  truePeakDbtp?: number;
+  error?: string;
+} {
+  if (!fs.existsSync(file)) return { ok: false, error: 'file tidak ada' };
+  const res = spawnSync(
+    'ffmpeg',
+    ['-v', 'info', '-nostats', '-i', file, '-filter_complex', 'ebur128=peak=true', '-f', 'null', '-'],
+    { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 },
+  );
+  if (res.status !== 0) return { ok: false, error: (res.stderr ?? '').slice(-300) || 'ffmpeg gagal' };
+  const err = res.stderr ?? '';
+  const summary = err.slice(err.lastIndexOf('Summary:'));
+  const i = summary.match(/I:\s*(-?\d+(?:\.\d+)?)\s*LUFS/);
+  const peak = summary.match(/Peak:\s*(-?\d+(?:\.\d+)?)\s*dBFS/);
+  if (!i) return { ok: false, error: 'ringkasan ebur128 tidak terbaca' };
+  return {
+    ok: true,
+    integratedLufs: Number(i[1]),
+    truePeakDbtp: peak ? Number(peak[1]) : undefined,
+  };
+}

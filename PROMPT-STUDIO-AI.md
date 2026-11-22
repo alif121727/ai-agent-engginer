@@ -38,7 +38,7 @@ audio → render → QA → (opsional) publikasi.
 - Tanpa framework tes. Tes berupa skrip TS yang dijalankan
   `node --experimental-strip-types tests/run.ts`, mencetak
   `N pemeriksaan lulus, M gagal`, exit non-zero bila gagal. Acuan saat ini:
-  **124 pemeriksaan lulus**.
+  **128 pemeriksaan lulus**.
 - Antrean memakai tabel database (bukan Redis), karena syaratnya tahan restart.
 
 ## 3. Struktur folder
@@ -227,9 +227,18 @@ field hilang membuat React melempar dan seluruh halaman jadi layar putih.
 - Gerbang frame video menangkap **hitam atau beku**, bukan menilai ketajaman
   fotografis (itu tugas gerbang per-aset). Ambang frame 2 + cek `tidak-beku`
   lewat perceptual hash antar frame. Menaikkan `unsharp` tidak menolong.
-- QA menghasilkan **21 pemeriksaan**: `berkas-video`, `terbaca-ffprobe`,
-  `durasi-sesuai`, `ada-audio`, `resolusi`, `tanpa-fallback`, `frame-1..6`,
-  `tidak-kosong`, `tidak-beku`, `gerakan-terukur`, `gerakan-scene-1..6`.
+- QA menghasilkan **25 pemeriksaan**: 21 cek render (`berkas-video`,
+  `terbaca-ffprobe`, `durasi-sesuai`, `ada-audio`, `resolusi`, `tanpa-fallback`,
+  `frame-1..6`, `tidak-kosong`, `tidak-beku`, `gerakan-terukur`,
+  `gerakan-scene-1..6`) plus 4 cek audio: `audio-plan-lengkap`,
+  `loudness-sesuai` (±1 LU dari target), `true-peak-aman` (≤ -1 dBTP), dan
+  `penggerak-konsisten` (EV tidak dinilai dengan profil ICE).
+- Loudness diukur dari video jadi lewat `ebur128` (`measureLoudness`), bukan dari
+  angka yang kita niatkan. Target `-16 LUFS` di `config/defaults.json`. Video lama
+  terukur `-14.3 LUFS` sehingga gerbang ini benar-benar menolak, bukan hiasan.
+- Setiap scene punya `audio-plan` di `audio.json` (penggerak, posisi kamera,
+  event dominan, permukaan, silinder, firing per rev, rpm). Nilainya diturunkan
+  dari profil mesin katalog; model di luar katalog ditandai `sumber: unknown`.
 - QA **tidak** memeriksa bitrate. Dua job pernah lulus QA dengan bitrate ~50 kbps
   (0,2-0,3 MB untuk 30-45 detik) dan harus dikeluarkan dari galeri manual.
 - Worker menyimpan cache modul. Setelah mengubah kode agen/render, **restart
@@ -309,7 +318,7 @@ tetapi `POST /api/login` balas 404.
 
 Bangun sampai semua ini **terbukti**, bukan diasumsikan:
 
-1. `npm test` lulus semua (acuan 124 pemeriksaan) dan `typecheck:studio` bersih.
+1. `npm test` lulus semua (acuan 128 pemeriksaan) dan `typecheck:studio` bersih.
 2. `npm run build:studio` menghasilkan `public/assets/studio.js` + `studio.css`
    dengan hash versi baru; penjaga media tetap menolak build bila berkas media
    wajib hilang tanpa `MEDIA_OPTIONAL`.
@@ -389,10 +398,29 @@ Ubah kalau terbukti salah, tapi jangan diam-diam.
 11. `config/llm.json` saat ini `model: ""` dan `baseUrl: ""` — agen berjalan lewat
     jalur deterministik, bukan LLM sungguhan. Jangan mengarang konfigurasi LLM.
 
-## 15. Perintah
+## 15. Riset, sumber, dan header keamanan
+
+- Sumber angka ada di `config/catalog.json` field `sumber` (semua 33 model →
+  Wikipedia). Skrip `scripts/riset-sumber.py` memeriksa URL-nya secara nyata
+  (HEAD request) dan menulis `data/riset-sumber.json` berisi `url`, `license`,
+  `accessed_at`, `confidence`. Jalankan `--offline` di CI tanpa jaringan.
+- URL katalog tidak boleh memuat catatan seperti ` (bagian Z-tune)`: teks itu
+  membuat URL tidak valid. Simpan catatan di tempat lain.
+- Angka yang tidak ada di sumber ditulis `tidak disebut di sumber`, tidak diisi
+  tebakan, dan tidak pernah tampil di kartu model.
+- Header keamanan dipasang global: `X-Content-Type-Options`, `Referrer-Policy`,
+  `X-Frame-Options: DENY`, dan CSP yang hanya mengizinkan skrip dari origin
+  sendiri. HSTS hanya dikirim bila `APP_URL`/`SITE_URL` berawalan `https`.
+- Halaman ditandai `noindex` kecuali `SITE_URL` berisi domain produksi
+  (bukan host `prod-runtime.all-hands.dev`, `localhost`, atau `127.0.0.1`).
+  Tag robots yang sudah ada **diganti**, bukan ditambah: dua tag berlawanan
+  membuat mesin pencari memilih yang paling permisif.
+- Rate limit login sudah ada: 10 percobaan/menit per akun, 60/menit per IP.
+
+## 16. Perintah
 
 ```bash
-npm test                                   # 124 pemeriksaan
+npm test                                   # 128 pemeriksaan
 npm run typecheck:studio
 npm run build:studio                       # bundel UI + hash versi
 npm run api                                # port 8080 (atau PORT)

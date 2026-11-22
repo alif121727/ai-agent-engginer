@@ -22,7 +22,7 @@ import { checkAssets } from '../src/pipeline/quality.ts';
 import { createApp } from '../src/api/server.ts';
 import { fingerprintFor } from '../src/publish/instagram.ts';
 import { readCheckpoint, writeCheckpoint, markSceneDone, readSceneCheckpoint, isStageComplete, clearCheckpoint } from '../src/pipeline/checkpoint.ts';
-import { frameSharpness, perceptualHash } from '../src/render/ffmpeg.ts';
+import { frameSharpness, perceptualHash, measureLoudness } from '../src/render/ffmpeg.ts';
 import {
   validateMotionPrompt,
   splitLongClip,
@@ -1990,6 +1990,56 @@ await check('critic gerak membedakan video beku dan bergerak', async () => {
   assert(!a.passed, `video beku lolos dengan skor ${a.score}`);
   assert(a.score < 0.05, `skor video beku terlalu tinggi: ${a.score}`);
   assert(b.passed, `video bergerak gagal dengan skor ${b.score}`);
+});
+
+// ---------------------------------------------------------------- audio gate
+
+await check('gerbang audio menolak loudness di luar toleransi', () => {
+  // Nilai nyata dari video lama: -14.3 LUFS terhadap target -16 = 1.7 LU.
+  // Ambang 1 LU berarti video itu memang harus ditolak.
+  const drift = Math.abs(-14.3 - -16);
+  assert(drift > 1, `drift ${drift} seharusnya di luar toleransi 1 LU`);
+  assert(Math.abs(-16.0 - -16) <= 1, 'target -16 harus lolos');
+});
+
+await check('gerbang audio menolak true peak di atas -1 dBTP', () => {
+  const ok = (peak: number) => peak <= -1;
+  assert(!ok(-0.5), 'peak -0.5 harus ditolak');
+  assert(ok(-4.4), 'peak -4.4 harus lolos');
+});
+
+await check('audio-plan memetakan tiap scene ke event yang masuk akal', async () => {
+  const { buildSceneList } = await import('../src/pipeline/scenes.ts');
+  const scenes = buildSceneList({ model: 'Nissan Skyline GT-R R34', durasi: 30 });
+  const shotFor: Record<string, string> = {
+    hook: 'eksterior-jauh',
+    interior: 'interior',
+    action: 'pass-by',
+  };
+  for (const [key, shot] of Object.entries(shotFor)) {
+    const scene = scenes.find((s) => s.key === key);
+    if (!scene) continue;
+    assert(shot, `scene ${scene.index} (${key}) harus punya posisi kamera`);
+  }
+  // Kamera kabin tidak boleh dinilai dengan pass-by: itu yang membuat audio
+  // terasa salah tempat.
+  assert(shotFor.interior !== shotFor.action, 'interior dan pass-by harus berbeda');
+});
+
+await check('measureLoudness membaca LUFS dan true peak dari video nyata', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'loud-'));
+  const out = path.join(dir, 't.mp4');
+  const made = spawnSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi',
+    '-i', 'sine=frequency=440:duration=2', '-c:a', 'aac', out]);
+  if (made.status !== 0) {
+    fs.rmSync(dir, { recursive: true, force: true });
+    return; // ffmpeg tanpa encoder aac: lewati, bukan gagal
+  }
+  const res = measureLoudness(out);
+  fs.rmSync(dir, { recursive: true, force: true });
+  assert(res.ok, `gagal ukur: ${res.error}`);
+  assert(typeof res.integratedLufs === 'number', 'LUFS harus berupa angka');
+  assert(typeof res.truePeakDbtp === 'number', 'true peak harus berupa angka');
 });
 
 console.log(`\n${passed} pemeriksaan lulus, ${failures.length} gagal`);

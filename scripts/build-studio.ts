@@ -74,6 +74,8 @@ const oldIndex = path.join(out, 'index.html');
 fs.copyFileSync(path.join(src, 'index.html'), oldIndex);
 // 404.html statis: dipakai Netlify dan GitHub Pages apa adanya.
 fs.copyFileSync(path.join(src, '404.html'), path.join(out, '404.html'));
+// tautan.html sengaja tanpa JS: alamat studio tetap terbaca walau bundel gagal.
+fs.copyFileSync(path.join(src, 'tautan.html'), path.join(out, 'tautan.html'));
 
 // Salinan untuk backend: `npm run api` menyajikan public/, dan studio memilih
 // HttpStudioApi saat /api/health terjawab. Tanpa salinan ini studio hanya
@@ -103,5 +105,8 @@ const html = fs.readFileSync(idxPath, 'utf8')
   .replaceAll('__APP_VERSION__', pkg.version);
 fs.writeFileSync(idxPath, html);
 fs.copyFileSync(idxPath, path.join(pub, 'index.html'));
+// Server menyajikan public/ dan catch-all-nya mengirim index.html untuk path
+// tak dikenal, jadi tautan.html harus ikut disalin ke sini.
+fs.copyFileSync(path.join(src, 'tautan.html'), path.join(pub, 'tautan.html'));
 
 console.log(`✓ studio dibangun: studio.js ${(js / 1024).toFixed(0)} kB, studio.css ${(css / 1024).toFixed(1)} kB, v=${hash}, media=${mediaHash}`);

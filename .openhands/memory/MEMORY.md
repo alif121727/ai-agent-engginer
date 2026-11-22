@@ -311,3 +311,19 @@ yang sudah tertaut (jadi `unlink` dulu). CLI ada di `/workspace/tools`
   pakai `videoSrc()`/`thumbSrc()` dari `data/rendered.ts`.
 - Video terbit diperbaiki dengan **remux** (`muxAudio`, `-c:v copy`): durasi dan
   gambar utuh, hanya audio diganti. Jauh lebih murah daripada render ulang.
+
+## Test suite must never touch the production DB
+- `openDb()` takes an **object**: `openDb({ kind:'sqlite', file })`. Passing a
+  bare string silently used the default DB, so `tests/run.ts` wrote a
+  "Tes gerak" job into the real `data/studio.db` on every `npm test` run.
+  `openDb` now throws `TypeError` on a string argument — keep that guard.
+- A job with **zero stages** used to be marked `done` (empty stage loop +
+  empty failed list). The worker now rejects it as failed. Symptom to
+  recognise: jobs titled "Tes gerak" with 0 rows in `job_stages` and no
+  `jobs/<id>/` directory, inflating the dashboard's "selesai" count.
+- Dashboard numbers to sanity-check: `done` count must equal the number of
+  `jobs/*/video.mp4` on disk (orphans are reported as failed by
+  `honestStatus`).
+- `POST /api/jobs` requires a session cookie; `POST /api/login` expects the
+  field **`email`** (not `account`), and accepts a username there too.
+- `ffmpeg` here has no `-vsync`; use `-fps_mode passthrough`.

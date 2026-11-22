@@ -2,6 +2,7 @@ import React from 'react';
 import { useStudio } from '../state/store';
 import { Icon } from '../components/ui';
 import { VIDEO_MODELS } from '../data/models';
+import { LINKS } from '../links';
 import { APP_VERSION } from '../version';
 
 export function Models() {
@@ -58,8 +59,44 @@ export function Models() {
   );
 }
 
+const LINK_ROWS: Array<{ key: keyof typeof LINKS; label: string; note: string }> = [
+  { key: 'studio', label: 'Studio lengkap', note: 'Backend nyata: render ffmpeg, worker, QA sungguhan.' },
+  { key: 'pages', label: 'GitHub Pages', note: 'Salinan statis; bisa dibuka tanpa backend.' },
+  { key: 'netlify', label: 'Netlify', note: 'Deploy dari repo yang sama.' },
+  { key: 'repo', label: 'Repositori', note: 'Kode sumber dan riwayat perubahan.' },
+];
+
 export function Settings() {
   const { settings, saveSettings, toast, user } = useStudio();
+
+  async function copy(url: string, label: string) {
+    // navigator.clipboard butuh HTTPS + izin; kalau ditolak, pakai textarea
+    // sementara supaya penyalinan tetap berhasil di peramban lama.
+    let ok = false;
+    try {
+      await navigator.clipboard.writeText(url);
+      ok = true;
+    } catch {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = url;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+      } catch {
+        ok = false;
+      }
+    }
+    toast(
+      ok
+        ? { title: 'Tautan disalin', body: label, kind: 'ok' }
+        : { title: 'Tidak bisa menyalin otomatis', body: 'Salin manual dari teks di atas.', kind: 'info' },
+    );
+  }
   return (
     <div className="page stack" style={{ gap: 18, maxWidth: 780 }}>
       <div>
@@ -119,6 +156,44 @@ export function Settings() {
         <div className="note">
           <span className="note__icon"><Icon.Info size={14} /></span>
           <span>Kalau Anda memberi kunci API, saya bisa mengaktifkan adaptor platform di backend dengan mode <span className="mono">PUBLISHER_MODE=mock</span> dulu agar aman diuji tanpa benar-benar mengunggah.</span>
+        </div>
+      </div>
+
+      <div className="card stack">
+        <h2>Tautan</h2>
+        <p className="small muted" style={{ margin: 0 }}>
+          Alamat studio yang bisa dibagikan. Semuanya juga tercetak di <span className="mono">tautan.html</span>,
+          jadi tetap bisa dibuka walau JavaScript gagal dimuat.
+        </p>
+        {LINK_ROWS.map((l) => (
+          <div key={l.key} className="row row--between" style={{ padding: '10px 0', borderTop: '1px solid var(--border)' }}>
+            <div style={{ minWidth: 0 }}>
+              <div className="small" style={{ fontWeight: 600 }}>{l.label}</div>
+              <a
+                className="dim tiny mono"
+                href={LINKS[l.key]}
+                target="_blank"
+                rel="noreferrer"
+                style={{ overflowWrap: 'anywhere' }}
+              >
+                {LINKS[l.key]}
+              </a>
+              <div className="dim tiny">{l.note}</div>
+            </div>
+            <div className="row" style={{ gap: 6, flexShrink: 0 }}>
+              <button className="btn btn--sm" onClick={() => copy(LINKS[l.key], l.label)}>Salin</button>
+              <a className="btn btn--ghost btn--sm" href={LINKS[l.key]} target="_blank" rel="noreferrer">
+                Buka <Icon.ChevronR size={11} />
+              </a>
+            </div>
+          </div>
+        ))}
+        <div className="note">
+          <span className="note__icon"><Icon.Info size={14} /></span>
+          <span>
+            Alamat sandbox hanya hidup selama sesi kerja ini berjalan. Kalau nanti mati, buka
+            <span className="mono"> tautan.html</span> untuk melihat alamat yang masih aktif.
+          </span>
         </div>
       </div>
 

@@ -101,7 +101,7 @@ export function resolveCar(slug: string): Car | undefined {
 
 const ASPECTS = ['16:9', '9:16', '1:1'] as const;
 
-export function projectFromServer(j: ServerJob): Project {
+export function projectFromServer(j: ServerJob, base = '', mediaToken = ''): Project {
   const slug = j.brief_slug ?? '';
   const car = findCar(slug, j.model) ?? findResearched(slug)?.car ?? findResearched(j.model)?.car;
   const created = j.created_at ? Date.parse(j.created_at) : NaN;
@@ -152,8 +152,10 @@ export function projectFromServer(j: ServerJob): Project {
     qaNote: j.error ?? undefined,
     // Hanya job yang benar-benar selesai punya mp4. Tanpa ini pemutar di
     // halaman detail tidak muncul walau file ada di disk.
-    videoUrl: status === 'done' ? `/api/jobs/${j.id}/file/video.mp4` : undefined,
-    thumbUrl: status === 'done' ? `/api/jobs/${j.id}/file/preview.jpg` : undefined,
+    // URL absolut ke backend: halaman statis di Netlify/Pages harus memutar
+    // mp4 dari server render, bukan dari domain statis yang tidak punya file.
+    videoUrl: status === 'done' ? `${base}/api/jobs/${j.id}/file/video.mp4${mediaToken}` : undefined,
+    thumbUrl: status === 'done' ? `${base}/api/jobs/${j.id}/file/preview.jpg${mediaToken}` : undefined,
   };
 }
 
@@ -477,11 +479,42 @@ export class HttpStudioApi implements StudioApi {
     this.base = base;
   }
 
+  // Sesi lintas situs tidak bisa bergantung pada cookie: Chrome/Safari
+  // memblokir cookie pihak ketiga. Token dari /api/login disimpan di
+  // localStorage dan dikirim sebagai Bearer.
+  private static tokenKey = 'studio_token';
+  private static token(): string {
+    try {
+      return localStorage.getItem(HttpStudioApi.tokenKey) ?? '';
+    } catch {
+      return '';
+    }
+  }
+  private static setToken(token: string): void {
+    try {
+      if (token) localStorage.setItem(HttpStudioApi.tokenKey, token);
+      else localStorage.removeItem(HttpStudioApi.tokenKey);
+    } catch {
+      /* mode privat: jatuh ke cookie */
+    }
+  }
+  // <video>/<img> tidak bisa mengirim header, jadi token ikut di URL media.
+  private mediaQuery(): string {
+    const t = HttpStudioApi.token();
+    return t ? `?token=${encodeURIComponent(t)}` : '';
+  }
+
+  private authHeaders(): Record<string, string> {
+    const t = HttpStudioApi.token();
+    return t ? { authorization: `Bearer ${t}` } : {};
+  }
+
   private async j<T>(path: string, init?: RequestInit): Promise<T> {
+    const { headers, ...rest } = init ?? {};
     const r = await fetch(this.base + path, {
       credentials: 'include',
-      headers: { 'content-type': 'application/json' },
-      ...init,
+      ...rest,
+      headers: { 'content-type': 'application/json', ...this.authHeaders(), ...(headers as Record<string, string> | undefined) },
     });
     if (!r.ok) throw new Error(`${path} -> ${r.status}`);
     return (await r.json()) as T;
@@ -489,7 +522,7 @@ export class HttpStudioApi implements StudioApi {
 
   async listProjects(): Promise<Project[]> {
     const d = await this.j<{ jobs: ServerJob[] }>('/api/jobs');
-    return (d.jobs ?? []).map(projectFromServer);
+    return (d.jobs ?? []).map((j) => projectFromServer(j, this.base, this.mediaQuery()));
   }
   async saveProject(): Promise<void> {
     /* server yang menyimpan; tidak perlu aksi */
@@ -508,7 +541,7 @@ export class HttpStudioApi implements StudioApi {
     });
     // Job dari server memakai nama kolom snake_case; tanpa pemetaan ini UI
     // menampilkan durasi/rasio kosong dan tahap tidak bisa dicocokkan.
-    return projectFromServer(d.job);
+    return projectFromServer(d.job, this.base, this.mediaQuery());
   }
   async generateBrief(car: Car): Promise<Brief> {
     return buildBrief(car);
@@ -550,7 +583,11 @@ export class HttpStudioApi implements StudioApi {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ email: account, password }),
       });
-      if (r.ok) return { ok: true };
+      if (r.ok) {
+        const d = (await r.json().catch(() => ({}))) as { token?: string };
+        if (d.token) HttpStudioApi.setToken(d.token);
+        return { ok: true };
+      }
       const d = (await r.json().catch(() => ({}))) as { error?: string };
       return { ok: false, error: d.error ?? `login gagal (${r.status})` };
     } catch {
@@ -574,13 +611,21 @@ export class HttpStudioApi implements StudioApi {
   }
   async logout(): Promise<void> {
     try {
-      await fetch(this.base + '/api/logout', { method: 'POST', credentials: 'include' });
+      await fetch(this.base + '/api/logout', {
+        method: 'POST',
+        credentials: 'include',
+        headers: this.authHeaders(),
+      });
     } catch {
       /* sesi lokal tetap dihapus pemanggil */
     }
+    HttpStudioApi.setToken('');
   }
   async currentUser(): Promise<{ email: string; name: string } | null> {
-    const r = await fetch(this.base + '/api/me', { credentials: 'include' });
+    const r = await fetch(this.base + '/api/me', {
+      credentials: 'include',
+      headers: this.authHeaders(),
+    });
     if (r.status === 401) return null;
     if (!r.ok) throw new Error(`/api/me -> ${r.status}`);
     const d = (await r.json()) as { user?: { email: string; username: string | null } | null };
@@ -589,7 +634,10 @@ export class HttpStudioApi implements StudioApi {
   }
   async needsSetup(): Promise<boolean> {
     try {
-      const r = await fetch(this.base + '/api/bootstrap', { credentials: 'include' });
+      const r = await fetch(this.base + '/api/bootstrap', {
+        credentials: 'include',
+        headers: this.authHeaders(),
+      });
       if (!r.ok) return false;
       const d = (await r.json()) as { needsSetup?: boolean };
       return d.needsSetup === true;

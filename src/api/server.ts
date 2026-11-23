@@ -143,8 +143,24 @@ export function createApp(opts: AppOptions = {}) {
   const worker = opts.worker;
 
   // ---- auth helpers ----
+  // Cookie pihak ketiga diblokir Chrome/Safari secara default, jadi sesi
+  // lintas situs (Netlify/Pages -> backend) memakai Bearer token. Cookie tetap
+  // didukung untuk pemakaian satu origin.
+  // Tag <video>/<img> tidak bisa mengirim header, jadi untuk GET token juga
+  // diterima lewat ?token=. Hanya GET: POST/PATCH tetap wajib header.
+  const bearerToken = (req: Request): string | undefined => {
+    const h = req.headers.authorization ?? '';
+    const m = /^Bearer\s+(.+)$/i.exec(h.trim());
+    if (m?.[1]?.trim()) return m[1].trim();
+    if (req.method === 'GET') {
+      const q = typeof req.query?.token === 'string' ? req.query.token.trim() : '';
+      if (q) return q;
+    }
+    return undefined;
+  };
+
   const readUser = async (req: Request): Promise<User | null> => {
-    const token = parseCookies(req.headers.cookie ?? '')[COOKIE];
+    const token = bearerToken(req) ?? parseCookies(req.headers.cookie ?? '')[COOKIE];
     return sessionUser(token);
   };
 
@@ -228,11 +244,13 @@ export function createApp(opts: AppOptions = {}) {
     await purgeExpiredSessions();
     const token = await createSession(user.id);
     res.setHeader('Set-Cookie', cookieHeader(token));
-    res.json({ user });
+    // Token juga dikirim di body: UI lintas situs menyimpannya dan memakainya
+    // sebagai Bearer, karena cookie pihak ketiga diblokir peramban.
+    res.json({ user, token });
   });
 
   app.post('/api/logout', async (req, res) => {
-    const token = parseCookies(req.headers.cookie ?? '')[COOKIE];
+    const token = bearerToken(req) ?? parseCookies(req.headers.cookie ?? '')[COOKIE];
     if (token) await destroySession(token);
     res.setHeader('Set-Cookie', `${COOKIE}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax`);
     res.json({ ok: true });

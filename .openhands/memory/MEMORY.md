@@ -164,7 +164,10 @@ an mp4 using a team of AI agents with fixed job desks. Node + `--experimental-st
   kredensial, jadi Auth menampilkan tombol "Masuk sebagai tamu".
 
 ## Layout notes
-- `jobs/<id>/` (gitignored) holds `artifacts/`, `checkpoints/`, `assets/`, `video.mp4`.
+- `jobs/<id>/` holds `artifacts/`, `checkpoints/`, `assets/`, `video.mp4`.
+  `.gitignore` **sengaja meng-*un-ignore*** `jobs/*/artifacts/**` supaya artefak
+  ikut ter-commit; `git add -A` karena itu menyeret artefak job baru ke commit.
+  Kalau hanya ingin kode, stage file secara eksplisit.
 - `POST /api/jobs/:id/retry` accepts `{ from: '<stage name>' }` to rewind.
 - `GET /api/jobs/:id/artifact/:name` returns artifact JSON for the UI panel.
 - UI shows an Artefak panel + QA verdict; `AssetPanel` uploads own photos.
@@ -382,3 +385,20 @@ yang sudah tertaut (jadi `unlink` dulu). CLI ada di `/workspace/tools`
 - Uji regresi CORS ada di `tests/run.ts` ("CORS preflight mengizinkan header
   Authorization"); total suite kini 130 pemeriksaan.
 - Dokumentasi: `docs/PANDUAN-STUDIO.md` dan `docs/ARSITEKTUR-STUDIO.md`.
+
+## TTS / narasi (mahal dipelajari)
+- Dua penyedia: ElevenLabs (`TTS_API_KEY`) dan **Piper lokal** (gratis, otomatis
+  bila tanpa kunci). `ttsProviderName()` mengembalikan penyedia aktif.
+- Piper dipasang lewat `pip install piper-tts` + `./scripts/fetch-tts-model.sh`
+  (model `id_ID-news_tts-medium`, 63 MB, **gitignored** di `assets/tts/`).
+  Tanpa langkah ini narasi senyap dan `audio.json.ttsAvailable=false`.
+- Piper menulis WAV mono 22 kHz; `synthesizeLocal()` mengubahnya jadi mp3
+  44,1 kHz stereo 192 kbps supaya bentuk keluaran sama dengan ElevenLabs.
+- Nada suara (`suaraTone`) dipetakan ke `length-scale`/`noise-scale` Piper
+  lewat `PIPER_TONE`. Terukur: energik 6,84s, sinematik 7,03s, hangat 7,34s,
+  tegas 6,77s untuk kalimat yang sama — bukti kontrolnya nyata.
+- JANGAN laporkan `ttsAvailable` dari `Boolean(process.env.TTS_API_KEY)` saja;
+  pakai `ttsAvailable()` dari `src/tts/provider.ts` (bug ini pernah membuat UI
+  memperingatkan "tanpa narasi" padahal video bersuara).
+- Cara memverifikasi narasi benar-benar ada: RMS per scene di video final harus
+  sekitar -18 dB, bukan `-inf`. Perintah: ffmpeg `-ss <start> -t 2 -af astats`.

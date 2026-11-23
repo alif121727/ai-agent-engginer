@@ -207,7 +207,14 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 async function getJson(url: string, attempt = 0): Promise<any> {
   let res: Response;
   try {
-    res = await fetch(url, { headers: { Accept: 'application/json' } });
+    // Wikipedia menolak permintaan tanpa User-Agent yang jelas (HTTP 403,
+    // balasannya halaman HTML). Tanpa header ini pencarian selalu "gagal".
+    res = await fetch(url, {
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'StudioAI-Otomotif/1.0 (educational video studio)',
+      },
+    });
   } catch {
     throw new ResearchError(
       'Tidak bisa menghubungi Wikipedia. Periksa koneksi internet Anda, lalu coba lagi.',
@@ -537,4 +544,259 @@ export async function researchCar(query: string): Promise<ResearchResult> {
     query: q,
     articleTitle: page,
   };
+}
+
+/* ------------------------------------------------- pencarian lintas internet */
+
+export type KandidatWeb = {
+  /** Judul artikel Wikipedia; dipakai `researchCar` saat kandidat dipilih. */
+  judul: string;
+  nama: string;
+  tahun: string;
+  tenaga: string;
+  deskripsi: string;
+  gambarUrl: string;
+  halamanUrl: string;
+};
+
+const KATA_UMUM = new Set(['car', 'cars', 'the', 'and', 'of', 'for']);
+
+function kataKunci(q: string): string[] {
+  return q
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s-]/gu, ' ')
+    .split(/\s+/)
+    .filter((k) => k.length > 1 && !KATA_UMUM.has(k));
+}
+
+/** Ambil satu nilai dari wikitext infobox, termasuk templat bersarang. */
+function nilaiInfobox(wikitext: string, kunci: string): string {
+  const pola = new RegExp(`\\|\\s*${kunci}\\s*=\\s*`, 'i');
+  const m = pola.exec(wikitext);
+  if (!m) return '';
+  let i = m.index + m[0].length;
+  let dalam = 0;
+  let hasil = '';
+  while (i < wikitext.length) {
+    const dua = wikitext.slice(i, i + 2);
+    if (dua === '{{') { dalam += 1; hasil += dua; i += 2; continue; }
+    if (dua === '}}') {
+      if (dalam === 0) break;
+      dalam -= 1; hasil += dua; i += 2; continue;
+    }
+    if (wikitext[i] === '\n' && dalam === 0) break;
+    hasil += wikitext[i];
+    i += 1;
+  }
+  return hasil.trim();
+}
+
+/** Ubah nilai wikitext jadi teks yang enak dibaca; tidak mengarang isi. */
+export function rapikanWikitext(teks: string): string {
+  if (!teks) return '';
+  let hasil = teks;
+
+  // {{engine size|bore=..|stroke=..|cyl=..}} dihitung dari ukuran nyata.
+  hasil = hasil.replace(/\{\{\s*engine size\s*\|([^{}]*)\}\}/gi, (_m, args: string) => {
+    const p: Record<string, string> = {};
+    for (const bagian of args.split('|')) {
+      const [k, v] = bagian.split('=');
+      if (k && v) p[k.trim().toLowerCase()] = v.trim();
+    }
+    const bore = Number(p.bore);
+    const stroke = Number(p.stroke);
+    const cyl = Number(p.cyl);
+    if (!bore || !stroke || !cyl) return '';
+    const mm3 = (Math.PI / 4) * bore * bore * stroke * cyl;
+    const skala = Number(p.scale ?? 1) || 1;
+    return (mm3 / skala).toFixed(Number(p.rnd ?? 0));
+  });
+
+  for (let i = 0; i < 4; i += 1) {
+    const sebelum = hasil;
+    hasil = hasil.replace(
+      /\{\{\s*(convert|cvt)\s*\|([^|{}]*)\|([^|{}\s]+)([^{}]*)\}\}/gi,
+      (_m, _t, angka: string, unit: string, sisa: string) => {
+        const keluaran = /order\s*=\s*out/i.test(sisa)
+          ? (sisa.match(/\|\s*([a-z]+)/i)?.[1] ?? unit)
+          : unit;
+        const nilai = Number(angka);
+        if (Number.isFinite(nilai) && /^l$/i.test(unit) && /^cc/i.test(keluaran)) {
+          return `${Math.round(nilai * 1000)} cc`;
+        }
+        return `${angka} ${unit}`;
+      },
+    );
+    if (hasil === sebelum) break;
+  }
+
+  return hasil
+    // Catatan kaki dan tag HTML harus dibuang sebelum sisanya dirapikan.
+    .replace(/<ref[^>]*\/>/gi, ' ')
+    .replace(/<ref[^>]*>[\s\S]*?<\/ref>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    // Wikipedia berbahasa Inggris; tahun "present" berarti masih diproduksi.
+    .replace(/\bpresent\b/gi, 'sekarang')
+    .replace(/&minus;/g, '–')
+    .replace(/&ndash;/g, '–')
+    .replace(/&mdash;/g, '—')
+    .replace(/&amp;/g, '&')
+    .replace(/\[\[[^\]|]*\|([^\]]*)\]\]/g, '$1')
+    .replace(/\[\[([^\]]*)\]\]/g, '$1')
+    .replace(/\{\{\s*(unbulleted list|ubl|plainlist|flatlist|collapsible list)\s*\|?/gi, '')
+    .replace(/\{\{[^{}]*\}\}/g, '')
+    .replace(/\s*\|\s*/g, ' · ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/'{2,}/g, '')
+    .replace(/<br\s*\/?>/gi, ' · ')
+    .replace(/\{\{|\}\}/g, ' ')
+    .replace(/\b(abbr|order|disp|round|adj|sigfig|sp|us|first|out|frac|scale|rnd)\s*=\s*[\w-]*/gi, '')
+    .replace(/\s*·\s*·\s*/g, ' · ')
+    .replace(/(^|\s)·(\s|$)/g, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s+([–—])/g, '$1')
+    .replace(/([–—])\s+/g, '$1')
+    .replace(/^[\s·,;/]+|[\s·,;/]+$/g, '')
+    .replace(/^[a-z_]+\s*=\s*/i, '')
+    .trim();
+}
+
+/** Halaman ini benar-benar tentang sebuah mobil, bukan orang atau perusahaan. */
+function layakMobil(judul: string, deskripsi: string, gambarUrl: string): boolean {
+  if (!gambarUrl) return false;
+  // Logo dan diagram SVG bukan foto kendaraan.
+  if (/\.svg(\?|$)/i.test(gambarUrl)) return false;
+  if (deskripsi.length < 40) return false;
+  // Halaman acara dan komponen, bukan model: "Geneva International Motor
+  // Show", "Dual-clutch transmission".
+  if (/\b(motor show|auto show|salon|transmission|engine|platform|chassis|tyre|tire|wheel)\b/i.test(judul)) {
+    return false;
+  }
+  // Halaman konsep umum, bukan model: "Automobile drag coefficient".
+  if (/^(automobile|car|cars|vehicle|list of|history of|automotive|glossary)\b/i.test(judul.trim())) {
+    return false;
+  }
+  // Tokoh: "Christian von Koenigsegg" muncul saat mencari "Koenigsegg Jesko".
+  if (/\b(born\s+\d|businessman|businesswoman|entrepreneur|he founded|she founded)\b/i.test(deskripsi)) {
+    return false;
+  }
+  // Perusahaan/produsen, bukan model.
+  if (/\b(automobiles?|motors?|company|manufacturer|ag|gmbh|inc\.?|ltd\.?)\s*$/i.test(judul.trim())) {
+    return false;
+  }
+  if (/\b(in motorsport|DTM|Formula One|racing team)\b/i.test(judul)) return false;
+  // Halaman teknis ("Dihedral synchro-helix actuation doors") punya foto dan
+  // menyebut "car", tapi judulnya bukan nama model. Model selalu diawali
+  // mereknya, dan merek itu muncul di kata pertama judul.
+  if (/\b(doors?|actuation|suspension|brake|gearbox|aerodynamics?|technology)\b/i.test(judul)) {
+    return false;
+  }
+  // Tanpa "\b" di ujung: huruf beraksen ("coupé") bukan \w di JS.
+  return /\b(car|automobile|vehicle|supercar|hypercar|roadster|coup|sedan|hatchback|convertible)/i.test(deskripsi);
+}
+
+/** Skor judul: judul persis selalu menang atas model lain yang mirip. */
+export function skorJudulWeb(judul: string, query: string): number {
+  const kata = kataKunci(query);
+  if (!kata.length) return 0;
+  const j = judul.toLowerCase().trim();
+  if (j === query.toLowerCase().trim()) return 1;
+  const cocok = kata.filter((k) => j.includes(k)).length;
+  const dasar = cocok / kata.length;
+  const awalan = j.startsWith(kata[0]) ? 0.15 : 0;
+  const tambahan = Math.max(0, j.split(/\s+/).filter(Boolean).length - kata.length);
+  return Math.min(1, Math.max(0, dasar + awalan - 0.18 * tambahan)) * 0.85;
+}
+
+/**
+ * Mencari banyak mobil sekaligus di internet.
+ *
+ * Satu permintaan `generator=search` mengembalikan deskripsi, gambar, dan
+ * wikitext sekaligus. Dulu tiap kandidat butuh beberapa permintaan, dan itu
+ * memicu HTTP 429. Spesifikasi lengkap tetap disusun `researchCar` saat
+ * kandidat dipilih.
+ */
+/** Kueri cadangan: buang kode generasi ("MK5", "R34") yang tidak ada di Wikipedia. */
+export function varianKueriWeb(q: string): string[] {
+  const hasil: string[] = [];
+  const tanpaKode = q.replace(/\b(mk|generation|gen)\s*[ivx\d]+\b/gi, '').replace(/\s+/g, ' ').trim();
+  if (tanpaKode && tanpaKode !== q) hasil.push(tanpaKode);
+  // Buang kata terakhir satu per satu: "Toyota Supra MK5" -> "Toyota Supra".
+  let potong = q;
+  while (potong.includes(' ') && hasil.length < 3) {
+    potong = potong.replace(/\s+\S+$/, '');
+    if (potong.length >= 4 && !hasil.includes(potong)) hasil.push(potong);
+  }
+  return hasil;
+}
+
+export async function cariMobilWeb(query: string, limit = 8): Promise<KandidatWeb[]> {
+  const q = query.trim().replace(/\s+/g, ' ');
+  if (q.length < 2) return [];
+
+  // Kata kunci asli dicoba lebih dulu; cadangan hanya dipakai bila kosong.
+  for (const percobaan of [q, ...varianKueriWeb(q)]) {
+    const hasil = await cariSekali(percobaan, limit);
+    if (hasil.length) return hasil;
+  }
+  return [];
+}
+
+async function cariSekali(q: string, limit: number): Promise<KandidatWeb[]> {
+  const params = new URLSearchParams({
+    action: 'query',
+    format: 'json',
+    origin: '*',
+    generator: 'search',
+    gsrsearch: q,
+    gsrlimit: String(Math.min(limit * 2, 20)),
+    prop: 'extracts|pageimages|revisions',
+    exintro: '1',
+    explaintext: '1',
+    exsentences: '3',
+    piprop: 'original',
+    rvprop: 'content',
+    rvslots: 'main',
+  });
+  const data = await getJson(`${WIKI}?${params}`);
+  const pages = Object.values((data?.query?.pages ?? {}) as Record<string, any>);
+
+  const kandidat: (KandidatWeb & { skor: number })[] = [];
+  for (const page of pages) {
+    const judul = String(page.title ?? '');
+    const deskripsi = String(page.extract ?? '').trim();
+    const gambarUrl = page.original?.source ?? '';
+    if (!layakMobil(judul, deskripsi, gambarUrl)) continue;
+
+    const wikitext = page.revisions?.[0]?.slots?.main?.['*'] ?? '';
+    const tahun = rapikanWikitext(
+      nilaiInfobox(wikitext, 'production') || nilaiInfobox(wikitext, 'model_years'),
+    );
+    const tenaga = rapikanWikitext(
+      nilaiInfobox(wikitext, 'powerout') ||
+        nilaiInfobox(wikitext, 'power') ||
+        nilaiInfobox(wikitext, 'output'),
+    );
+
+    // Tanpa satu kata pun yang sama, halaman ini bukan yang dicari: mencari
+    // "Rimac Nevera" tidak boleh menampilkan "Koenigsegg Regera".
+    const skor = skorJudulWeb(judul, q);
+    if (skor <= 0) continue;
+
+    kandidat.push({
+      judul,
+      nama: judul,
+      tahun,
+      tenaga,
+      deskripsi,
+      gambarUrl,
+      halamanUrl: `https://en.wikipedia.org/wiki/${encodeURIComponent(judul.replace(/ /g, '_'))}`,
+      skor,
+    });
+  }
+
+  return kandidat
+    .sort((a, b) => b.skor - a.skor)
+    .slice(0, limit)
+    .map(({ skor: _skor, ...sisa }) => sisa);
 }

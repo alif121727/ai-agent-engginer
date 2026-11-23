@@ -18,6 +18,17 @@ import { resolveBriefLook } from '../src/core/brief-look.ts';
 import { ConnectionMonitor } from '../src/net/monitor.ts';
 import { stagesFor, presetAgents, listPresets } from '../src/agents/registry.ts';
 import { assertGuardRejects } from '../src/agents/runner.ts';
+import {
+  kosongkanCache,
+  rapikanNilai,
+  ambilInfobox,
+  merkDari,
+  skorJudul,
+  layakJadiMobil,
+  spekDariWikitext,
+  varianKueri,
+} from '../src/search/web.ts';
+import { cariMobilHybrid, kartuDariKatalog } from '../src/search/hybrid.ts';
 import { checkAssets } from '../src/pipeline/quality.ts';
 import { createApp } from '../src/api/server.ts';
 import { fingerprintFor } from '../src/publish/instagram.ts';
@@ -2536,6 +2547,171 @@ await check('gerbang audio menolak narasi yang hilang (video tanpa suara)', () =
   // Regresi bug lama: video 30 detik lolos validasi angka walau tanpa narasi,
   // jadi keberadaan trek audio harus diperiksa terpisah.
   assert(report.problems.length > 0, 'video tanpa audio harus ditolak');
+});
+
+await check('pencarian: unit mesin diambil dari templat convert, bukan daftar unit', () => {
+  // Regresi: {{convert|185|PS|kW hp}} pernah jadi "185 PS kW hp 0".
+  const hasil = rapikanNilai('{{convert|185|PS|kW hp|0|abbr=on}}');
+  assert(hasil === '185 PS', `harus "185 PS", dapat "${hasil}"`);
+});
+
+await check('pencarian: satu nilai dengan dua templat tidak kehilangan separuh isinya', () => {
+  // Regresi: parser berhenti di "}}" pertama, jadi torsi hilang.
+  const infobox = '| powerout = {{convert|185|PS|kW hp|0}} and {{convert|160|Nm|0}}\n| x = 1';
+  const hasil = rapikanNilai(ambilInfobox(infobox, 'powerout'));
+  assert(hasil.includes('185 PS'), `tenaga hilang: "${hasil}"`);
+  assert(hasil.includes('160 Nm'), `torsi hilang: "${hasil}"`);
+});
+
+await check('pencarian: tautan wiki dan entitas HTML dibersihkan', () => {
+  const infobox = "| engine = 6.5&nbsp;L ''[[Lamborghini V12#Second Generation|L539]]'' [[V12 engine|V12]]\n| y = 2";
+  const hasil = rapikanNilai(ambilInfobox(infobox, 'engine'));
+  assert(hasil === '6.5 L L539 V12', `dapat "${hasil}"`);
+});
+
+await check('pencarian: kolom kosong tidak diisi nilai karangan', () => {
+  const spek = spekDariWikitext('| transmission = \n| production = \n');
+  assert(spek.mesin === '', 'mesin harus kosong bila tidak ada');
+  assert(spek.tahun === '', 'tahun harus kosong bila tidak ada');
+  assert(spek.tenaga === '', 'tenaga harus kosong bila tidak ada');
+});
+
+await check('pencarian: isi silinder dihitung dari bore/stroke/cyl (nyata, bukan karangan)', () => {
+  // Kasus nyata Koenigsegg Jesko: {{engine size|bore=92|stroke=95.25|cyl=8}}
+  // Wikipedia menulis 5.065 cc, jadi hasil hitungan harus sama.
+  const hasil = rapikanNilai(
+    '{{convert|{{engine size|bore=92|stroke=95.25|cyl=8|scale=1000000|rnd=3}}|L|cc L cuin|abbr=on|0|order=out}} [[V8 engine|V8]]',
+  );
+  assert(hasil.startsWith('5065 cc'), `harus 5065 cc, dapat "${hasil}"`);
+  assert(hasil.endsWith('V8'), `tautan V8 harus jadi teks, dapat "${hasil}"`);
+});
+
+await check('pencarian: tahun diambil dari production dan model_years', () => {
+  const spek = spekDariWikitext('| production = 2019–2026\n');
+  assert(spek.tahun === '2019–2026', `dapat "${spek.tahun}"`);
+  const spek2 = spekDariWikitext('| model_years = 2020–2024\n');
+  assert(spek2.tahun === '2020–2024', `dapat "${spek2.tahun}"`);
+});
+
+await check('pencarian: merek terpanjang menang (Mercedes-Benz, bukan Mercedes)', () => {
+  assert(merkDari('Mercedes-Benz SLS AMG') === 'Mercedes-Benz', 'harus Mercedes-Benz');
+  assert(merkDari('Mercedes-AMG GT') === 'Mercedes-AMG', 'harus Mercedes-AMG');
+  assert(merkDari('Toyota Supra') === 'Toyota', 'harus Toyota');
+});
+
+await check('pencarian: skor judul menolak hasil yang meleset', () => {
+  // "Nissan Skyline R34" harus cocok dengan halaman Skyline, bukan Laurel.
+  assert(skorJudul('Nissan Skyline GT-R', 'Nissan Skyline R34') >= 0.5, 'Skyline harus lolos');
+  assert(skorJudul('Nissan Laurel', 'Nissan Skyline R34') < 0.5, 'Laurel harus ditolak');
+});
+
+await check('pencarian: halaman non-mobil dan halaman merek disaring', () => {
+  const gambar = { source: 'https://x/y.jpg' };
+  const dasar = {
+    extract: 'The Nissan Skyline GT-R is a sports car produced by Nissan, introduced in 1969.',
+    original: gambar,
+  };
+  assert(!layakJadiMobil({ ...dasar, title: 'Toyota Supra in motorsport' }, 'Toyota Supra'), 'motorsport harus ditolak');
+  assert(!layakJadiMobil({ ...dasar, title: 'BMW M4 DTM' }, 'BMW M4'), 'versi DTM harus ditolak');
+  assert(!layakJadiMobil({ ...dasar, title: 'Lamborghini' }, 'Lamborghini Aventador'), 'halaman merek harus ditolak');
+  assert(!layakJadiMobil({ ...dasar, title: 'Nissan Skyline', extract: '' }, 'Nissan Skyline'), 'tanpa deskripsi harus ditolak');
+  assert(!layakJadiMobil({ title: 'Nissan Skyline', extract: dasar.extract }, 'Nissan Skyline'), 'tanpa gambar harus ditolak');
+  assert(layakJadiMobil({ ...dasar, title: 'Nissan Skyline GT-R' }, 'Nissan Skyline R34'), 'model sah harus lolos');
+});
+
+await check('pencarian: halaman tokoh tidak dianggap mobil', () => {
+  // Regresi nyata: "Koenigsegg Jesko" memunculkan "Christian von Koenigsegg"
+  // lengkap dengan foto, dan lolos semua syarat lain.
+  const gambar = { source: 'https://x/y.jpg' };
+  const bio = {
+    title: 'Christian von Koenigsegg',
+    extract:
+      'Christian Erland Harald von Koenigsegg (born 2 July 1972) is a Swedish automotive engineer and businessman. He founded the car manufacturer Koenigsegg Automotive AB in 1994.',
+    original: gambar,
+  };
+  assert(!layakJadiMobil(bio, 'Koenigsegg Jesko'), 'biografi tokoh harus ditolak');
+});
+
+await check('pencarian: mobil dengan kata beraksen tetap lolos', () => {
+  // "coupé" gagal cocok dengan \b karena huruf beraksen bukan \w di JS.
+  const mobil = {
+    title: 'BMW M4',
+    extract: 'The BMW M4 is a high-performance version of the BMW 4 Series coupé and convertible, developed by BMW M GmbH.',
+    original: { source: 'https://x/y.jpg' },
+  };
+  assert(layakJadiMobil(mobil, 'BMW M4'), 'BMW M4 harus lolos meski deskripsi memakai "coupé"');
+});
+
+await check('pencarian: varian kata kunci menangani penulisan wiki', () => {
+  const v = varianKueri('Toyota Supra MK5');
+  assert(v.includes('Toyota Supra MK V'), 'harus mencoba angka Romawi');
+  assert(v.includes('Toyota Supra'), 'harus mencoba tanpa penanda generasi');
+  const v2 = varianKueri('Porsche 911 GT3 RS');
+  assert(v2.includes('Porsche 911 GT3'), 'harus mencoba tanpa akhiran RS');
+});
+
+await check('pencarian hybrid: katalog lokal dipakai lebih dulu tanpa internet', async () => {
+  // "r34" ada di katalog, jadi internet tidak boleh dipanggil sama sekali.
+  const hasil = await cariMobilHybrid('r34', { lokalSaja: true, limit: 5 });
+  assert(hasil.kartu.length > 0, 'harus menemukan R34 di katalog');
+  assert(hasil.kartu.every((k) => k.sumber === 'lokal'), 'semua hasil harus dari lokal');
+  assert(hasil.kartu[0].nama.includes('Skyline'), `dapat "${hasil.kartu[0].nama}"`);
+});
+
+await check('pencarian hybrid: kartu lokal membawa slug untuk pemilihan model', () => {
+  const kartu = kartuDariKatalog({
+    slug: 'toyota-gr-supra', merk: 'Toyota', model: 'Toyota GR Supra', seri: 'A90',
+    tahun: '2019–2026', kategori: 'sport', mesin: 'I6 3.0L turbo', tenaga: '387 PS',
+    torsi: '500 Nm', layout: 'FR', berat: '1.520 kg', nol100: '4,1 dtk', vmax: '250 km/jam',
+    tagline: 'Kembalinya legenda.', deskripsi: 'Supra generasi kelima.', sumber: 'https://x',
+  }, '/api/assets/toyota-gr-supra/cover');
+  assert(kartu.slug === 'toyota-gr-supra', 'slug harus ikut');
+  assert(kartu.gambarUrl.includes('cover'), 'gambar lokal harus dipakai');
+  assert(kartu.sumber === 'lokal', 'sumber harus lokal');
+});
+
+await check('pencarian hybrid: satu hasil lokal yang sangat cocok tidak memanggil internet', async () => {
+  // Regresi: "Porsche 911 GT3 RS" ada di katalog, tapi internet tetap dipanggil
+  // dan menambah 911 (993/996/997) yang tidak diminta pengguna.
+  const hasil = await cariMobilHybrid('Porsche 911 GT3 RS', { limit: 5 });
+  assert(hasil.sumberDominan === 'lokal', `harus lokal, dapat ${hasil.sumberDominan}`);
+  assert(hasil.kartu.length === 1, `harus 1 kartu, dapat ${hasil.kartu.length}`);
+  assert(hasil.kartu[0].nama === 'Porsche 911 GT3 RS', `dapat "${hasil.kartu[0].nama}"`);
+});
+
+await check('pencarian web studio: kueri cadangan membuang kode generasi', async () => {
+  const { varianKueriWeb } = await import('../studio/src/services/research.ts');
+  const v = varianKueriWeb('Toyota Supra MK5');
+  assert(v.includes('Toyota Supra'), `harus memuat "Toyota Supra", dapat ${JSON.stringify(v)}`);
+  assert(!v.includes('Toyota Supra MK5'), 'kueri asli tidak boleh jadi cadangan');
+});
+
+await check('pencarian web studio: rapikan wikitext tanpa mengarang', async () => {
+  const { rapikanWikitext } = await import('../studio/src/services/research.ts');
+  assert(
+    rapikanWikitext('{{convert|1.6|L|cc|0|order=out}}') === '1600 cc',
+    `dapat ${rapikanWikitext('{{convert|1.6|L|cc|0|order=out}}')}`,
+  );
+  // Catatan kaki dibuang, "present" diterjemahkan, tag HTML hilang.
+  assert(rapikanWikitext('2024<ref name=x>[1]</ref>–present') === '2024–sekarang',
+    `dapat ${rapikanWikitext('2024<ref name=x>[1]</ref>–present')}`);
+  assert(rapikanWikitext('') === '', 'kosong tetap kosong');
+});
+
+await check('pencarian web studio: judul persis mengalahkan model mirip', async () => {
+  const { skorJudulWeb } = await import('../studio/src/services/research.ts');
+  const q = 'Bugatti Chiron';
+  const persis = skorJudulWeb('Bugatti Chiron', q);
+  const konsep = skorJudulWeb('Bugatti 18/3 Chiron', q);
+  assert(persis === 1, `judul persis harus 1, dapat ${persis}`);
+  assert(persis > konsep, `persis (${persis}) harus di atas konsep (${konsep})`);
+  assert(skorJudulWeb('Rimac Nevera', q) === 0, 'tanpa kata yang sama skornya 0');
+});
+
+await check('pencarian hybrid: kata kunci tak dikenal tidak mengarang hasil', async () => {
+  const hasil = await cariMobilHybrid('zzzqqq', { lokalSaja: true });
+  assert(hasil.kartu.length === 0, 'tidak boleh ada hasil karangan');
+  assert(Boolean(hasil.catatan), 'harus ada catatan alasan kosong');
 });
 
 console.log(`\n${passed} pemeriksaan lulus, ${failures.length} gagal`);

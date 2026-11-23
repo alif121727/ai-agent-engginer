@@ -103,7 +103,13 @@ function scoreAgainst(query: string, qTokens: string[], qCompact: string, name: 
     return 0.9 - (0.2 * extraChars) / Math.max(1, qCompact.length);
   }
 
-  const matched = qTokens.filter((qt) => nTokens.some((nt) => nt === qt || nt.startsWith(qt) || qt.startsWith(nt)));
+  // Prefix matching is only safe for tokens long enough to be meaningful.
+  // Without the length guard a single-letter token ("z" in "Z-tune") matches
+  // any query starting with that letter, so "zzzqqq" resolved to the Z-tune
+  // and the job silently used the wrong car's photos.
+  const mirip = (a: string, b: string) =>
+    a === b || (a.length >= 3 && b.length >= 3 && (a.startsWith(b) || b.startsWith(a)));
+  const matched = qTokens.filter((qt) => nTokens.some((nt) => mirip(qt, nt)));
   if (!matched.length) return 0;
 
   // Extra model words are allowed (the user may say "Nissan GT-R" for the

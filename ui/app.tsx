@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 type Connection = 'ONLINE' | 'PAUSED_OFFLINE';
@@ -51,6 +51,31 @@ interface CatalogModel {
   tenaga: string;
   torsi: string;
   tagline: string;
+}
+
+/** Satu kartu hasil pencarian; bentuknya sama untuk sumber lokal dan internet. */
+interface KartuMobil {
+  id: string;
+  nama: string;
+  merk: string;
+  tahun: string;
+  ringkas: string;
+  gambarUrl: string;
+  sumber: 'lokal' | 'internet';
+  slug?: string;
+  mesin?: string;
+  tenaga?: string;
+  transmisi?: string;
+  generasi?: string;
+  deskripsi?: string;
+  halamanUrl?: string;
+}
+
+interface HasilCari {
+  kartu: KartuMobil[];
+  sumberDominan: 'lokal' | 'internet' | 'campuran';
+  catatan?: string;
+  totalKatalog?: number;
 }
 
 interface Config {
@@ -416,6 +441,221 @@ function Dashboard({ navigate, connection }: { navigate: (to: string) => void; c
   );
 }
 
+// ------------------------------------------------------- pencarian internet
+
+/**
+ * Pencarian mobil lintas internet.
+ *
+ * Katalog lokal tetap jadi jalur utama (cepat, foto dan suara mesin sudah
+ * siap), dan internet dipakai untuk mobil yang belum ada di katalog. Label
+ * sumber ditampilkan di setiap kartu supaya pengguna tahu apa yang dipakai.
+ */
+function CariInternet({ onPilih }: { onPilih: (kartu: KartuMobil) => void }) {
+  const [kata, setKata] = useState('');
+  const [hasil, setHasil] = useState<HasilCari | null>(null);
+  const [memuat, setMemuat] = useState(false);
+  const [galat, setGalat] = useState('');
+  const [detail, setDetail] = useState<KartuMobil | null>(null);
+
+  const cari = async (lokalSaja = false) => {
+    const q = kata.trim();
+    if (q.length < 2) return;
+    setMemuat(true);
+    setGalat('');
+    try {
+      const res = await api.get<HasilCari>(
+        `/cars/search?q=${encodeURIComponent(q)}&limit=8${lokalSaja ? '&sumber=lokal' : ''}`,
+      );
+      setHasil(res);
+    } catch (err) {
+      setGalat(err instanceof Error ? err.message : 'pencarian gagal');
+      setHasil(null);
+    } finally {
+      setMemuat(false);
+    }
+  };
+
+  return (
+    <div style={{ marginTop: 24 }}>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+        <h2 style={{ margin: 0 }}>Cari mobil dari seluruh dunia</h2>
+        <span className="badge" title="Sumber: katalog lokal lalu Wikipedia">
+          Internet aktif
+        </span>
+      </div>
+
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          void cari();
+        }}
+        style={{ display: 'flex', gap: 12, marginTop: 12, flexWrap: 'wrap' }}
+      >
+        <input
+          aria-label="Cari mobil dari internet"
+          value={kata}
+          onChange={(e) => setKata(e.target.value)}
+          placeholder="Cari mobil dari seluruh dunia…"
+          style={{ flex: '1 1 260px' }}
+        />
+        <button type="submit" className="btn btn--primary" disabled={memuat || kata.trim().length < 2}>
+          {memuat ? 'Mencari…' : 'Cari'}
+        </button>
+        {hasil && (
+          <button type="button" className="btn" onClick={() => void cari(true)} disabled={memuat}>
+            Katalog lokal saja
+          </button>
+        )}
+      </form>
+
+      {memuat && (
+        <p className="muted" style={{ marginTop: 12 }}>
+          <span className="spinner" aria-hidden="true" /> Menghubungi internet, mohon tunggu…
+        </p>
+      )}
+
+      {galat && (
+        <p className="muted" style={{ marginTop: 12, color: 'var(--orange)' }}>
+          {galat}
+        </p>
+      )}
+
+      {hasil && !memuat && (
+        <>
+          <p className="muted" style={{ marginTop: 12, fontSize: '0.85rem' }}>
+            {hasil.kartu.length
+              ? `${hasil.kartu.length} hasil · sumber: ${
+                  hasil.sumberDominan === 'campuran'
+                    ? 'katalog lokal + internet'
+                    : hasil.sumberDominan === 'internet'
+                      ? 'internet'
+                      : 'katalog lokal'
+                }`
+              : hasil.catatan ?? 'Tidak ada hasil'}
+          </p>
+
+          {hasil.kartu.length > 0 && (
+            <div className="model-grid" style={{ marginTop: 12 }}>
+              {hasil.kartu.map((k) => (
+                <article key={k.id} className="model-card">
+                  {k.gambarUrl ? (
+                    <img
+                      src={k.gambarUrl}
+                      alt={k.nama}
+                      loading="lazy"
+                      style={{ width: '100%', height: 120, objectFit: 'cover', borderRadius: 10 }}
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <div
+                      className="muted"
+                      style={{
+                        height: 120,
+                        display: 'grid',
+                        placeItems: 'center',
+                        border: '1px dashed var(--border)',
+                        borderRadius: 10,
+                        fontSize: '0.8rem',
+                      }}
+                    >
+                      tanpa foto
+                    </div>
+                  )}
+                  <span className="badge" style={{ alignSelf: 'flex-start' }}>
+                    {k.sumber === 'internet' ? 'Internet' : 'Database lokal'}
+                  </span>
+                  <strong style={{ fontFamily: 'var(--font-display)' }}>{k.nama}</strong>
+                  <span className="muted" style={{ fontSize: '0.8rem' }}>
+                    {[k.merk, k.tahun, k.tenaga].filter(Boolean).join(' · ')}
+                  </span>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 'auto' }}>
+                    <button className="btn btn--primary" onClick={() => onPilih(k)}>
+                      Pilih mobil
+                    </button>
+                    <button className="btn" onClick={() => setDetail(k)}>
+                      Lihat detail
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {detail && (
+        <div
+          role="dialog"
+          aria-label={`Detail ${detail.nama}`}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.7)',
+            display: 'grid',
+            placeItems: 'center',
+            padding: 24,
+            zIndex: 50,
+          }}
+          onClick={() => setDetail(null)}
+        >
+          <div
+            className="card"
+            style={{ maxWidth: 560, width: '100%', maxHeight: '85vh', overflow: 'auto' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ marginTop: 0 }}>{detail.nama}</h3>
+            {detail.gambarUrl && (
+              <img
+                src={detail.gambarUrl}
+                alt={detail.nama}
+                style={{ width: '100%', borderRadius: 12, marginBottom: 12 }}
+              />
+            )}
+            <dl style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '6px 12px', fontSize: '0.88rem' }}>
+              {[
+                ['Merek', detail.merk],
+                ['Tahun', detail.tahun],
+                ['Generasi', detail.generasi],
+                ['Mesin', detail.mesin],
+                ['Tenaga', detail.tenaga],
+                ['Transmisi', detail.transmisi],
+                ['Sumber', detail.sumber === 'internet' ? 'Internet (Wikipedia)' : 'Database lokal'],
+              ]
+                .filter(([, v]) => v)
+                .map(([label, nilai]) => (
+                  <Fragment key={label}>
+                    <dt className="muted">{label}</dt>
+                    <dd style={{ margin: 0 }}>{nilai}</dd>
+                  </Fragment>
+                ))}
+            </dl>
+            {detail.deskripsi && (
+              <p className="muted" style={{ fontSize: '0.85rem' }}>{detail.deskripsi}</p>
+            )}
+            {detail.halamanUrl && (
+              <p style={{ fontSize: '0.8rem' }}>
+                <a href={detail.halamanUrl} target="_blank" rel="noreferrer noopener">
+                  Buka sumber
+                </a>
+              </p>
+            )}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn btn--primary" onClick={() => { onPilih(detail); setDetail(null); }}>
+                Pilih mobil ini
+              </button>
+              <button className="btn" onClick={() => setDetail(null)}>
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ------------------------------------------------------------ new template
 
 function NewTemplate({ navigate }: { navigate: (to: string) => void }) {
@@ -539,6 +779,15 @@ function NewTemplate({ navigate }: { navigate: (to: string) => void }) {
                 Tidak ada model yang cocok. Tulis sendiri di kolom bawah.
               </p>
             )}
+            <CariInternet
+              onPilih={(kartu) => {
+                // Nama model dipakai pipeline untuk mencari foto dan suara
+                // mesin, jadi yang dipilih adalah nama modelnya, bukan id kartu.
+                setModel(kartu.nama);
+                setCari(kartu.nama);
+              }}
+            />
+
             <div className="field" style={{ marginTop: 24 }}>
               <label htmlFor="model-custom">Atau tulis model sendiri</label>
               <input

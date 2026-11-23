@@ -6,6 +6,7 @@ import { CATALOG, type Car } from '../data/catalog';
 import { MIN_DUR, MAX_DUR, VIDEO_MODELS } from '../data/models';
 import { buildBrief, buildShots, type Brief, type Shot } from '../services/api';
 import { ResearchPanel } from '../components/ResearchPanel';
+import { WebResults } from '../components/WebResults';
 import { PromptPanel } from '../components/PromptPanel';
 import { listResearched } from '../data/researched';
 
@@ -197,7 +198,26 @@ export function NewVideo({ go, preselect }: { go: (r: Route) => void; preselect?
             </div>
           )}
 
-          {/* Riset mandiri: hanya muncul saat katalog tidak punya jawabannya. */}
+          {/* Pencarian internet selalu tersedia: model yang belum ada di
+              katalog tetap bisa dipakai tanpa menunggu katalog kosong. */}
+          {q.trim().length >= 2 && (
+            <WebResults
+              query={q}
+              onPick={(entry) => {
+                setResearched(listResearched());
+                setCar(entry.car);
+                setBrief(null);
+                setShots([]);
+                toast({
+                  title: 'Model dari internet dipakai',
+                  body: `${entry.car.model} — ${entry.missing.length ? `tanpa ${entry.missing.join(', ')}` : 'data lengkap'}`,
+                  kind: 'ok',
+                });
+              }}
+            />
+          )}
+
+          {/* Riset mendalam: susun satu model lengkap beserta sumbernya. */}
           {list.length === 0 && q.trim().length >= 2 && (
             <ResearchPanel
               query={q}

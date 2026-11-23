@@ -11,6 +11,7 @@ import { generateAiTheme } from '../core/theme-ai.ts';
 import { searchTemplates } from '../core/templates.ts';
 import { resolveBriefLook } from '../core/brief-look.ts';
 import { loadCatalog, aliasesFor } from '../core/catalog.ts';
+import { cariMobilHybrid, jumlahKatalog } from '../search/hybrid.ts';
 import { planScenes, estimateCost } from '../pipeline/scenes.ts';
 import { ffmpegAvailable } from '../render/ffmpeg.ts';
 import { paths, slugify, jobDir } from '../core/fsx.ts';
@@ -644,6 +645,53 @@ export function createApp(opts: AppOptions = {}) {
     return STOCK_MARKERS.some((re) => re.test(text)) ? 'Gambar stok acak, bukan kendaraan' : null;
   };
 
+  /**
+   * Pencarian mobil hybrid: katalog lokal dulu, internet bila kurang.
+   *
+   * Pencarian internet memakan waktu beberapa detik, jadi dibatasi lajunya
+   * per pengguna; tanpa batas, ketikan cepat di kolom cari akan menembak
+   * Wikipedia berkali-kali dan memicu pemblokiran.
+   */
+  // Pencarian internet memakai kuota Wikipedia, jadi dibatasi per akun.
+  const cariBatas = rateLimit(30, 60_000);
+  app.get('/api/cars/search', async (req, res) => {
+    const q = String(req.query.q ?? '').trim();
+    const lokalSaja = String(req.query.sumber ?? '') === 'lokal';
+    const limit = Math.min(20, Math.max(1, Number(req.query.limit ?? 8) || 8));
+
+    if (q.length < 2) {
+      res.json({ kartu: [], sumberDominan: 'lokal', catatan: 'Kata kunci terlalu pendek', totalKatalog: jumlahKatalog() });
+      return;
+    }
+
+    const kunciBatas = (req as Request & { user?: { id?: string } }).user?.id ?? req.ip ?? 'anon';
+    if (!cariBatas.allow(kunciBatas)) {
+      res.status(429).json({ error: 'Terlalu banyak pencarian, tunggu sebentar' });
+      return;
+    }
+    cariBatas.fail(kunciBatas);
+
+    try {
+      const hasil = await cariMobilHybrid(q, {
+        lokalSaja,
+        limit,
+        adaFoto: (slug) => {
+          const dir = path.join(paths.assets, 'own', assetFolderSlug(slug));
+          return fs.existsSync(dir) && fs.readdirSync(dir).some((f) => /\.(jpe?g|png|webp)$/i.test(f));
+        },
+      });
+      res.json({ ...hasil, totalKatalog: jumlahKatalog() });
+    } catch (err) {
+      // Pencarian tidak boleh membuat halaman gagal; UI cukup diberi tahu.
+      res.status(200).json({
+        kartu: [],
+        sumberDominan: 'lokal',
+        catatan: `Pencarian gagal: ${err instanceof Error ? err.message : String(err)}`,
+        totalKatalog: jumlahKatalog(),
+      });
+    }
+  });
+
   app.get('/api/assets/:model', async (req, res) => {
     const dir = ownDir(req.params.model);
     const files = fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => ASSET_EXT.test(f)) : [];
@@ -653,6 +701,29 @@ export function createApp(opts: AppOptions = {}) {
       if (flag) warnings[file] = flag;
     }
     res.json({ model: req.params.model, folder: path.relative(paths.root, dir), files, warnings });
+  });
+
+  /**
+   * Foto sampul sebuah model, dipakai kartu hasil pencarian.
+   *
+   * Berkas dipilih yang bukan video dan bukan metadata; urutan nama dipakai
+   * supaya hasilnya stabil antar-permintaan (foto-1 selalu yang pertama).
+   */
+  app.get('/api/assets/:model/cover', async (req, res) => {
+    const dir = ownDir(req.params.model);
+    if (!fs.existsSync(dir)) {
+      res.status(404).json({ error: 'folder aset tidak ada' });
+      return;
+    }
+    const foto = fs
+      .readdirSync(dir)
+      .filter((f) => /\.(jpe?g|png|webp)$/i.test(f))
+      .sort((a, b) => a.localeCompare(b, 'id', { numeric: true }));
+    if (!foto.length) {
+      res.status(404).json({ error: 'belum ada foto untuk model ini' });
+      return;
+    }
+    res.sendFile(path.join(dir, foto[0]));
   });
 
   app.post(

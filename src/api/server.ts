@@ -732,7 +732,7 @@ export function createApp(opts: AppOptions = {}) {
         image: Boolean(process.env.IMAGE_PROVIDER_API_KEY),
         video: Boolean(process.env.VIDEO_PROVIDER_API_KEY),
         stock: Boolean(process.env.STOCK_API_KEY),
-        llm: Boolean(process.env.LLM_API_KEY),
+        llm: Boolean(process.env.LLM_API_KEY && process.env.LLM_BASE_URL && process.env.LLM_MODEL),
         instagram: Boolean(process.env.IG_ACCESS_TOKEN),
       },
     });

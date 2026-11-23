@@ -2316,6 +2316,86 @@ await check('naskah jatuh ke jalur lokal saat LLM gagal, render tidak ikut gagal
   }
 });
 
+await check('saldo LLM habis dilaporkan spesifik, bukan "LLM gagal"', async () => {
+  const http = await import('node:http');
+  const { buildScript } = await import('../src/pipeline/script.ts');
+  const scenes = [0].map((i) => ({
+    index: i, key: 'hook', label: 'X', start: 0, duration: 5, shot: '', camera: '',
+    lens: '', lighting: '', location: '', prompt: '', negativePrompt: '',
+    onScreenText: '', voiceover: '',
+  }));
+
+  const server = http.createServer((_req, res) => {
+    res.writeHead(402, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ error: { message: 'Insufficient Balance' } }));
+  });
+  await new Promise<void>((r) => server.listen(0, '127.0.0.1', () => r()));
+  const port = (server.address() as { port: number }).port;
+
+  const lama = { ...process.env };
+  process.env.LLM_BASE_URL = `http://127.0.0.1:${port}/v1`;
+  process.env.LLM_API_KEY = 'uji';
+  process.env.LLM_MODEL = 'uji-model';
+  try {
+    const draft = await buildScript({
+      brief: { model: 'Porsche 911 GT3 RS' },
+      scenes: scenes as never,
+      specs: [],
+      detail: null,
+    });
+    assert(draft.sumber === 'lokal', 'harus jatuh ke lokal');
+    assert(
+      (draft.catatan ?? '').includes('saldo'),
+      `catatan harus menyebut saldo, dapat: ${draft.catatan}`,
+    );
+    assert(
+      !(draft.catatan ?? '').includes('tidak valid'),
+      'penyebab harus spesifik, bukan pesan kabur',
+    );
+  } finally {
+    process.env = lama;
+    server.close();
+  }
+});
+
+await check('kunci LLM ditolak dibedakan dari saldo habis', async () => {
+  const http = await import('node:http');
+  const { buildScript } = await import('../src/pipeline/script.ts');
+  const scenes = [0].map((i) => ({
+    index: i, key: 'hook', label: 'X', start: 0, duration: 5, shot: '', camera: '',
+    lens: '', lighting: '', location: '', prompt: '', negativePrompt: '',
+    onScreenText: '', voiceover: '',
+  }));
+
+  const server = http.createServer((_req, res) => {
+    res.writeHead(401, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ error: { message: 'invalid api key' } }));
+  });
+  await new Promise<void>((r) => server.listen(0, '127.0.0.1', () => r()));
+  const port = (server.address() as { port: number }).port;
+
+  const lama = { ...process.env };
+  process.env.LLM_BASE_URL = `http://127.0.0.1:${port}/v1`;
+  process.env.LLM_API_KEY = 'salah';
+  process.env.LLM_MODEL = 'uji-model';
+  try {
+    const draft = await buildScript({
+      brief: { model: 'Porsche 911 GT3 RS' },
+      scenes: scenes as never,
+      specs: [],
+      detail: null,
+    });
+    assert(draft.sumber === 'lokal', 'harus jatuh ke lokal');
+    assert(
+      (draft.catatan ?? '').includes('kunci'),
+      `catatan harus menyebut kunci ditolak, dapat: ${draft.catatan}`,
+    );
+  } finally {
+    process.env = lama;
+    server.close();
+  }
+});
+
 await check('gaya overlay dipilih dari isi teks, bukan satu gaya untuk semua', async () => {
   const { chooseOverlayStyle, parseOverlay, buildOverlayFilters } = await import('../src/render/overlay.ts');
 

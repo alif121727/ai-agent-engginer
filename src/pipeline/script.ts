@@ -149,12 +149,18 @@ export function buildScriptPrompt(input: ScriptInput): string {
  * fungsi ini mengembalikan null supaya pemanggil bisa memakai jalur lokal.
  * Render tidak boleh gagal hanya karena LLM sedang bermasalah.
  */
+export interface LlmAttempt {
+  draft: ScriptDraft | null;
+  /** Alasan kegagalan yang bisa ditampilkan ke pengguna, bukan pesan kabur. */
+  alasan?: string;
+}
+
 export async function generateScriptWithLlm(
   input: ScriptInput,
   opts: { timeoutMs?: number } = {},
-): Promise<ScriptDraft | null> {
+): Promise<LlmAttempt> {
   const cfg = llmConfig();
-  if (!cfg) return null;
+  if (!cfg) return { draft: null, alasan: 'LLM belum dikonfigurasi' };
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? 60_000);
@@ -172,17 +178,27 @@ export async function generateScriptWithLlm(
         ],
       }),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      // 402 = saldo habis, 401 = kunci salah. Dua hal ini butuh tindakan
+      // berbeda, jadi jangan disamarkan menjadi "LLM gagal".
+      const pesan =
+        res.status === 402
+          ? 'saldo LLM habis (HTTP 402)'
+          : res.status === 401 || res.status === 403
+            ? 'kunci LLM ditolak (HTTP ' + res.status + ')'
+            : `LLM membalas HTTP ${res.status}`;
+      return { draft: null, alasan: pesan };
+    }
 
     const data = (await res.json()) as {
       choices?: { message?: { content?: string } }[];
     };
     const mentah = data.choices?.[0]?.message?.content ?? '';
     const json = extractJson(mentah);
-    if (!json) return null;
+    if (!json) return { draft: null, alasan: 'balasan LLM bukan JSON' };
 
     const parsed = LlmScriptSchema.safeParse(json);
-    if (!parsed.success) return null;
+    if (!parsed.success) return { draft: null, alasan: 'balasan LLM tidak sesuai skema' };
 
     const byIndex = new Map(parsed.data.lines.map((l) => [l.sceneIndex, l]));
     const lines: ScriptLine[] = input.scenes.map((scene) => {
@@ -197,16 +213,24 @@ export async function generateScriptWithLlm(
 
     // Scene tanpa narasi akan menghasilkan video bisu di bagian itu, jadi
     // kelengkapan diperiksa sebelum hasil LLM dipakai.
-    if (lines.some((l) => l.voiceover.length < 8)) return null;
+    if (lines.some((l) => l.voiceover.length < 8)) {
+      return { draft: null, alasan: 'ada scene tanpa narasi dari LLM' };
+    }
 
     return {
-      model: input.brief.model,
-      tagline: input.brief.tagline ?? '',
-      lines,
-      sumber: 'llm',
+      draft: {
+        model: input.brief.model,
+        tagline: input.brief.tagline ?? '',
+        lines,
+        sumber: 'llm',
+      },
     };
-  } catch {
-    return null;
+  } catch (err) {
+    const alasan =
+      err instanceof Error && err.name === 'AbortError'
+        ? 'LLM melewati batas waktu'
+        : `LLM tidak dapat dihubungi: ${err instanceof Error ? err.message : String(err)}`;
+    return { draft: null, alasan };
   } finally {
     clearTimeout(timer);
   }
@@ -363,9 +387,12 @@ export async function buildScript(
   opts: { useLlm?: boolean; timeoutMs?: number } = {},
 ): Promise<ScriptDraft> {
   if (opts.useLlm !== false && llmTersedia()) {
-    const llm = await generateScriptWithLlm(input, opts);
-    if (llm) return llm;
-    return { ...buildLocalScript(input), catatan: 'LLM gagal atau tidak valid, dipakai naskah lokal' };
+    const percobaan = await generateScriptWithLlm(input, opts);
+    if (percobaan.draft) return percobaan.draft;
+    return {
+      ...buildLocalScript(input),
+      catatan: `${percobaan.alasan ?? 'LLM gagal'}; dipakai naskah lokal`,
+    };
   }
   return buildLocalScript(input);
 }

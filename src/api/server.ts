@@ -112,7 +112,8 @@ export function createApp(opts: AppOptions = {}) {
    * CORS untuk UI statis (Netlify/Pages) yang memakai backend ini lewat
    * `__STUDIO_API__`. Daftar origin eksplisit lewat env `CORS_ORIGINS`; tanpa
    * env ini tidak ada header CORS sama sekali, jadi sandbox tetap tertutup.
-   * `Access-Control-Allow-Credentials` wajib karena sesi memakai cookie.
+   * `Access-Control-Allow-Credentials` tetap dikirim untuk sesi cookie satu
+   * origin, meski UI lintas situs memakai Bearer token.
    */
   const corsOrigins = new Set(
     (process.env.CORS_ORIGINS ?? '')
@@ -128,7 +129,10 @@ export function createApp(opts: AppOptions = {}) {
         res.setHeader('Vary', 'Origin');
         res.setHeader('Access-Control-Allow-Credentials', 'true');
         res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        // Authorization wajib ada di daftar ini; tanpa itu browser menolak
+        // preflight dan semua permintaan ber-token gagal walau server sehat.
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Range');
         res.setHeader('Access-Control-Max-Age', '600');
       }
       if (req.method === 'OPTIONS') {

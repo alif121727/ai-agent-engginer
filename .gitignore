@@ -30,3 +30,7 @@ docs/ui/*.png
 netlify-site.zip
 # State deploy lokal (site id sementara dari deploy anonymous)
 netlify-site/.netlify/
+
+# Model TTS lokal (63 MB), diunduh lewat scripts/fetch-tts-model.sh
+assets/tts/*.onnx
+assets/tts/*.onnx.json

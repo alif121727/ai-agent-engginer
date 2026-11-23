@@ -6,10 +6,13 @@
  * musik, sehingga penonton tidak mendengar satu kata pun. Itulah sebab utama
  * keluhan "suara tidak jelas".
  *
- * Penyedia utama ElevenLabs. Tanpa kunci API, pemanggilan mengembalikan null
- * dan pipeline tetap jalan tanpa narasi — lebih baik video tanpa VO daripada
- * audio palsu.
+ * Penyedia utama ElevenLabs (suara paling natural). Bila tidak ada kunci API,
+ * modul ini memakai Piper — mesin saraf lokal yang gratis — sehingga narasi
+ * tetap ada pada instalasi tanpa anggaran TTS. Bila keduanya tidak tersedia,
+ * pemanggilan melaporkan `skipped` dan pipeline berjalan tanpa narasi: lebih
+ * baik video tanpa VO daripada audio palsu.
  */
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -112,8 +115,47 @@ function apiKey(): string | null {
   return key.trim() ? key.trim() : null;
 }
 
+/**
+ * Mesin TTS lokal (Piper). Dipakai bila tidak ada kunci API, supaya narasi
+ * tetap berbunyi tanpa biaya. Keberadaannya dideteksi sekali saat modul dimuat.
+ */
+export function piperBinary(): string | null {
+  const explicit = process.env.PIPER_BIN;
+  if (explicit && fs.existsSync(explicit)) return explicit;
+  const kandidat = [
+    path.join(process.env.HOME ?? '', '.local/bin/piper'),
+    '/usr/local/bin/piper',
+    '/usr/bin/piper',
+  ];
+  for (const p of kandidat) {
+    if (p && fs.existsSync(p)) return p;
+  }
+  return null;
+}
+
+/** Berkas model Piper untuk bahasa tertentu. */
+export function piperModel(lang = 'id'): string | null {
+  const explicit = process.env.PIPER_MODEL;
+  if (explicit && fs.existsSync(explicit)) return explicit;
+  const root = path.join(process.cwd(), 'assets', 'tts');
+  if (!fs.existsSync(root)) return null;
+  const cocok = fs
+    .readdirSync(root)
+    .filter((f) => f.endsWith('.onnx') && f.startsWith(lang === 'id' ? 'id_' : 'en_'));
+  if (cocok.length === 0) return null;
+  return path.join(root, cocok[0]);
+}
+
+/** true bila narasi bisa dibuat, entah lewat API berbayar atau mesin lokal. */
 export function ttsAvailable(): boolean {
-  return apiKey() !== null;
+  return apiKey() !== null || (piperBinary() !== null && piperModel() !== null);
+}
+
+/** Nama penyedia yang akan dipakai, untuk log dan UI. */
+export function ttsProviderName(): 'elevenlabs' | 'piper' | 'tidak-ada' {
+  if (apiKey()) return 'elevenlabs';
+  if (piperBinary() && piperModel()) return 'piper';
+  return 'tidak-ada';
 }
 
 /**
@@ -132,11 +174,15 @@ export async function synthesize(
 
   const key = apiKey();
   if (!key) {
+    // Tanpa kunci API, coba mesin lokal. Ini yang membuat narasi tetap ada
+    // pada instalasi tanpa anggaran TTS.
+    const lokal = synthesizeLocal(kalimat, opts);
+    if (lokal) return lokal;
     return {
       ok: false,
-      provider: 'elevenlabs',
+      provider: 'tidak-ada',
       skipped: true,
-      error: 'TTS_API_KEY belum diisi',
+      error: 'TTS_API_KEY belum diisi dan mesin TTS lokal tidak tersedia',
     };
   }
 
@@ -199,4 +245,76 @@ export async function synthesize(
   } finally {
     clearTimeout(timer);
   }
+}
+
+/**
+ * Sintesis dengan Piper, mesin saraf lokal.
+ *
+ * Piper menulis WAV mono 22 kHz. Berkas itu lalu dikonversi ke mp3 192 kbps
+ * stereo 44,1 kHz supaya bentuk keluarannya sama dengan jalur ElevenLabs —
+ * pemanggil tidak perlu tahu penyedia mana yang dipakai.
+ *
+ * Mengembalikan null bila mesin tidak ada, sehingga pemanggil bisa melaporkan
+ * "tidak tersedia" alih-alih gagal.
+ */
+function synthesizeLocal(
+  text: string,
+  opts: { tone?: VoiceTone; outFile: string; timeoutMs?: number },
+): SynthResult | null {
+  const bin = piperBinary();
+  const model = piperModel();
+  if (!bin || !model) return null;
+
+  const tmpWav = opts.outFile.replace(/\.mp3$/i, '') + '.piper.wav';
+  fs.mkdirSync(path.dirname(opts.outFile), { recursive: true });
+
+  const args = ['-m', model, '-f', tmpWav];
+  // Panjang jeda antar kalimat; tanpa ini Piper berbicara terlalu rapat.
+  if (process.env.PIPER_SENTENCE_SILENCE) {
+    args.push('--sentence-silence', process.env.PIPER_SENTENCE_SILENCE);
+  }
+
+  const run = spawnSync(bin, args, {
+    input: text,
+    encoding: 'utf8',
+    timeout: opts.timeoutMs ?? 120_000,
+  });
+  if (run.status !== 0 || !fs.existsSync(tmpWav)) {
+    fs.rmSync(tmpWav, { force: true });
+    return {
+      ok: false,
+      provider: 'piper',
+      error: `piper gagal: ${(run.stderr ?? '').slice(0, 200) || `kode ${run.status}`}`,
+    };
+  }
+
+  const enc = spawnSync(
+    'ffmpeg',
+    [
+      '-hide_banner', '-loglevel', 'error', '-y',
+      '-i', tmpWav,
+      '-af', 'aresample=44100',
+      '-ar', '44100', '-ac', '2',
+      '-c:a', 'libmp3lame', '-b:a', '192k',
+      opts.outFile,
+    ],
+    { encoding: 'utf8', timeout: 60_000 },
+  );
+  fs.rmSync(tmpWav, { force: true });
+
+  if (enc.status !== 0 || !fs.existsSync(opts.outFile)) {
+    return {
+      ok: false,
+      provider: 'piper',
+      error: `encode gagal: ${(enc.stderr ?? '').slice(0, 200)}`,
+    };
+  }
+
+  return {
+    ok: true,
+    file: opts.outFile,
+    provider: 'piper',
+    model: path.basename(model),
+    voiceId: path.basename(model, '.onnx'),
+  };
 }

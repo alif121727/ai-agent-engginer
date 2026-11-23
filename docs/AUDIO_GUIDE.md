@@ -118,6 +118,26 @@ Periksa berurutan:
 5. **Apakah hanya terdengar di satu perangkat?** Uji di ponsel dengan speaker
    kecil. Kalau di situ kata hilang, naikkan `equalizer f=3000` menjadi `+4`.
 
+## Mesin lokal (gratis)
+
+Tanpa kunci ElevenLabs, narasi dibuat dengan Piper:
+
+```bash
+pip install piper-tts
+./scripts/fetch-tts-model.sh
+```
+
+Piper menulis WAV mono 22 kHz, lalu `synthesizeLocal()` mengubahnya menjadi mp3
+44,1 kHz stereo 192 kbps. Bentuk keluaran sama dengan jalur ElevenLabs, jadi
+tahap pasca-proses dan mixing tidak berubah.
+
+Keterbatasan yang perlu diketahui: Piper datar secara emosi. Untuk iklan
+komersial, ElevenLabs tetap lebih baik. Untuk pratinjau, uji coba, dan render
+internal, Piper sudah memadai.
+
+Variabel yang bisa diatur: `PIPER_BIN`, `PIPER_MODEL`,
+`PIPER_SENTENCE_SILENCE` (jeda antar kalimat, detik).
+
 ## Biaya
 
 Model `eleven_multilingual_v2` sekitar tiga kali `turbo`. Untuk video 30 detik

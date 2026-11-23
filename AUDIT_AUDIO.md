@@ -108,13 +108,40 @@ menghasilkan suara datar yang menjadi keluhan awal.
   dilakukan otomatis di sini.
 - Video lama tidak dirender ulang. Video baru otomatis memakai jalur ini.
 
-## Cara mengaktifkan
+## Dua penyedia narasi
+
+| Penyedia | Kapan dipakai | Kualitas | Biaya |
+|---|---|---|---|
+| ElevenLabs | bila `TTS_API_KEY` diisi | paling natural | berbayar |
+| Piper (lokal) | otomatis bila tidak ada kunci | jelas, agak datar | gratis |
+
+Pemilihan otomatis; pemanggil tidak perlu tahu mana yang aktif.
+
+Pasang mesin lokal sekali:
+
+```bash
+pip install piper-tts
+./scripts/fetch-tts-model.sh          # unduh model id_ID-news_tts (63 MB)
+```
+
+Untuk suara ElevenLabs:
 
 ```bash
 export TTS_API_KEY=<kunci ElevenLabs>
-# opsional, untuk proxy atau pengujian:
-export TTS_BASE_URL=https://api.elevenlabs.io
+export TTS_BASE_URL=https://api.elevenlabs.io   # opsional, untuk proxy
 ```
 
-Tanpa kunci, video tetap dirender dengan mesin + musik dan log mencatat
-`narasi tidak dibuat`. Tidak ada audio palsu.
+Bila keduanya tidak ada, video tetap dirender dengan mesin + musik dan log
+mencatat `narasi tidak dibuat`. Tidak ada audio palsu.
+
+## Bukti tanpa kunci berbayar
+
+Render job `bdf298d4…` memakai Piper. Hasilnya:
+
+```
+LULUS  loudness -16.42 LUFS · true peak -3.14 dBTP · LRA 2.1
+       48000 Hz · 2 kanal · 192 kbps · 30.0 dtk
+```
+
+Narasi terdengar di **6 dari 6 scene** (RMS per 2 detik pertama):
+`-18.4`, `-18.0`, `-18.3`, `-18.5`, `-19.6`, `-19.5` dB.

@@ -2114,19 +2114,45 @@ await check('TTS memakai model dan bitrate kualitas tinggi, bukan default', () =
   assert(VOICE_SETTINGS.use_speaker_boost === true, 'speaker boost harus aktif');
 });
 
-await check('TTS tanpa kunci API melewati diri, bukan gagal keras', async () => {
+await check('TTS tanpa kunci API jatuh ke mesin lokal atau ditandai skipped', async () => {
   const prev = process.env.TTS_API_KEY;
   const prevEl = process.env.ELEVENLABS_API_KEY;
   delete process.env.TTS_API_KEY;
   delete process.env.ELEVENLABS_API_KEY;
+  const out = path.join(os.tmpdir(), `x-${Date.now()}.mp3`);
   try {
-    const res = await synthesize('halo', { outFile: path.join(os.tmpdir(), 'x.mp3') });
-    assert(res.ok === false, 'tanpa kunci tidak boleh ok');
-    assert(res.skipped === true, 'harus ditandai skipped');
+    const res = await synthesize('halo', { outFile: out });
+    if (res.ok) {
+      // Piper tersedia: hasilnya harus berkas nyata, bukan klaim kosong.
+      assert(res.provider === 'piper', `penyedia tak terduga: ${res.provider}`);
+      assert(fs.existsSync(out), 'ok=true wajib disertai berkas');
+      assert(fs.statSync(out).size > 1024, 'berkas terlalu kecil untuk audio');
+    } else {
+      assert(res.skipped === true, 'kegagalan tanpa kunci harus ditandai skipped');
+      assert(!fs.existsSync(out), 'gagal tidak boleh meninggalkan berkas');
+    }
   } finally {
+    fs.rmSync(out, { force: true });
     if (prev !== undefined) process.env.TTS_API_KEY = prev;
     if (prevEl !== undefined) process.env.ELEVENLABS_API_KEY = prevEl;
   }
+});
+
+await check('TTS lokal menghasilkan mp3 44,1 kHz stereo 192 kbps', async () => {
+  const out = path.join(os.tmpdir(), `piper-${Date.now()}.mp3`);
+  const res = await synthesize('Uji narasi Bahasa Indonesia.', { outFile: out });
+  if (res.provider !== 'piper') {
+    // Mesin lokal tidak wajib ada; jangan gagalkan mesin tanpa Piper.
+    assert(res.skipped === true, 'tanpa piper harus skipped');
+    return;
+  }
+  const probe = spawnSync('ffprobe', ['-v', 'error', '-show_entries',
+    'stream=sample_rate,channels:format=bit_rate', '-of', 'json', out], { encoding: 'utf8' });
+  const info = JSON.parse(probe.stdout);
+  assert(info.streams[0].sample_rate === '44100', 'harus 44,1 kHz');
+  assert(info.streams[0].channels === 2, 'harus stereo');
+  assert(Number(info.format.bit_rate) >= 190000, 'harus >= 192 kbps');
+  fs.rmSync(out, { force: true });
 });
 
 await check('narasi ditempatkan di awal scene-nya, bukan menumpuk di detik nol', () => {

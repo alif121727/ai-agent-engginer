@@ -769,9 +769,12 @@ async function cariSekali(q: string, limit: number): Promise<KandidatWeb[]> {
     if (!layakMobil(judul, deskripsi, gambarUrl)) continue;
 
     const wikitext = page.revisions?.[0]?.slots?.main?.['*'] ?? '';
-    const tahun = rapikanWikitext(
+    // Tahun produksi sering berisi daftar semua varian; kartu hanya butuh
+    // rentang pertama, sisanya merusak tata letak.
+    const tahunPenuh = rapikanWikitext(
       nilaiInfobox(wikitext, 'production') || nilaiInfobox(wikitext, 'model_years'),
     );
+    const tahun = tahunPenuh.length > 40 ? `${tahunPenuh.slice(0, 38).trimEnd()}…` : tahunPenuh;
     const tenaga = rapikanWikitext(
       nilaiInfobox(wikitext, 'powerout') ||
         nilaiInfobox(wikitext, 'power') ||

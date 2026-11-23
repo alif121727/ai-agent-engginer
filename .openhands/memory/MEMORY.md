@@ -464,3 +464,16 @@ SSE progress (`/api/...` event stream), 15 template di `src/core/templates.ts`.
   semua kepanjangan (`pilihYangMuat`).
 - Tagline hanya di scene `hook`/`cta`; sediakan varian "tagline saja" karena
   scene cta 3 dtk tidak muat "model + tagline".
+
+## Studio UI (`studio/` -> `netlify-site/`)
+- `npm run build:studio` menulis ke `netlify-site/` **dan** `public/assets/`.
+  `?v=` di `index.html` berubah tiap build; pakai untuk cek bundel baru.
+- Deploy: push `main` -> `pages.yml` push paksa ke `gh-pages` -> Pages build
+  sendiri. Dua run harus sukses: "Deploy ke GitHub Pages" + "pages build and
+  deployment".
+- **Tidak ada typecheck untuk `src/`**; `npx tsc --noEmit -p tsconfig.json`
+  memunculkan ~94 error lama yang aman diabaikan (express @types, `Row`),
+  tapi error `Cannot find name` / `Property X does not exist` = bug runtime.
+- UI wajib jujur: label model "butuh API key" dari `/api/visual/readiness`,
+  yang melaporkan `credits` juga (Runway saldo 0 => `ready:false`).
+- File media `/api/jobs/:id/file/*` butuh `?token=`; tanpa itu 401.

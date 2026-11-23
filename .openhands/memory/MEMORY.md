@@ -50,8 +50,16 @@ an mp4 using a team of AI agents with fixed job desks. Node + `--experimental-st
 - Provenance foto: `jobs/<id>/artifacts/assets.json` (`provider: local`, `source`
   menunjuk `assets/own/<slug>/`). Slug folder ≠ slug galeri.
 
+## Failure modes worth knowing
+- **Job tertahan `running`**: worker mati di tengah render meninggalkan job
+  `running`; `claimNextJob()` hanya ambil `queued` dan retry menolak `running`.
+  Sudah diperbaiki: `requeueStaleRunning()` saat `Worker.start()`, heartbeat
+  `touchJob()` tiap 60s, retry menerima job diam >15 menit (`d985d9c`).
+- **Dashboard "Gagal" untuk job `done`**: itu `honestStatus()` — job `done`
+  yang `video.mp4`-nya hilang sengaja dilaporkan gagal. Bukan bug.
+
 ## Commands that matter
-- `npm test` -> 37 checks, exits non-zero on failure.
+- `npm test` -> 168 checks, exits non-zero on failure.
 - `npm run api` (port 8080) + `npm run worker` — both needed; jobs stall without the worker.
 - `./scripts/serve.sh 12000` — starts API on the public sandbox port and the
   worker if absent, then prints health + the public URL. Public URL for port

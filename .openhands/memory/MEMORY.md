@@ -423,3 +423,18 @@ SSE progress (`/api/...` event stream), 15 template di `src/core/templates.ts`.
 - `extractBars` harus menerima label SEBELUM atau SESUDAH angka ("525 PS").
 - Verifikasi visual tanpa mata: hitung blob glyph (`scipy.ndimage.label`,
   ambang >246) — "0 PS"=3 glyph, "525 PS"=5 glyph.
+
+## Naskah (src/pipeline/script.ts)
+- Dua jalur: LLM bila `LLM_BASE_URL`+`LLM_API_KEY`+`LLM_MODEL` lengkap, jika
+  tidak -> penyusun lokal. Kegagalan LLM **tidak pernah** menggagalkan render;
+  alasan fallback ditulis ke `script.json` (`sumber`, `catatan`).
+- `LLM_MODEL` di `.env.example` lama menunjuk proxy eval yang menolak
+  `OPENHANDS_API_KEY` (HTTP 401). Jangan isi `LLM_BASE_URL` dengan proxy itu.
+- Kecepatan Piper terukur: 80 karakter = 6,9 dtk -> **11,5 karakter/detik**.
+  `maxCharsFor(durasi)` memakai 0,92 dari itu sebagai batas per scene.
+- JANGAN memotong kalimat sebagai langkah pertama: itu menghasilkan
+  "Presisi." dari tagline dan "naturally" dari "naturally aspirated".
+  Pola benar: susun beberapa kandidat, pilih yang muat, potong hanya jika
+  semua kepanjangan (`pilihYangMuat`).
+- Tagline hanya di scene `hook`/`cta`; sediakan varian "tagline saja" karena
+  scene cta 3 dtk tidak muat "model + tagline".

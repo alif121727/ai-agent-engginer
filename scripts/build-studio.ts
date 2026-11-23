@@ -67,7 +67,7 @@ const res = await build({
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
     __MEDIA_VERSION__: JSON.stringify(mediaHash),
-    __STUDIO_URL__: JSON.stringify(process.env.STUDIO_URL ?? ''),
+    __STUDIO_URL__: JSON.stringify(process.env.STUDIO_URL ?? LINKS.studio),
   },
 });
 

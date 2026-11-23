@@ -1,0 +1,103 @@
+{
+  "loudnessLufs": -14,
+  "music": {
+    "ducking": true,
+    "gain": -18
+  },
+  "engine": {
+    "profile": "flat-6 · 6 silinder · na · redline 9000 rpm",
+    "synthesizedLocally": true,
+    "externalPrompts": [
+      {
+        "id": "start",
+        "label": "Start & idle",
+        "scene": "Engine bay",
+        "prompt": "Car engine ignition start, starter motor cranking, naturally aspirated flat-six engine (MA2.75) coming to life, settling into a hard-edged race-spec idle at 1100 rpm, close-up microphone, high quality, studio recording, realistic, no music, no voice, dry signal"
+      },
+      {
+        "id": "rev",
+        "label": "Rev & akselerasi",
+        "scene": "Driving",
+        "prompt": "High-performance naturally aspirated flat-six engine revving hard through the gears up to 8200 rpm, hard-edged race-spec exhaust note, exhaust crackle and pop on lift-off, backfire, Porsche 911 GT3 RS, high quality, studio recording, realistic, no music, no voice, dry signal"
+      },
+      {
+        "id": "exhaust",
+        "label": "Knalpot dekat",
+        "scene": "Detail",
+        "prompt": "Close-mic exhaust recording of a naturally aspirated flat-six engine, hard-edged race-spec tone, blipping the throttle, tailpipe resonance, high quality, studio recording, realistic, no music, no voice, dry signal"
+      },
+      {
+        "id": "passby",
+        "label": "Melintas (Doppler)",
+        "scene": "Action",
+        "prompt": "naturally aspirated flat-six car passing by at high speed, Doppler effect, hard-edged race-spec exhaust note sweeping past, tyre noise on tarmac, realistic racing sound, high quality, studio recording, realistic, no music, no voice, dry signal"
+      },
+      {
+        "id": "idle",
+        "label": "Idle kabin",
+        "scene": "Interior",
+        "prompt": "Interior of a Porsche 911 GT3 RS, engine idling at 1100 rpm, hard-edged race-spec note muffled through the firewall, faint cabin ambience, high quality, studio recording, realistic, no music, no voice, dry signal"
+      }
+    ],
+    "negativePrompt": "music, melody, voice, speech, singing, robotic voice, clipping audio, background hiss, wind noise, distortion, cartoon sound, synthesized beeps, phone recording"
+  },
+  "sfx": [
+    {
+      "sceneIndex": 0,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 1,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 2,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 3,
+      "bed": "cabin-ambience",
+      "promptId": "idle"
+    },
+    {
+      "sceneIndex": 4,
+      "bed": "engine-rev",
+      "promptId": "passby"
+    },
+    {
+      "sceneIndex": 5,
+      "bed": "studio-room",
+      "promptId": "rev"
+    }
+  ],
+  "subtitles": [
+    {
+      "sceneIndex": 0,
+      "text": "Porsche 911 GT3 RS. Balap sirkuit"
+    },
+    {
+      "sceneIndex": 1,
+      "text": "Ini Porsche 911 GT3 RS, 2022–sekarang. Mesin flat-6 4.0L naturally aspirated (MA2.75)."
+    },
+    {
+      "sceneIndex": 2,
+      "text": "Salah satu andalannya: flat-6 4.0L naturally aspirated (MA2.75) · 525 PS."
+    },
+    {
+      "sceneIndex": 3,
+      "text": "Kabin Porsche 992 GT3 RS, semua tersusun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "text": "Di jalan, 525 PS, nol sampai seratus 3,2 dtk."
+    },
+    {
+      "sceneIndex": 5,
+      "text": "Porsche 911 GT3 RS. Balap sirkuit"
+    }
+  ],
+  "ttsAvailable": false
+}

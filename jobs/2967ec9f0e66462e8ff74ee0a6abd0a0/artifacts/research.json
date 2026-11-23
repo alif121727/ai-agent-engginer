@@ -1,0 +1,53 @@
+{
+  "model": "Ford GT 2017",
+  "catalog": {
+    "merk": "Ford",
+    "seri": "generasi kedua",
+    "tahun": "2017–2022",
+    "kategori": "balap",
+    "mesin": "V6 3.5L twin-turbo EcoBoost",
+    "tenaga": "647 PS",
+    "torsi": "746 Nm",
+    "layout": "mid-engine, RWD",
+    "berat": "tidak disebut di sumber",
+    "nol100": "2,9 dtk",
+    "vmax": "348 km/jam",
+    "sumber": "https://en.wikipedia.org/wiki/Ford_GT"
+  },
+  "specs": [
+    {
+      "text": "V6 EcoBoost 647 hp",
+      "source": "brief"
+    },
+    {
+      "text": "Aerodinamika aktif",
+      "source": "brief"
+    },
+    {
+      "text": "Bobot ringan serat karbon",
+      "source": "brief"
+    },
+    {
+      "text": "V6 3.5L twin-turbo EcoBoost · 647 PS",
+      "source": "katalog"
+    },
+    {
+      "text": "Torsi 746 Nm · mid-engine, RWD",
+      "source": "katalog"
+    },
+    {
+      "text": "0–100 km/jam 2,9 dtk · top speed 348 km/jam",
+      "source": "katalog"
+    },
+    {
+      "text": "Produksi 2017–2022",
+      "source": "katalog"
+    },
+    {
+      "text": "Program balap yang dibalik jadi mobil jalan: monokok karbon dan body aerodinamis ekstrem.",
+      "source": "katalog"
+    }
+  ],
+  "missing": [],
+  "note": "angka dari brief didahulukan; sisanya dari katalog yang bersumber Wikipedia"
+}

@@ -1,0 +1,103 @@
+{
+  "loudnessLufs": -14,
+  "music": {
+    "ducking": true,
+    "gain": -18
+  },
+  "engine": {
+    "profile": "I6 · 6 silinder · turbo · redline 7000 rpm",
+    "synthesizedLocally": true,
+    "externalPrompts": [
+      {
+        "id": "start",
+        "label": "Start & idle",
+        "scene": "Engine bay",
+        "prompt": "Car engine ignition start, starter motor cranking, turbocharged inline-six engine (B58B30) coming to life, settling into a crisp modern idle at 850 rpm, close-up microphone, high quality, studio recording, realistic, no music, no voice, dry signal"
+      },
+      {
+        "id": "rev",
+        "label": "Rev & akselerasi",
+        "scene": "Driving",
+        "prompt": "High-performance turbocharged inline-six engine revving hard through the gears up to 7000 rpm, crisp modern exhaust note, turbo spool and blow-off flutter, turbo whistle, Toyota GR Supra, high quality, studio recording, realistic, no music, no voice, dry signal"
+      },
+      {
+        "id": "exhaust",
+        "label": "Knalpot dekat",
+        "scene": "Detail",
+        "prompt": "Close-mic exhaust recording of a turbocharged inline-six engine, crisp modern tone, blipping the throttle, wastegate flutter, tailpipe resonance, high quality, studio recording, realistic, no music, no voice, dry signal"
+      },
+      {
+        "id": "passby",
+        "label": "Melintas (Doppler)",
+        "scene": "Action",
+        "prompt": "turbocharged inline-six car passing by at high speed, Doppler effect, crisp modern exhaust note sweeping past, turbo spool, tyre noise on tarmac, realistic racing sound, high quality, studio recording, realistic, no music, no voice, dry signal"
+      },
+      {
+        "id": "idle",
+        "label": "Idle kabin",
+        "scene": "Interior",
+        "prompt": "Interior of a Toyota GR Supra, engine idling at 850 rpm, crisp modern note muffled through the firewall, faint cabin ambience, high quality, studio recording, realistic, no music, no voice, dry signal"
+      }
+    ],
+    "negativePrompt": "music, melody, voice, speech, singing, robotic voice, clipping audio, background hiss, wind noise, distortion, cartoon sound, synthesized beeps, phone recording"
+  },
+  "sfx": [
+    {
+      "sceneIndex": 0,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 1,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 2,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 3,
+      "bed": "cabin-ambience",
+      "promptId": "idle"
+    },
+    {
+      "sceneIndex": 4,
+      "bed": "engine-rev",
+      "promptId": "passby"
+    },
+    {
+      "sceneIndex": 5,
+      "bed": "studio-room",
+      "promptId": "rev"
+    }
+  ],
+  "subtitles": [
+    {
+      "sceneIndex": 0,
+      "text": "Toyota GR Supra. Uji login dan render setelah perbaikan"
+    },
+    {
+      "sceneIndex": 1,
+      "text": "Ini Toyota GR Supra, 2019–2026. Mesin I6 3.0L turbo (B58B30)."
+    },
+    {
+      "sceneIndex": 2,
+      "text": "Salah satu andalannya: 0–100 km/jam 4,1 dtk · top speed 250 km/jam (dibatasi)."
+    },
+    {
+      "sceneIndex": 3,
+      "text": "Kabin Toyota A90 (J29), semua tersusun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "text": "Di jalan, 340 PS, nol sampai seratus 4,1 dtk."
+    },
+    {
+      "sceneIndex": 5,
+      "text": "Toyota GR Supra. Uji login dan render setelah perbaikan"
+    }
+  ],
+  "ttsAvailable": false
+}

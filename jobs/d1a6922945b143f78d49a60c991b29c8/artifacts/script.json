@@ -1,0 +1,36 @@
+{
+  "model": "Toyota GR Supra",
+  "tagline": "Uji pembuatan studio",
+  "lines": [
+    {
+      "sceneIndex": 0,
+      "onScreenText": "Uji pembuatan studio",
+      "voiceover": "Toyota GR Supra. Uji pembuatan studio"
+    },
+    {
+      "sceneIndex": 1,
+      "onScreenText": "Toyota GR Supra",
+      "voiceover": "Ini Toyota GR Supra, 2019–2026. Mesin I6 3.0L turbo (B58B30)."
+    },
+    {
+      "sceneIndex": 2,
+      "onScreenText": "Mesin 3.0L turbo inline-six 382 hp",
+      "voiceover": "Salah satu andalannya: Sasis ringan dan seimbang."
+    },
+    {
+      "sceneIndex": 3,
+      "onScreenText": "Nol ke 100 km/jam dalam 4,1 detik",
+      "voiceover": "Kabin Toyota A90 (J29), semua tersusun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "onScreenText": "Sasis ringan dan seimbang",
+      "voiceover": "Di jalan, 340 PS, nol sampai seratus 4,1 dtk."
+    },
+    {
+      "sceneIndex": 5,
+      "onScreenText": "Toyota GR Supra",
+      "voiceover": "Toyota GR Supra. Uji pembuatan studio"
+    }
+  ]
+}

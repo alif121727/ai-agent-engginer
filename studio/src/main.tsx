@@ -6,6 +6,7 @@ import { Dashboard } from './pages/Dashboard';
 import { NewVideo } from './pages/NewVideo';
 import { ProjectDetail } from './pages/ProjectDetail';
 import { Projects, Garage } from './pages/Projects';
+import { AllProjects } from './pages/AllProjects';
 import { Library } from './pages/Library';
 import { Feed } from './pages/Feed';
 import { Models, Settings } from './pages/Models';
@@ -18,6 +19,7 @@ const TITLES: Record<Route['name'], { t: string; c?: string }> = {
   baru: { t: 'Buat Video', c: 'Brief → storyboard → parameter → generate' },
   agen: { t: 'Agen Otonom', c: 'Sembilan tahap berjalan sendiri + metadata otomatis' },
   proyek: { t: 'Proyek Saya' },
+  'semua-proyek': { t: 'Semua Proyek', c: 'Seluruh proyek yang pernah dikerjakan + hasil videonya' },
   'proyek-detail': { t: 'Detail Proyek', c: 'Pipeline sembilan tahap' },
   feed: { t: 'Feed', c: 'Video vertikal, geser ke atas untuk lanjut' },
   perpustakaan: { t: 'Perpustakaan' },
@@ -63,6 +65,7 @@ function Router() {
         {route.name === 'baru' && <NewVideo go={go} preselect={route.car} />}
         {route.name === 'agen' && <Agent go={go} />}
         {route.name === 'proyek' && <Projects go={go} />}
+        {route.name === 'semua-proyek' && <AllProjects go={go} />}
         {route.name === 'proyek-detail' && <ProjectDetail id={route.id} go={go} autoRun={route.autoRun} />}
         {route.name === 'feed' && <Feed go={go} />}
         {route.name === 'perpustakaan' && <Library go={go} />}

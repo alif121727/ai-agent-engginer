@@ -1,0 +1,36 @@
+{
+  "model": "Porsche 911 GT3 RS",
+  "tagline": "Balap sirkuit",
+  "lines": [
+    {
+      "sceneIndex": 0,
+      "onScreenText": "Balap sirkuit",
+      "voiceover": "Porsche 911 GT3 RS. Balap sirkuit"
+    },
+    {
+      "sceneIndex": 1,
+      "onScreenText": "Porsche 911 GT3 RS",
+      "voiceover": "Ini Porsche 911 GT3 RS, 2022–sekarang. Mesin flat-6 4.0L naturally aspirated (MA2.75)."
+    },
+    {
+      "sceneIndex": 2,
+      "onScreenText": "aero aktif",
+      "voiceover": "Salah satu andalannya: flat-6 4.0L naturally aspirated (MA2.75) · 525 PS."
+    },
+    {
+      "sceneIndex": 3,
+      "onScreenText": "PDK 7 percepatan",
+      "voiceover": "Kabin Porsche 992 GT3 RS, semua tersusun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "onScreenText": "",
+      "voiceover": "Di jalan, 525 PS, nol sampai seratus 3,2 dtk."
+    },
+    {
+      "sceneIndex": 5,
+      "onScreenText": "Porsche 911 GT3 RS",
+      "voiceover": "Porsche 911 GT3 RS. Balap sirkuit"
+    }
+  ]
+}

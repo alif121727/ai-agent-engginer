@@ -108,6 +108,36 @@ export function createApp(opts: AppOptions = {}) {
     }
     next();
   });
+  /**
+   * CORS untuk UI statis (Netlify/Pages) yang memakai backend ini lewat
+   * `__STUDIO_API__`. Daftar origin eksplisit lewat env `CORS_ORIGINS`; tanpa
+   * env ini tidak ada header CORS sama sekali, jadi sandbox tetap tertutup.
+   * `Access-Control-Allow-Credentials` wajib karena sesi memakai cookie.
+   */
+  const corsOrigins = new Set(
+    (process.env.CORS_ORIGINS ?? '')
+      .split(',')
+      .map((s) => s.trim().replace(/\/$/, ''))
+      .filter(Boolean),
+  );
+  if (corsOrigins.size > 0) {
+    app.use((req, res, next) => {
+      const origin = (req.headers.origin ?? '').replace(/\/$/, '');
+      if (origin && corsOrigins.has(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Vary', 'Origin');
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+        res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        res.setHeader('Access-Control-Max-Age', '600');
+      }
+      if (req.method === 'OPTIONS') {
+        res.status(204).end();
+        return;
+      }
+      next();
+    });
+  }
   app.use(express.json({ limit: '2mb' }));
 
   const worker = opts.worker;
@@ -809,7 +839,12 @@ function productionSite(): boolean {
 
 function cookieHeader(token: string): string {
   const secure = process.env.APP_URL?.startsWith('https') ? '; Secure' : '';
-  return `${COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${60 * 60 * 24 * 7}${secure}`;
+  // UI statis di domain lain hanya bisa mengirim cookie sesi bila SameSite=None,
+  // dan SameSite=None wajib disertai Secure. Hanya aktif saat CORS dibuka.
+  const crossSite = Boolean(process.env.CORS_ORIGINS?.trim());
+  const sameSite = crossSite ? 'None' : 'Lax';
+  const secureCross = crossSite && !secure ? '; Secure' : '';
+  return `${COOKIE}=${token}; Path=/; HttpOnly; SameSite=${sameSite}; Max-Age=${60 * 60 * 24 * 7}${secure}${secureCross}`;
 }
 
 export function parseCookies(header: string): Record<string, string> {

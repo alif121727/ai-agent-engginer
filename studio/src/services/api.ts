@@ -608,23 +608,30 @@ export class HttpStudioApi implements StudioApi {
 }
 
 /* --------------------------------------------------------------- pemilihan */
+// Disuntik esbuild (lihat scripts/build-studio.ts); kosong saat dev.
+declare const __STUDIO_URL__: string | undefined;
+
 export async function pickApi(): Promise<StudioApi> {
-  // Urutan percobaan: override eksplisit, lalu origin sendiri (bila studio
-  // disajikan oleh API), baru demo. Demo berarti tidak ada backend sama sekali.
+  // Urutan percobaan: override eksplisit, backend yang disuntikkan saat build
+  // (STUDIO_URL), origin sendiri, lalu demo. Demo berarti tidak ada backend.
+  //
+  // `__STUDIO_API__` sengaja didahulukan: UI statis di Netlify/Pages memakai
+  // backend sandbox yang hidup, sehingga situs itu tidak lagi "mode demo".
   const candidates = [
     (globalThis as any).__STUDIO_API__ as string | undefined,
+    typeof __STUDIO_URL__ === 'string' && __STUDIO_URL__ ? __STUDIO_URL__ : undefined,
     globalThis.location?.origin,
   ].filter((b): b is string => typeof b === 'string' && b.length > 0);
 
   for (const base of candidates) {
     try {
-      const r = await fetch(base + '/api/health', {
+      const r = await fetch(base.replace(/\/$/, '') + '/api/health', {
         credentials: 'include',
         signal: AbortSignal.timeout(2500),
       });
       if (r.ok) {
         const d = (await r.json()) as { ok?: boolean };
-        if (d?.ok) return new HttpStudioApi(base);
+        if (d?.ok) return new HttpStudioApi(base.replace(/\/$/, ''));
       }
     } catch {
       /* coba kandidat berikutnya */

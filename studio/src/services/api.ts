@@ -194,14 +194,21 @@ const rid = () => Math.random().toString(36).slice(2, 10);
 
 /* ------------------------------------------------------------------ brief */
 // 5-beat yang benar-benar memakai angka dari katalog — tidak mengarang.
+/** Gabungkan bagian kalimat, lewati yang kosong supaya tidak ada "top speed ." */
+function rangkai(bagian: Array<string | undefined>, kosong: string): string {
+  const isi = bagian.filter((b): b is string => Boolean(b && b.trim()));
+  return isi.length ? isi.join(', ') : kosong;
+}
+
 export function buildBrief(car: Car): Brief {
   const tenaga = car.tenaga || 'tenaga belum tercatat';
-  const nol = car.nol100 || 'angka akselerasi belum tercatat';
+  const nol = car.nol100 ? `0–100 ${car.nol100}` : 'angka akselerasi belum tercatat';
+  const vmax = car.vmax ? `top speed ${car.vmax}` : undefined;
   return {
     hook: `${car.model}: ${car.tagline || 'satu mesin, satu karakter.'}`,
     problem: `Banyak konten otomotif menyebut angka tanpa sumber. ${car.model} sering dibahas dengan klaim yang tidak bisa dilacak.`,
-    product: `${car.mesin}. ${tenaga}, torsi ${car.torsi}, layout ${car.layout}.`,
-    proof: `0–100 ${nol}, top speed ${car.vmax}. Berat ${car.berat}. Sumber: Wikipedia (lihat lembar riset).`,
+    product: rangkai([car.mesin, tenaga, car.torsi && `torsi ${car.torsi}`, car.layout && `layout ${car.layout}`], 'Spesifikasi belum tersedia.'),
+    proof: `${rangkai([nol, vmax], 'Angka performa belum tercatat')}. ${car.berat ? `Berat ${car.berat}. ` : ''}Sumber: Wikipedia (lihat lembar riset).`,
     cta: `Simpan video ini, lalu bandingkan sendiri dengan data resmi ${car.merk}.`,
   };
 }
@@ -216,7 +223,7 @@ export function buildShots(car: Car, dur: number, brief: Brief): Shot[] {
     { p: `Mesin: ${car.mesin}`, cam: 'macro dolly', conf: 'high', w: 0.18 },
     { p: `Roda dan rem berputar, motion blur`, cam: 'tracking rendah', conf: 'medium', w: 0.14 },
     { p: `Interior kokpit, tangan di setir`, cam: 'handheld halus', conf: 'low', w: 0.12 },
-    { p: `Akselerasi: 0–100 ${car.nol100}`, cam: 'chase cam', conf: 'medium', w: 0.14 },
+    { p: car.nol100 ? `Akselerasi: 0–100 ${car.nol100}` : 'Akselerasi: tarikan mesin', cam: 'chase cam', conf: 'medium', w: 0.14 },
     { p: `${brief.cta}`, cam: 'static hero', conf: 'high', w: 0.12 },
   ];
   const total = beats.reduce((a, b) => a + b.w, 0);

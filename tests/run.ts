@@ -2679,6 +2679,26 @@ await check('pencarian hybrid: satu hasil lokal yang sangat cocok tidak memanggi
   assert(hasil.kartu[0].nama === 'Porsche 911 GT3 RS', `dapat "${hasil.kartu[0].nama}"`);
 });
 
+await check('brief studio: bagian kosong tidak meninggalkan kalimat menggantung', async () => {
+  const { buildBrief } = await import('../studio/src/services/api.ts');
+  const tanpaVmax = buildBrief({
+    merk: 'Pagani', model: 'Pagani Utopia', mesin: 'V12 twin-turbo',
+    tenaga: '864 PS', torsi: '1,100 Nm', layout: 'Rear mid-engine',
+    berat: '1,280 kg', tahun: '2022',
+  } as any);
+  assert(!/top speed\s*\./.test(tanpaVmax.proof), `"top speed ." muncul: ${tanpaVmax.proof}`);
+  assert(!/,\s*\./.test(tanpaVmax.proof), `koma menggantung: ${tanpaVmax.proof}`);
+  assert(/belum tercatat/.test(tanpaVmax.proof), 'angka kosong harus disebut jujur');
+
+  const lengkap = buildBrief({
+    merk: 'Pagani', model: 'Pagani Utopia', mesin: 'V12', tenaga: '864 PS',
+    torsi: '1,100 Nm', layout: 'Rear mid-engine', berat: '1,280 kg',
+    tahun: '2022', vmax: '350 km/jam', nol100: '2,9 detik',
+  } as any);
+  assert(/top speed 350 km\/jam/.test(lengkap.proof), `top speed hilang: ${lengkap.proof}`);
+  assert(/0–100 2,9 detik/.test(lengkap.proof), `0–100 hilang: ${lengkap.proof}`);
+});
+
 await check('pencarian web studio: kueri cadangan membuang kode generasi', async () => {
   const { varianKueriWeb } = await import('../studio/src/services/research.ts');
   const v = varianKueriWeb('Toyota Supra MK5');

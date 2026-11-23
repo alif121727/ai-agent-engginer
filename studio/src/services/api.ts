@@ -52,6 +52,8 @@ export type Project = {
   resolution: '1080p' | '4K';
   style: 'cinematic' | 'documentary' | 'social';
   audio: { engine: boolean; music: boolean; voiceover: boolean; lang: 'id' | 'en' };
+  /** Nada suara narasi; kosong berarti dipilih otomatis dari model mobil. */
+  suaraTone?: 'energik' | 'sinematik' | 'hangat' | 'tegas';
   brief: Brief;
   shots: Shot[];
   stages: StageRun[];
@@ -537,6 +539,9 @@ export class HttpStudioApi implements StudioApi {
         durasi: input.durationSec,
         aspect: input.aspect,
         resolusi: input.resolution,
+        // Nada suara ikut dikirim; tanpa ini pilihan pengguna hilang dan
+        // server memakai nada otomatis.
+        ...(input.suaraTone ? { suaraTone: input.suaraTone } : {}),
       }),
     });
     // Job dari server memakai nama kolom snake_case; tanpa pemetaan ini UI

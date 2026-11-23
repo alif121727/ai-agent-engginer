@@ -33,6 +33,7 @@ export function NewVideo({ go, preselect }: { go: (r: Route) => void; preselect?
   const [engine, setEngine] = React.useState(true);
   const [music, setMusic] = React.useState(true);
   const [voice, setVoice] = React.useState(false);
+  const [tone, setTone] = React.useState<'energik' | 'sinematik' | 'hangat' | 'tegas'>('sinematik');
 
   // Hasil riset mandiri ikut dicari, jadi model di luar katalog tetap terpilih.
   const [researched, setResearched] = React.useState(() => listResearched());
@@ -93,6 +94,7 @@ export function NewVideo({ go, preselect }: { go: (r: Route) => void; preselect?
         style,
         modelId,
         audio: { engine, music, voiceover: voice, lang: settings.language },
+        suaraTone: voice ? tone : undefined,
       });
       p.shots = shots;
       p.brief = brief ?? p.brief;
@@ -428,6 +430,21 @@ export function NewVideo({ go, preselect }: { go: (r: Route) => void; preselect?
               <Check label="Suara mesin" hint="Disintesis per model dari profil katalog" checked={engine} onChange={setEngine} />
               <Check label="Musik latar" hint="Bed musik instrumental" checked={music} onChange={setMusic} />
               <Check label="Voiceover" hint={`Bahasa ${settings.language === 'id' ? 'Indonesia' : 'Inggris'}`} checked={voice} onChange={setVoice} />
+              {voice && (
+                <div className="field">
+                  <label htmlFor="tone">Nada suara</label>
+                  <select id="tone" value={tone} onChange={(e) => setTone(e.target.value as typeof tone)}>
+                    <option value="energik">Energik — sport car, EV</option>
+                    <option value="sinematik">Sinematik — dokumenter, film</option>
+                    <option value="hangat">Hangat — SUV keluarga, review</option>
+                    <option value="tegas">Tegas — mewah, klasik</option>
+                  </select>
+                  <small className="muted">
+                    Narasi diucapkan per scene, lalu dirapikan otomatis: EQ, kompresor,
+                    dan loudness -16 LUFS. Musik diturunkan saat narasi berbunyi.
+                  </small>
+                </div>
+              )}
             </div>
 
             {car && <PromptPanel car={car} />}

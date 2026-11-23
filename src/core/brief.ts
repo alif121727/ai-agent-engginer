@@ -13,6 +13,11 @@ export const BriefSchema = z.object({
   deadlineMenit: z.number().positive().optional(),
   /** Template yang dipilih pengguna; menentukan resep scene. */
   templateId: z.string().optional(),
+  /**
+   * Nada suara narasi. Boleh kosong: kalau tidak diisi, nada dipilih otomatis
+   * dari jenis mobil supaya pengguna tidak perlu memikirkan istilah teknis.
+   */
+  suaraTone: z.enum(['energik', 'sinematik', 'hangat', 'tegas']).optional(),
   /** Tema buatan AI yang dipilih pengguna, disimpan apa adanya di brief. */
   temaAi: z
     .object({

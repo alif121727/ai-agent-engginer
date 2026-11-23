@@ -438,9 +438,26 @@ const EVENT_FOR_SHOT: Record<string, string> = {
   onboard: 'akselerasi',
 };
 
-tool('synthesize_speech', 'Siapkan rencana TTS', async (args, ctx) => {
-  const text = String(args.text ?? '');
-  return { text, engine: process.env.TTS_ENGINE ?? 'belum-dikonfigurasi' };
+/**
+ * Menyintesis satu potong narasi menjadi berkas audio sungguhan.
+ *
+ * Versi lama hanya mengembalikan teks, sehingga agen audio merasa berhasil
+ * padahal tidak ada suara yang pernah dibuat. Sekarang hasilnya berisi berkas
+ * dan status yang bisa diperiksa.
+ */
+tool('synthesize_speech', 'Sintesis narasi jadi audio', async (args, ctx) => {
+  const { synthesize, ttsAvailable, toneForModel } = await import('../tts/provider.ts');
+  const text = String(args.text ?? '').trim();
+  if (!text) return { ok: false, error: 'teks kosong' };
+  if (!ttsAvailable()) {
+    return { ok: false, skipped: true, error: 'TTS_API_KEY belum diisi' };
+  }
+  const brief = ctx.brief as unknown as Brief;
+  const dir = path.join(jobDir(ctx.jobId), 'audio', 'narration');
+  fs.mkdirSync(dir, { recursive: true });
+  const outFile = path.join(dir, `adhoc-${Date.now()}.mp3`);
+  const res = await synthesize(text, { outFile, tone: toneForModel(brief.model ?? '') });
+  return res;
 });
 
 tool('write_audio_plan', 'Tulis rencana audio dan subtitle', async (_args, ctx) => {

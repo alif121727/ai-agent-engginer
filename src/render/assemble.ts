@@ -9,6 +9,7 @@ import type { AgentContext } from '../agents/guard.ts';
 import type { AssetRecord, Brief, ScenePlan, Theme } from '../core/types.ts';
 import { ffprobe, contactSheet, ffmpegHasFilter } from './ffmpeg.ts';
 import { buildMusicBed, buildEngineTrack, muxAudio } from './audio.ts';
+import { buildNarration } from './narration.ts';
 import { describeProfile } from './engine.ts';
 import { cameraFilterFor } from './camera.ts';
 import type { CameraMove } from '../core/motion-prompt.ts';
@@ -294,8 +295,46 @@ export async function assembleVideo(ctx: AgentContext): Promise<RenderResult> {
     theme,
     model: brief.model ?? '',
   });
-  const withAudio = engine || music
-    ? muxAudio(silentFile, music, outFile, defaults.render.loudnessLufs, engine?.file ?? null)
+
+  /**
+   * Narasi disintesis di sini, bukan di tahap audio, karena butuh timing scene
+   * final setelah klip digabung. Tanpa kunci TTS, `buildNarration` melewati
+   * dirinya sendiri dan video tetap punya mesin + musik.
+   */
+  const narration = await buildNarration({
+    jobId: ctx.jobId,
+    scenes,
+    model: brief.model ?? '',
+    tone: brief.suaraTone,
+    durationSec: expectedDuration,
+  });
+  if (narration.ok) {
+    await ctx.log(
+      'info',
+      `narasi: ${narration.clips.length} scene, voice ${narration.tone}`,
+    );
+    const over = narration.clips.filter(
+      (c) => c.audioDuration !== undefined && c.audioDuration > c.duration + 0.5,
+    );
+    if (over.length) {
+      await ctx.log(
+        'warn',
+        `narasi ${over.length} scene lebih panjang dari durasinya, teks akan terpotong`,
+      );
+    }
+  } else if (!narration.skipped) {
+    await ctx.log('warn', `narasi tidak dibuat: ${narration.errors[0] ?? 'tidak diketahui'}`);
+  }
+
+  const withAudio = engine || music || narration.trackFile
+    ? muxAudio(
+        silentFile,
+        music,
+        outFile,
+        defaults.render.loudnessLufs,
+        engine?.file ?? null,
+        narration.trackFile ?? null,
+      )
     : false;
   if (!withAudio) {
     fs.copyFileSync(silentFile, outFile);

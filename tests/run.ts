@@ -23,6 +23,9 @@ import { createApp } from '../src/api/server.ts';
 import { fingerprintFor } from '../src/publish/instagram.ts';
 import { readCheckpoint, writeCheckpoint, markSceneDone, readSceneCheckpoint, isStageComplete, clearCheckpoint } from '../src/pipeline/checkpoint.ts';
 import { frameSharpness, perceptualHash, measureLoudness } from '../src/render/ffmpeg.ts';
+import { buildTrack } from '../src/render/narration.ts';
+import { synthesize, voiceForTone, toneForModel, TTS_MODEL, TTS_OUTPUT_FORMAT, VOICE_SETTINGS } from '../src/tts/provider.ts';
+import { analyseAudio } from '../scripts/validate-audio.ts';
 import {
   validateMotionPrompt,
   splitLongClip,
@@ -2092,6 +2095,96 @@ await check('measureLoudness membaca LUFS dan true peak dari video nyata', () =>
   assert(res.ok, `gagal ukur: ${res.error}`);
   assert(typeof res.integratedLufs === 'number', 'LUFS harus berupa angka');
   assert(typeof res.truePeakDbtp === 'number', 'true peak harus berupa angka');
+});
+
+// ------------------------------------------------------------------ audio VO
+
+await check('TTS memilih voice sesuai nada dan model', () => {
+  assert(voiceForTone('energik').voiceId !== voiceForTone('hangat').voiceId, 'voice harus berbeda');
+  // Sport car dan EV butuh energi; SUV keluarga butuh nada hangat.
+  assert(toneForModel('Porsche 911 GT3 RS') === 'energik', 'GT3 RS harus energik');
+  assert(toneForModel('Toyota Fortuner') === 'hangat', 'Fortuner harus hangat');
+  assert(toneForModel('Ferrari F40') === 'tegas', 'F40 harus tegas');
+});
+
+await check('TTS memakai model dan bitrate kualitas tinggi, bukan default', () => {
+  // Regresi: default API adalah mp3_44100_128 + turbo, yang terdengar datar.
+  assert(TTS_MODEL === 'eleven_multilingual_v2', 'model harus multilingual_v2');
+  assert(TTS_OUTPUT_FORMAT === 'mp3_44100_192', 'format harus 192 kbps');
+  assert(VOICE_SETTINGS.use_speaker_boost === true, 'speaker boost harus aktif');
+});
+
+await check('TTS tanpa kunci API melewati diri, bukan gagal keras', async () => {
+  const prev = process.env.TTS_API_KEY;
+  const prevEl = process.env.ELEVENLABS_API_KEY;
+  delete process.env.TTS_API_KEY;
+  delete process.env.ELEVENLABS_API_KEY;
+  try {
+    const res = await synthesize('halo', { outFile: path.join(os.tmpdir(), 'x.mp3') });
+    assert(res.ok === false, 'tanpa kunci tidak boleh ok');
+    assert(res.skipped === true, 'harus ditandai skipped');
+  } finally {
+    if (prev !== undefined) process.env.TTS_API_KEY = prev;
+    if (prevEl !== undefined) process.env.ELEVENLABS_API_KEY = prevEl;
+  }
+});
+
+await check('narasi ditempatkan di awal scene-nya, bukan menumpuk di detik nol', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'vo-'));
+  const mk = (freq: number, dur: number, name: string) => {
+    const out = path.join(dir, name);
+    const r = spawnSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi',
+      '-i', `sine=frequency=${freq}:duration=${dur}`, '-ar', '48000', '-ac', '2',
+      '-c:a', 'pcm_s16le', out]);
+    return r.status === 0 ? out : null;
+  };
+  const a = mk(1000, 2, 'a.wav');
+  const b = mk(1000, 2, 'b.wav');
+  if (!a || !b) {
+    fs.rmSync(dir, { recursive: true, force: true });
+    return;
+  }
+  const track = path.join(dir, 'track.wav');
+  const ok = buildTrack(
+    [
+      { sceneIndex: 0, start: 0, duration: 10, file: a, text: 'satu' },
+      { sceneIndex: 1, start: 12, duration: 10, file: b, text: 'dua' },
+    ],
+    30,
+    track,
+  );
+  assert(ok, 'buildTrack harus berhasil');
+
+  const rms = (start: number, dur: number) => {
+    const out = spawnSync('ffmpeg', ['-hide_banner', '-ss', String(start), '-t', String(dur),
+      '-i', track, '-af', 'astats', '-f', 'null', '-'], { encoding: 'utf8' }).stderr ?? '';
+    const m = [...out.matchAll(/RMS level dB:\s*(-?[\d.]+|-inf)/g)];
+    return m.length ? m[m.length - 1][1] : 'n/a';
+  };
+  const first = rms(0, 1.5);
+  const gap = rms(5, 3);
+  const second = rms(12, 1.5);
+  fs.rmSync(dir, { recursive: true, force: true });
+
+  assert(first !== '-inf', 'scene 1 harus bersuara di awal');
+  assert(gap === '-inf', `jeda harus senyap, dapat ${gap}`);
+  assert(second !== '-inf', 'scene 2 harus bersuara di detik 12');
+});
+
+await check('gerbang audio menolak narasi yang hilang (video tanpa suara)', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'silent-'));
+  const out = path.join(dir, 'silent.mp4');
+  const made = spawnSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi',
+    '-i', 'color=c=black:s=160x120:d=1', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', out]);
+  if (made.status !== 0) {
+    fs.rmSync(dir, { recursive: true, force: true });
+    return;
+  }
+  const report = analyseAudio(out);
+  fs.rmSync(dir, { recursive: true, force: true });
+  // Regresi bug lama: video 30 detik lolos validasi angka walau tanpa narasi,
+  // jadi keberadaan trek audio harus diperiksa terpisah.
+  assert(report.problems.length > 0, 'video tanpa audio harus ditolak');
 });
 
 console.log(`\n${passed} pemeriksaan lulus, ${failures.length} gagal`);

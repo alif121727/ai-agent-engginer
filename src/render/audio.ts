@@ -431,32 +431,81 @@ export function muxAudio(
   outFile: string,
   loudnessLufs: number,
   engineFile?: string | null,
+  narrationFile?: string | null,
 ): boolean {
   const tmp = outFile.replace(/\.mp4$/, '.mux.mp4');
-  const inputs = ['-i', videoFile];
-  if (engineFile) inputs.push('-i', engineFile);
-  if (musicFile) inputs.push('-i', musicFile);
 
-  // The engine is the subject of the video, so it leads; the music bed sits
-  // underneath and is side-chain ducked by the engine so the two never fight.
+  /**
+   * Urutan input tetap: video, mesin, musik, narasi. Indeks filter dihitung
+   * dari posisi itu, jadi menambah/menghapus salah satu trek akan menggeser
+   * nomor input — karena itu pemetaan dibuat eksplisit di bawah.
+   */
+  const inputs = ['-i', videoFile];
+  const idx: { engine?: number; music?: number; narration?: number } = {};
+  if (engineFile) {
+    idx.engine = inputs.length / 2;
+    inputs.push('-i', engineFile);
+  }
+  if (musicFile) {
+    idx.music = inputs.length / 2;
+    inputs.push('-i', musicFile);
+  }
+  if (narrationFile) {
+    idx.narration = inputs.length / 2;
+    inputs.push('-i', narrationFile);
+  }
+
+  const fmt = 'aformat=sample_rates=48000:channel_layouts=stereo';
+  /**
+   * Narasi adalah trek utama dan harus paling jelas. Musik turun jauh di
+   * bawahnya (-22 LUFS terhadap -16 narasi) dan di-duck 12:1 saat narasi
+   * berbunyi, jadi kata-kata tidak pernah tertutup. Mesin ada di antaranya:
+   * cukup terdengar untuk terasa seperti mobil, tetapi bukan subjek bicara.
+   */
+  const layers: string[] = [];
+  const mixLabels: string[] = [];
+
+  if (idx.engine !== undefined) {
+    layers.push(
+      `[${idx.engine}:a]${fmt},loudnorm=I=${loudnessLufs - 6}:TP=-2:LRA=8[eng]`,
+    );
+    mixLabels.push('[eng]');
+  }
+  if (idx.music !== undefined) {
+    layers.push(
+      `[${idx.music}:a]${fmt},volume=0.28,loudnorm=I=${loudnessLufs - 6}:TP=-4:LRA=9[bed]`,
+    );
+  }
+  if (idx.narration !== undefined) {
+    layers.push(`[${idx.narration}:a]${fmt},loudnorm=I=${loudnessLufs}:TP=-1.5:LRA=9[vox]`);
+  }
+
+  // Musik hanya di-duck oleh narasi bila narasi ada; tanpa narasi ia tidak
+  // perlu sidechain sama sekali.
+  if (idx.music !== undefined && idx.narration !== undefined) {
+    layers.push(
+      `[vox]asplit=2[voxout][voxkey]`,
+      `[bed][voxkey]sidechaincompress=threshold=0.03:ratio=12:attack=10:release=400[ducked]`,
+    );
+    mixLabels.push('[voxout]', '[ducked]');
+  } else if (idx.music !== undefined) {
+    mixLabels.push('[bed]');
+  }
+
+  // Tanpa satu pun trek audio, jangan mengarang trek senyap: pemanggil harus
+  // tahu bahwa tidak ada audio, bukan menerima video yang diam tanpa kabar.
+  if (mixLabels.length === 0) return false;
+
   let filter: string;
   let audioMap: string;
-  // A filter output label may only be consumed once, so the engine is split:
-  // one copy is the audible bed, the other only keys the ducker.
-  const fmt = 'aformat=sample_rates=48000:channel_layouts=stereo';
-  if (engineFile && musicFile) {
-    filter =
-      `[1:a]${fmt},loudnorm=I=${loudnessLufs - 2}:TP=-1.5:LRA=7,asplit=2[eng][engkey];` +
-      `[2:a]${fmt},volume=0.30,loudnorm=I=${loudnessLufs - 12}:TP=-6:LRA=9[bed];` +
-      `[bed][engkey]sidechaincompress=threshold=0.03:ratio=8:attack=8:release=260[ducked];` +
-      `[eng][ducked]amix=inputs=2:duration=first:normalize=0,` +
-      `loudnorm=I=${loudnessLufs}:TP=-1.5:LRA=11[a]`;
-    audioMap = '[a]';
-  } else if (engineFile) {
-    filter = `[1:a]${fmt},loudnorm=I=${loudnessLufs}:TP=-1.5:LRA=9[a]`;
-    audioMap = '[a]';
+  if (mixLabels.length === 1) {
+    filter = layers.join(';');
+    audioMap = mixLabels[0];
   } else {
-    filter = `[1:a]${fmt},loudnorm=I=${loudnessLufs}:TP=-1.5:LRA=11[a]`;
+    filter =
+      `${layers.join(';')};` +
+      `${mixLabels.join('')}amix=inputs=${mixLabels.length}:duration=first:normalize=0,` +
+      `loudnorm=I=${loudnessLufs}:TP=-1.5:LRA=11[a]`;
     audioMap = '[a]';
   }
 

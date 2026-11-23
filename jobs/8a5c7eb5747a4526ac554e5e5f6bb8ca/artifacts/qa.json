@@ -1,0 +1,188 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "name": "berkas-video",
+      "ok": true,
+      "detail": "30.4 MB"
+    },
+    {
+      "name": "terbaca-ffprobe",
+      "ok": true,
+      "detail": "h264 1920x1080 30.0 dtk"
+    },
+    {
+      "name": "durasi-sesuai",
+      "ok": true,
+      "detail": "video 30.0 dtk vs rencana 30.0 dtk"
+    },
+    {
+      "name": "ada-audio",
+      "ok": true,
+      "detail": "codec aac"
+    },
+    {
+      "name": "resolusi",
+      "ok": true,
+      "detail": "1920x1080"
+    },
+    {
+      "name": "tanpa-fallback",
+      "ok": true,
+      "detail": "semua aset nyata"
+    },
+    {
+      "name": "audio-plan-lengkap",
+      "ok": true,
+      "detail": "6/6 scene punya rencana audio"
+    },
+    {
+      "name": "loudness-sesuai",
+      "ok": true,
+      "detail": "-16.2 LUFS vs target -16 (selisih 0.2 LU)"
+    },
+    {
+      "name": "true-peak-aman",
+      "ok": true,
+      "detail": "-8.9 dBTP (batas -1)"
+    },
+    {
+      "name": "penggerak-konsisten",
+      "ok": true,
+      "detail": "profil \"flat-6 · 6 silinder · na · redline 9000 rpm\" cocok dengan rencana"
+    },
+    {
+      "name": "frame-1",
+      "ok": true,
+      "detail": "ketajaman 15"
+    },
+    {
+      "name": "frame-2",
+      "ok": true,
+      "detail": "ketajaman 17"
+    },
+    {
+      "name": "frame-3",
+      "ok": true,
+      "detail": "ketajaman 16"
+    },
+    {
+      "name": "frame-4",
+      "ok": true,
+      "detail": "ketajaman 16"
+    },
+    {
+      "name": "frame-5",
+      "ok": true,
+      "detail": "ketajaman 17"
+    },
+    {
+      "name": "frame-6",
+      "ok": true,
+      "detail": "ketajaman 14"
+    },
+    {
+      "name": "tidak-kosong",
+      "ok": true,
+      "detail": "rata-rata ketajaman 15.8"
+    },
+    {
+      "name": "tidak-beku",
+      "ok": true,
+      "detail": "6 dari 6 frame berbeda"
+    },
+    {
+      "name": "gerakan-terukur",
+      "ok": true,
+      "detail": "skor 0.909 (min 0.2), global 0.818, lokal 0.401"
+    },
+    {
+      "name": "gerakan-scene-1",
+      "ok": true,
+      "detail": "hook: skor 0.462 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-2",
+      "ok": true,
+      "detail": "exterior: skor 0.723 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-3",
+      "ok": true,
+      "detail": "features: skor 0.81 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-4",
+      "ok": true,
+      "detail": "interior: skor 0.819 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-5",
+      "ok": true,
+      "detail": "action: skor 0.337 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-6",
+      "ok": true,
+      "detail": "cta: skor 0.783 (min 0.2)"
+    }
+  ],
+  "assets": {
+    "passed": true,
+    "issues": []
+  },
+  "motion": {
+    "score": 0.909,
+    "globalMotion": 0.818,
+    "localMotion": 0.401,
+    "localRatio": 0.491,
+    "frames": 240,
+    "passed": true
+  },
+  "motionPerScene": [
+    {
+      "scene": 0,
+      "key": "hook",
+      "score": 0.462,
+      "passed": true
+    },
+    {
+      "scene": 1,
+      "key": "exterior",
+      "score": 0.723,
+      "passed": true
+    },
+    {
+      "scene": 2,
+      "key": "features",
+      "score": 0.81,
+      "passed": true
+    },
+    {
+      "scene": 3,
+      "key": "interior",
+      "score": 0.819,
+      "passed": true
+    },
+    {
+      "scene": 4,
+      "key": "action",
+      "score": 0.337,
+      "passed": true
+    },
+    {
+      "scene": 5,
+      "key": "cta",
+      "score": 0.783,
+      "passed": true
+    }
+  ],
+  "video": {
+    "file": "/workspace/project/jobs/8a5c7eb5747a4526ac554e5e5f6bb8ca/video.mp4",
+    "durationSec": 30,
+    "width": 1920,
+    "height": 1080,
+    "codec": "h264"
+  },
+  "checkedAt": "2026-11-23T13:42:45.053Z"
+}

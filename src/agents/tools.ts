@@ -28,6 +28,7 @@ import {
 import type { RenderResult } from '../render/assemble.ts';
 import { markSceneDone, readSceneCheckpoint, markStageComplete } from '../pipeline/checkpoint.ts';
 import { engineSfxPrompts, AUDIO_NEGATIVE } from '../core/prompts.ts';
+import { buildScript } from '../pipeline/script.ts';
 import { engineProfileFor, describeProfile } from '../render/engine.ts';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -193,16 +194,20 @@ tool('write_script', 'Tulis narasi dan teks layar', async (_args, ctx) => {
         layout: entry.layout,
       }
     : null;
+  const draft = await buildScript({ brief, scenes, specs, detail });
   const script = {
-    model: brief.model,
-    tagline: brief.tagline ?? '',
-    lines: scenes.map((scene, i) => ({
-      sceneIndex: scene.index,
-      onScreenText: scene.onScreenText,
-      voiceover: voiceoverFor(scene.key, brief, specs, i, detail),
-    })),
+    model: draft.model,
+    tagline: draft.tagline,
+    lines: draft.lines,
+    sumber: draft.sumber,
+    catatan: draft.catatan,
   };
   writeOwned(ctx, 'script.json', script);
+  await ctx.log(
+    'info',
+    `naskah dibuat oleh ${draft.sumber === 'llm' ? 'LLM' : 'penyusun lokal'}` +
+      (draft.catatan ? ` (${draft.catatan})` : ''),
+  );
   return script;
 });
 
@@ -215,46 +220,6 @@ interface ModelDetail {
   nol100: string;
   vmax: string;
   layout: string;
-}
-
-/**
- * The brief alone often has no technical data, so the catalog supplies the
- * engine/year/series facts. Narration stays short because each line has to fit
- * the scene duration.
- */
-function voiceoverFor(
-  key: string,
-  brief: Brief,
-  specs: { text: string }[],
-  index: number,
-  detail: ModelDetail | null,
-): string {
-  const spec = specs[index % Math.max(1, specs.length)]?.text ?? '';
-  const intro = detail ? `${detail.merk} ${detail.seri}, ${detail.tahun}` : brief.model;
-  switch (key) {
-    case 'hook':
-      return brief.tagline ? `${brief.model}. ${brief.tagline}` : `${brief.model}. ${intro}.`;
-    case 'exterior':
-      return detail
-        ? `Ini ${brief.model}, ${detail.tahun}. Mesin ${detail.mesin}.`
-        : `Ini ${brief.model}, dilihat dari setiap sudut.`;
-    case 'features':
-      return spec ? `Salah satu andalannya: ${spec}.` : `Detail ${brief.model} yang membuatnya berbeda.`;
-    case 'detail_engine':
-      return detail ? `Jantungnya ${detail.mesin}, ${detail.tenaga}.` : spec || `Ruang mesin ${brief.model}.`;
-    case 'interior':
-      return detail ? `Kabin ${detail.merk} ${detail.seri}, semua tersusun untuk pengemudi.` : `Masuk ke kabin, semua tersusun untuk pengemudi.`;
-    case 'action':
-      return detail
-        ? `Di jalan, ${detail.tenaga}, nol sampai seratus ${detail.nol100}.`
-        : spec
-          ? `Di jalan, ${spec}.`
-          : `Saat jalanan terbuka, karakter aslinya terlihat.`;
-    case 'cta':
-      return brief.tagline ? `${brief.model}. ${brief.tagline}` : `${brief.model}.`;
-    default:
-      return spec ? `${spec}.` : `Detail ${brief.model}.`;
-  }
 }
 
 // -------------------------------------------------------- storyboard tools

@@ -2155,6 +2155,167 @@ await check('TTS lokal menghasilkan mp3 44,1 kHz stereo 192 kbps', async () => {
   fs.rmSync(out, { force: true });
 });
 
+await check('naskah lokal mematuhi batas durasi tiap scene', async () => {
+  const { buildLocalScript, maxCharsFor } = await import('../src/pipeline/script.ts');
+  const scenes = [0, 1, 2].map((i) => ({
+    index: i, key: ['hook', 'features', 'cta'][i], label: 'X', start: i * 5, duration: 5,
+    shot: '', camera: '', lens: '', lighting: '', location: '', prompt: '',
+    negativePrompt: '', onScreenText: '', voiceover: '',
+  }));
+  const draft = buildLocalScript({
+    brief: { model: 'Porsche 911 GT3 RS', tagline: 'Presisi tanpa kompromi' },
+    scenes: scenes as never,
+    specs: [{ text: '525 PS' }],
+    detail: null,
+  });
+  assert(draft.sumber === 'lokal', 'tanpa LLM harus ditandai lokal');
+  assert(draft.lines.length === 3, 'satu baris per scene');
+  for (const line of draft.lines) {
+    const batas = maxCharsFor(5);
+    assert(
+      line.voiceover.length <= batas + 1,
+      `narasi ${line.voiceover.length} karakter melebihi batas ${batas}: ${line.voiceover}`,
+    );
+    assert(line.voiceover.length >= 8, 'narasi tidak boleh kosong');
+  }
+  // Kalimat tidak boleh berakhir di tengah kata.
+  for (const line of draft.lines) {
+    assert(/[.!?]$/.test(line.voiceover), `narasi harus kalimat utuh: ${line.voiceover}`);
+  }
+});
+
+await check('narasi memilih kalimat yang muat, bukan memotong tagline/spec', async () => {
+  const { localVoiceoverFor, maxCharsFor } = await import('../src/pipeline/script.ts');
+  const brief = {
+    model: 'Porsche 911 GT3 RS',
+    tagline: 'Presisi tanpa kompromi',
+    keunggulan: ['aerodinamika aktif', '525 PS'],
+  };
+  const specs = [
+    { text: 'flat-6 4.0L naturally aspirated (MA2.75) · 525 PS' },
+    { text: '525 PS' },
+  ];
+
+  // Bug nyata: tagline dipotong jadi "Presisi." pada scene CTA 3 detik.
+  const cta = localVoiceoverFor('cta', brief, specs, 5, null, maxCharsFor(3));
+  assert(cta.includes('Presisi tanpa kompromi'), `tagline harus utuh, dapat: ${cta}`);
+  assert(!/\bPresisi\.$/.test(cta), 'tagline tidak boleh terpotong jadi satu kata');
+
+  // Bug nyata: "naturally aspirated" terpotong jadi "naturally".
+  const fitur = localVoiceoverFor('features', brief, specs, 2, null, maxCharsFor(5));
+  assert(!/naturally$/i.test(fitur.replace(/\.$/, '')), `kata menggantung: ${fitur}`);
+  assert(!/aspirated/i.test(fitur) || /naturally aspirated/i.test(fitur), 'frasa teknis harus utuh atau dibuang');
+
+  // Semua narasi harus kalimat utuh dan tidak melebihi batas.
+  for (const [i, key] of ['hook', 'exterior', 'features', 'interior', 'action', 'cta'].entries()) {
+    const durasi = [5, 6, 5, 5, 6, 3][i];
+    const v = localVoiceoverFor(key, brief, specs, i, null, maxCharsFor(durasi));
+    assert(v.length >= 8, `${key} terlalu pendek: ${v}`);
+    assert(/[.!?]$/.test(v), `${key} harus kalimat utuh: ${v}`);
+    assert(v.length <= maxCharsFor(durasi) + 1, `${key} melebihi batas: ${v}`);
+  }
+});
+
+await check('pemotong kalimat memotong di batas kata, bukan tengah kata', async () => {
+  const { clampSentence } = await import('../src/pipeline/script.ts');
+  const hasil = clampSentence('Mesin enam silinder dengan tenaga besar dan suara khas', 30);
+  assert(hasil.length <= 31, `hasil ${hasil.length} terlalu panjang`);
+  assert(/\.$/.test(hasil), 'harus diakhiri titik');
+  assert(!/\s$/.test(hasil), 'tidak boleh ada spasi menggantung');
+  // Tidak boleh memotong di tengah kata: setiap kata harus utuh.
+  const asli = 'Mesin enam silinder dengan tenaga besar dan suara khas'.split(' ');
+  const potong = hasil.replace(/\.$/, '').split(' ');
+  assert(potong.every((w) => asli.includes(w)), `ada kata terpotong: ${hasil}`);
+});
+
+await check('naskah memakai LLM saat tersedia, dan memvalidasi balasannya', async () => {
+  const http = await import('node:http');
+  const { buildScript, llmTersedia } = await import('../src/pipeline/script.ts');
+
+  const scenes = [0, 1].map((i) => ({
+    index: i, key: ['hook', 'action'][i], label: 'X', start: i * 5, duration: 5,
+    shot: 'dekat', camera: '', lens: '', lighting: '', location: '', prompt: '',
+    negativePrompt: '', onScreenText: '', voiceover: '',
+  }));
+
+  // Server tiruan: meniru bentuk balasan OpenAI chat/completions.
+  let diterima = 0;
+  const server = http.createServer((req, res) => {
+    diterima += 1;
+    let body = '';
+    req.on('data', (c) => (body += c));
+    req.on('end', () => {
+      const isi = JSON.stringify({
+        lines: [
+          { sceneIndex: 0, voiceover: 'Ini Porsche 911 GT3 RS, lahir untuk lintasan.' },
+          { sceneIndex: 1, voiceover: 'Di jalan, 525 PS bekerja tanpa ragu.' },
+        ],
+      });
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ choices: [{ message: { content: '```json\n' + isi + '\n```' } }] }));
+    });
+  });
+  await new Promise<void>((r) => server.listen(0, '127.0.0.1', () => r()));
+  const port = (server.address() as { port: number }).port;
+
+  const lama = { ...process.env };
+  process.env.LLM_BASE_URL = `http://127.0.0.1:${port}/v1`;
+  process.env.LLM_API_KEY = 'uji';
+  process.env.LLM_MODEL = 'uji-model';
+  try {
+    assert(llmTersedia(), 'konfigurasi lengkap harus dianggap tersedia');
+    const draft = await buildScript({
+      brief: { model: 'Porsche 911 GT3 RS' },
+      scenes: scenes as never,
+      specs: [],
+      detail: null,
+    });
+    assert(diterima === 1, `LLM harus dipanggil sekali, dapat ${diterima}`);
+    assert(draft.sumber === 'llm', `harus ditandai llm, dapat ${draft.sumber}`);
+    assert(draft.lines[0].voiceover.includes('lintasan'), 'isi dari LLM harus dipakai');
+  } finally {
+    process.env = lama;
+    server.close();
+  }
+});
+
+await check('naskah jatuh ke jalur lokal saat LLM gagal, render tidak ikut gagal', async () => {
+  const http = await import('node:http');
+  const { buildScript } = await import('../src/pipeline/script.ts');
+  const scenes = [0].map((i) => ({
+    index: i, key: 'hook', label: 'X', start: 0, duration: 5, shot: '', camera: '',
+    lens: '', lighting: '', location: '', prompt: '', negativePrompt: '',
+    onScreenText: '', voiceover: '',
+  }));
+
+  // Balasan rusak: bukan JSON yang bisa dipakai.
+  const server = http.createServer((_req, res) => {
+    res.writeHead(200, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ choices: [{ message: { content: 'maaf saya tidak bisa' } }] }));
+  });
+  await new Promise<void>((r) => server.listen(0, '127.0.0.1', () => r()));
+  const port = (server.address() as { port: number }).port;
+
+  const lama = { ...process.env };
+  process.env.LLM_BASE_URL = `http://127.0.0.1:${port}/v1`;
+  process.env.LLM_API_KEY = 'uji';
+  process.env.LLM_MODEL = 'uji-model';
+  try {
+    const draft = await buildScript({
+      brief: { model: 'Porsche 911 GT3 RS' },
+      scenes: scenes as never,
+      specs: [{ text: '525 PS' }],
+      detail: null,
+    });
+    assert(draft.sumber === 'lokal', 'balasan rusak harus jatuh ke lokal');
+    assert(draft.catatan !== undefined, 'alasan fallback harus dicatat');
+    assert(draft.lines[0].voiceover.length >= 8, 'narasi lokal tetap terisi');
+  } finally {
+    process.env = lama;
+    server.close();
+  }
+});
+
 await check('gaya overlay dipilih dari isi teks, bukan satu gaya untuk semua', async () => {
   const { chooseOverlayStyle, parseOverlay, buildOverlayFilters } = await import('../src/render/overlay.ts');
 

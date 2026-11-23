@@ -2155,6 +2155,69 @@ await check('TTS lokal menghasilkan mp3 44,1 kHz stereo 192 kbps', async () => {
   fs.rmSync(out, { force: true });
 });
 
+await check('gaya overlay dipilih dari isi teks, bukan satu gaya untuk semua', async () => {
+  const { chooseOverlayStyle, parseOverlay, buildOverlayFilters } = await import('../src/render/overlay.ts');
+
+  assert(chooseOverlayStyle('525 PS') === 'count_up', 'satu angka harus jadi count_up');
+  assert(chooseOverlayStyle('1450 kg · 525 PS · 465 Nm') === 'spec_bar', 'banyak angka harus jadi spec_bar');
+  // Bug nyata: nama model berisi angka, dan sempat dirender sebagai bar.
+  assert(chooseOverlayStyle('Porsche 911 GT3 RS') === 'stat_callout', 'nama model bukan bar spesifikasi');
+  assert(chooseOverlayStyle('Ferrari 296 GTB') === 'stat_callout', 'nama model Ferrari bukan bar');
+  assert(chooseOverlayStyle('BMW M4 Competition G82') === 'stat_callout', 'nama model BMW bukan bar');
+  // 17 karakter masih "punchy", jadi tampil besar di tengah.
+  assert(chooseOverlayStyle('Aerodinamika aktif') === 'stat_callout', 'teks pendek harus stat_callout');
+  assert(
+    chooseOverlayStyle('Aerodinamika aktif di lintasan') === 'lower_third',
+    'teks sedang harus lower_third',
+  );
+  assert(chooseOverlayStyle('Halo') === 'stat_callout', 'teks pendek harus stat_callout');
+  assert(
+    chooseOverlayStyle('Downforce 450 kg pada kecepatan tinggi menghasilkan stabilitas luar biasa di tikungan'),
+    'full_screen_stat',
+    'teks panjang harus full_screen_stat',
+  );
+
+  const angka = parseOverlay('525 PS');
+  assert(angka.value === 525, `nilai harus 525, dapat ${angka.value}`);
+  assert(angka.unit === 'PS', `unit harus PS, dapat ${angka.unit}`);
+
+  // Angka ribuan Indonesia memakai titik, harus dibaca 1450 bukan 1,45.
+  const ribu = parseOverlay('1.450 kg');
+  assert(ribu.value === 1450, `1.450 harus jadi 1450, dapat ${ribu.value}`);
+
+  // spec_bar tanpa dua pasangan valid harus turun jadi count_up, bukan satu bar.
+  const tanpaBar = parseOverlay('1450 kg · luar biasa');
+  assert(tanpaBar.style !== 'spec_bar', 'bar tanpa minimal 2 pasangan harus ditolak');
+  assert(tanpaBar.value === 1450, 'nilai harus tetap terbaca 1450');
+
+  const filter = buildOverlayFilters(angka, {
+    durationSec: 5, width: 1920, height: 1080,
+    fontFile: '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', fps: 30,
+  });
+  assert(filter.length > 0, 'filter tidak boleh kosong');
+  const gabung = filter.join(' ');
+  // Frame terakhir ada di durasi - 1/fps, jadi penyebut ekspresi harus 4,9667.
+  assert(gabung.includes('4.9667'), `penyebut count-up harus durasi-1/fps, dapat: ${gabung.slice(0, 200)}`);
+  assert(gabung.includes('eif'), 'harus memakai ekspresi eif untuk menghitung angka');
+  assert(gabung.includes('between(t,') || gabung.includes('alpha='), 'harus punya animasi alpha/enable');
+});
+
+await check('overlay menolak klip yang terlalu pendek agar teks tidak berkedip', async () => {
+  const { parseOverlay, buildOverlayFilters } = await import('../src/render/overlay.ts');
+  const f = buildOverlayFilters(parseOverlay('525 PS'), {
+    durationSec: 0.15, width: 1920, height: 1080,
+    fontFile: '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', fps: 30,
+  });
+  assert(f.length === 0, 'klip 0,15 dtk tidak boleh diberi overlay');
+});
+
+await check('teks overlay di-escape agar tidak merusak filter ffmpeg', async () => {
+  const { escapeDrawtext } = await import('../src/render/overlay.ts');
+  const hasil = escapeDrawtext("100% 'asli': uji");
+  assert(!hasil.includes("'"), 'kutip tunggal harus diganti, kalau tidak filter putus');
+  assert(hasil.includes('\\%') || hasil.includes('\\:'), 'karakter khusus harus di-escape');
+});
+
 await check('nada suara mengubah tempo narasi pada mesin lokal', async () => {
   const teks = 'Porsche 911 GT3 RS dengan mesin naturally aspirated.';
   const durasi: Record<string, number> = {};

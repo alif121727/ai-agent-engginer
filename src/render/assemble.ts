@@ -12,6 +12,7 @@ import { buildMusicBed, buildEngineTrack, muxAudio } from './audio.ts';
 import { buildNarration } from './narration.ts';
 import { describeProfile } from './engine.ts';
 import { cameraFilterFor } from './camera.ts';
+import { buildOverlayFilters, parseOverlay, describeOverlay } from './overlay.ts';
 import type { CameraMove } from '../core/motion-prompt.ts';
 import { assertPolicyApplied, assertMotionAllowed, loadPolicy, PolicyViolation } from '../core/motion-policy.ts';
 import { validateMotionPrompt } from '../core/motion-prompt.ts';
@@ -52,10 +53,6 @@ function fontFile(): string | null {
     '/usr/share/fonts/TTF/DejaVuSans-Bold.ttf',
   ];
   return candidates.find((f) => fs.existsSync(f)) ?? null;
-}
-
-function escapeDrawText(text: string): string {
-  return text.replace(/\\/g, '\\\\').replace(/:/g, '\\:').replace(/'/g, "\\'").replace(/%/g, '\\%');
 }
 
 /**
@@ -198,6 +195,8 @@ export async function assembleVideo(ctx: AgentContext): Promise<RenderResult> {
   }
 
   const clipPaths: string[] = [];
+  /** Ringkasan overlay per scene, dipakai log job agar gaya bisa diperiksa. */
+  const overlayNotes: string[] = [];
   for (const scene of scenes) {
     ctx.assertOnline();
     const asset = byScene.get(scene.index)!;
@@ -205,7 +204,6 @@ export async function assembleVideo(ctx: AgentContext): Promise<RenderResult> {
     clipPaths.push(clip);
 
     const font = fontFile();
-    const text = scene.onScreenText ? escapeDrawText(scene.onScreenText) : '';
     // Each cross-fade eats XFADE_SEC of total runtime, so every clip except the
     // last is rendered that much longer. Without this a 30s brief renders 27.5s.
     const isLast = scene.index === scenes[scenes.length - 1].index;
@@ -230,11 +228,18 @@ export async function assembleVideo(ctx: AgentContext): Promise<RenderResult> {
     ];
     if (scene.onScreenText) {
       if (font && ffmpegHasFilter('drawtext')) {
-        const fontSize = Math.round(width / 22);
-        filters.push(
-          `drawtext=fontfile=${font}:text='${text}':fontcolor=white:fontsize=${fontSize}:` +
-            `x=(w-text_w)/2:y=h-(text_h*2.4):box=1:boxcolor=0x0A0A0A@0.55:boxborderw=${Math.round(fontSize / 2)}`,
-        );
+        const spec = parseOverlay(scene.onScreenText, scene.label);
+        const tambahan = buildOverlayFilters(spec, {
+          durationSec: clipDuration,
+          width,
+          height,
+          fontFile: font,
+          fps,
+        });
+        if (tambahan.length) {
+          filters.push(...tambahan);
+          overlayNotes.push(`scene ${scene.index}: ${describeOverlay(spec)}`);
+        }
       } else if (ffmpegHasFilter('ass')) {
         // drawtext butuh libfreetype; libass tersedia di hampir semua build.
         const ass = writeAssFile(clipsDir, scene, width, height);
@@ -295,6 +300,10 @@ export async function assembleVideo(ctx: AgentContext): Promise<RenderResult> {
     theme,
     model: brief.model ?? '',
   });
+
+  if (overlayNotes.length) {
+    await ctx.log('info', `teks overlay: ${overlayNotes.join(' · ')}`);
+  }
 
   /**
    * Narasi disintesis di sini, bukan di tahap audio, karena butuh timing scene

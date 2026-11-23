@@ -428,8 +428,15 @@ SSE progress (`/api/...` event stream), 15 template di `src/core/templates.ts`.
 - Dua jalur: LLM bila `LLM_BASE_URL`+`LLM_API_KEY`+`LLM_MODEL` lengkap, jika
   tidak -> penyusun lokal. Kegagalan LLM **tidak pernah** menggagalkan render;
   alasan fallback ditulis ke `script.json` (`sumber`, `catatan`).
-- `LLM_MODEL` di `.env.example` lama menunjuk proxy eval yang menolak
-  `OPENHANDS_API_KEY` (HTTP 401). Jangan isi `LLM_BASE_URL` dengan proxy itu.
+- Kunci milik user adalah **DeepSeek** (`api.deepseek.com/v1`, model
+  `deepseek-flash` / `deepseek-v4-pro`), BUKAN OpenAI: kunci `sk-`+32hex
+  ditolak OpenAI (401). `.env.example` lama menunjuk proxy eval yang juga
+  menolak `OPENHANDS_API_KEY` (401). Jangan pakai proxy itu.
+- Saldo DeepSeek user = **0,00 USD** -> HTTP 402 `insufficient_balance_error`.
+  Autentikasi valid tapi tidak bisa dipakai sampai diisi saldo. Cek dengan
+  `GET https://api.deepseek.com/user/balance`.
+- Kegagalan LLM dibedakan: 402 -> "saldo habis", 401/403 -> "kunci ditolak".
+  Jangan pernah menyamarkan jadi "LLM gagal".
 - Kecepatan Piper terukur: 80 karakter = 6,9 dtk -> **11,5 karakter/detik**.
   `maxCharsFor(durasi)` memakai 0,92 dari itu sebagai batas per scene.
 - JANGAN memotong kalimat sebagai langkah pertama: itu menghasilkan

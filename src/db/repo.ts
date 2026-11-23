@@ -36,6 +36,8 @@ export interface Stage {
   job_id: string;
   agent_id: string;
   name: string;
+  /** Urutan tahap di dalam job; dipakai saat rewind untuk memilih tahap mana yang diulang. */
+  ord: number;
   status: StageStatus;
   attempts: number;
   progress: number;

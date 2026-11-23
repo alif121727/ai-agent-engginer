@@ -9,7 +9,9 @@ import {
   listStages,
   nextPendingStage,
   pauseAllOffline,
+  requeueStaleRunning,
   resumeAllOffline,
+  touchJob,
   setStageStatus,
   updateJob,
   dailyCost,
@@ -74,6 +76,13 @@ export class Worker {
   async start(): Promise<void> {
     this.#running = true;
     this.#monitor.start();
+    // Job yang tertinggal `running` oleh worker yang mati tidak akan pernah
+    // diambil lagi (claimNextJob hanya membaca `queued`), jadi dipulihkan dulu
+    // sebelum loop berjalan.
+    const dipulihkan = await requeueStaleRunning();
+    if (dipulihkan.length) {
+      logger('worker').warn(`memulihkan ${dipulihkan.length} job basi`, { jobs: dipulihkan });
+    }
     const loop = async () => {
       if (!this.#running) return;
       if (!this.#busy) {
@@ -157,6 +166,12 @@ export class Worker {
 
         await setStageStatus(stage.id, 'running', { incrementAttempts: true });
         await updateJob(job.id, { checkpoint_stage: stage.name });
+        // Heartbeat: render/QA bisa berjalan puluhan menit tanpa menyentuh
+        // `jobs.updated_at`, dan requeueStaleRunning akan mengambil alih job
+        // yang tampak diam.
+        const heartbeat = setInterval(() => {
+          void touchJob(job.id).catch(() => {});
+        }, 60_000);
         _bus.emitEvent({
           type: 'stage',
           at: new Date().toISOString(),
@@ -165,27 +180,32 @@ export class Worker {
           data: { stage: stage.name, status: 'running' },
         });
 
-        const outcome = await runStage({
-          jobId: job.id,
-          agentId: stage.agent_id,
-          brief,
-          isOffline: () => this.isOffline(),
-          setStageMessage: async (msg) => setStageStatus(stage.id, 'running', { message: msg }),
-          setStageProgress: async (pct) => {
-            await setStageStatus(stage.id, 'running', { progress: pct });
-            const stages = await listStages(job.id);
-            const total = stages.reduce((sum, s) => sum + (s.status === 'done' ? 100 : s.progress), 0);
-            const progress = Math.round(total / Math.max(1, stages.length));
-            await updateJob(job.id, { progress });
-            _bus.emitEvent({
-              type: 'stage',
-              at: new Date().toISOString(),
-              jobId: job.id,
-              agentId: stage.agent_id,
-              data: { stage: stage.name, status: 'running', progress: pct, jobProgress: progress },
-            });
-          },
-        });
+        let outcome: Awaited<ReturnType<typeof runStage>>;
+        try {
+          outcome = await runStage({
+            jobId: job.id,
+            agentId: stage.agent_id,
+            brief,
+            isOffline: () => this.isOffline(),
+            setStageMessage: async (msg) => setStageStatus(stage.id, 'running', { message: msg }),
+            setStageProgress: async (pct) => {
+              await setStageStatus(stage.id, 'running', { progress: pct });
+              const stages = await listStages(job.id);
+              const total = stages.reduce((sum, s) => sum + (s.status === 'done' ? 100 : s.progress), 0);
+              const progress = Math.round(total / Math.max(1, stages.length));
+              await updateJob(job.id, { progress });
+              _bus.emitEvent({
+                type: 'stage',
+                at: new Date().toISOString(),
+                jobId: job.id,
+                agentId: stage.agent_id,
+                data: { stage: stage.name, status: 'running', progress: pct, jobProgress: progress },
+              });
+            },
+          });
+        } finally {
+          clearInterval(heartbeat);
+        }
 
         if (outcome.offline) {
           await setStageStatus(stage.id, 'pending', { message: 'dijeda: internet putus' });

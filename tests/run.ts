@@ -884,6 +884,44 @@ await check('dua worker tidak bisa mengklaim job yang sama', async () => {
   assert(ids.includes(job.id), 'job baru tidak pernah terklaim');
 });
 
+await check('job running yang worker-nya mati dipulihkan, bukan tertahan selamanya', async () => {
+  const { createJob, claimNextJob, requeueStaleRunning, getJob } = await import('../src/db/repo.ts');
+  while (await claimNextJob()) {
+    /* kosongkan antrean */
+  }
+  const job = await createJob({
+    briefSlug: 'uji-basi',
+    title: 'Uji Basi',
+    model: 'Uji Basi',
+    themeId: 'generic',
+    mode: 'draft',
+    durationSec: 30,
+    aspect: '16:9',
+    preset: '9-orang',
+    brief: { model: 'Uji Basi', durasi: 30, rasio: '16:9', keunggulan: [] } as never,
+    costEstimate: 0,
+  });
+  const claimed = await claimNextJob();
+  assert(claimed?.id === job.id, 'job baru tidak terklaim');
+  assert((await getJob(job.id))?.status === 'running', 'job seharusnya running setelah diklaim');
+
+  // Job yang baru disentuh tidak boleh dianggap basi: itu akan merebut job
+  // yang benar-benar sedang dirender.
+  assert((await requeueStaleRunning()).length === 0, 'job yang masih segar ikut dipulihkan');
+
+  // Mundurkan updated_at melewati batas, seperti worker yang mati 20 menit lalu.
+  const { db } = await import('../src/db/index.ts');
+  const lama = new Date(Date.now() - 20 * 60_000).toISOString();
+  await db().run('UPDATE jobs SET updated_at = ? WHERE id = ?', [lama, job.id]);
+
+  const pulih = await requeueStaleRunning();
+  assert(pulih.includes(job.id), 'job basi tidak dipulihkan');
+  const setelah = await getJob(job.id);
+  assert(setelah?.status === 'queued', `status setelah pulih: ${setelah?.status}`);
+  const diambil = await claimNextJob();
+  assert(diambil?.id === job.id, 'job yang dipulihkan tidak bisa diklaim lagi');
+});
+
 // ------------------------------------------------ pencarian model otomatis
 
 await check('pencarian model menerima nama panggilan, bukan hanya nama persis', async () => {

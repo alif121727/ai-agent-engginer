@@ -110,6 +110,11 @@ export async function listActiveJobs(): Promise<Job[]> {
   );
 }
 
+/** Perbarui `updated_at` saja; dipakai heartbeat worker selama tahap panjang. */
+export async function touchJob(id: string): Promise<void> {
+  await db().run('UPDATE jobs SET updated_at = ? WHERE id = ?', [now(), id]);
+}
+
 export async function updateJob(id: string, patch: Partial<Job>): Promise<void> {
   const keys = Object.keys(patch).filter((k) => k !== 'id');
   if (!keys.length) return;
@@ -138,6 +143,39 @@ export async function claimNextJob(): Promise<Job | undefined> {
     if (changed === 1) return getJob(candidate.id);
   }
   return undefined;
+}
+
+/**
+ * Job yang statusnya masih `running` padahal tidak ada worker yang
+ * mengerjakannya (proses worker mati / container restart) akan tertahan
+ * selamanya: claimNextJob hanya mengambil `queued`, dan retry menolak job
+ * `running`. Saat worker start, job seperti itu dikembalikan ke `queued`
+ * supaya tahap yang belum selesai dilanjutkan, bukan diulang dari nol
+ * (checkpoint per tahap tetap dipakai).
+ *
+ * `staleMs` melindungi job yang benar-benar sedang berjalan: heartbeat
+ * worker memperbarui `updated_at` tiap tahap, jadi job yang baru disentuh
+ * tidak akan dianggap basi.
+ */
+export async function requeueStaleRunning(staleMs = 15 * 60_000): Promise<string[]> {
+  const batas = new Date(Date.now() - staleMs).toISOString();
+  const basi = await db().all<Job>(
+    `SELECT id FROM jobs WHERE status = 'running' AND updated_at < ?`,
+    [batas],
+  );
+  for (const row of basi) {
+    await db().run(`UPDATE jobs SET status = 'queued', updated_at = ? WHERE id = ?`, [
+      now(),
+      row.id as string,
+    ]);
+    // Tahap yang setengah jalan dikembalikan ke pending agar dijalankan ulang;
+    // tahap yang sudah `done` dibiarkan supaya tidak mengulang pekerjaan.
+    await db().run(
+      `UPDATE job_stages SET status = 'pending', updated_at = ? WHERE job_id = ? AND status = 'running'`,
+      [now(), row.id as string],
+    );
+  }
+  return basi.map((r) => r.id as string);
 }
 
 export async function pauseAllOffline(): Promise<string[]> {

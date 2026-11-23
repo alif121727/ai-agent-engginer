@@ -549,7 +549,14 @@ export function createApp(opts: AppOptions = {}) {
       res.status(404).json({ error: 'job tidak ditemukan' });
       return;
     }
-    if (job.status !== 'failed' && job.status !== 'cancelled') {
+    // Job `running` yang worker-nya sudah mati tidak bisa diulang lewat jalur
+    // biasa, jadi pengguna terkunci tanpa jalan keluar. Job seperti itu
+    // diterima bila tidak ada aktivitas selama 15 menit; job yang benar-benar
+    // dikerjakan tetap ditolak agar dua worker tidak menulis folder yang sama.
+    const basi =
+      job.status === 'running' &&
+      Date.now() - new Date(job.updated_at).getTime() > 15 * 60_000;
+    if (job.status !== 'failed' && job.status !== 'cancelled' && !basi) {
       res.status(409).json({ error: `job berstatus ${job.status}, tidak bisa diulang` });
       return;
     }

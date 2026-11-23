@@ -402,3 +402,24 @@ yang sudah tertaut (jadi `unlink` dulu). CLI ada di `/workspace/tools`
   memperingatkan "tanpa narasi" padahal video bersuara).
 - Cara memverifikasi narasi benar-benar ada: RMS per scene di video final harus
   sekitar -18 dB, bukan `-inf`. Perintah: ffmpeg `-ss <start> -t 2 -af astats`.
+
+## MASTER.md vs kenyataan (audit 2026-11-20)
+Dokumen `MASTER.md` (17 sprint) dibangun di atas stack yang TIDAK ada di repo:
+Next.js/Supabase/BullMQ/Redis/Stripe/Kling. Repo nyata: Express 5 + SQLite +
+esbuild, **tanpa LLM sama sekali** (`src/agents/tools.ts` memakai template
+deterministik; `src/pipeline/llm.ts` hanya probe konektivitas, tidak dipanggil
+pipeline). Jangan "migrasi" ke Next.js tanpa keputusan eksplisit user.
+Yang SUDAH ada dan jangan dibangun ulang: drawtext caption, color grade
+(`gradeFilters`), xfade transisi, loudnorm, sidechain ducking, engine track,
+SSE progress (`/api/...` event stream), 15 template di `src/core/templates.ts`.
+
+## Overlay (src/render/overlay.ts)
+- 6 gaya; gaya dipilih dari isi teks lewat `chooseOverlayStyle`/`parseOverlay`.
+- Animasi = ekspresi `drawtext` (`%{eif:...}` + `alpha`), bukan render PNG.
+- **Count-up WAJIB dibagi `durasi - 1/fps`**, bukan durasi: frame terakhir ada
+  di t=durasi-1/fps, jadi target tidak pernah tercapai (770 tampil 757).
+- Nama model berisi angka ("Porsche 911 GT3 RS") harus dianggap teks, bukan
+  angka spesifikasi — ada daftar `MEREK` + regex kode tipe.
+- `extractBars` harus menerima label SEBELUM atau SESUDAH angka ("525 PS").
+- Verifikasi visual tanpa mata: hitung blob glyph (`scipy.ndimage.label`,
+  ambang >246) — "0 PS"=3 glyph, "525 PS"=5 glyph.

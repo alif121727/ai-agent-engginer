@@ -248,6 +248,20 @@ export async function synthesize(
 }
 
 /**
+ * Pemetaan nada ke parameter Piper.
+ *
+ * `lengthScale` > 1 memperlambat bicara, `< 1` mempercepat. `noiseScale`
+ * menambah variasi intonasi. Angkanya dipilih dengan mendengarkan hasilnya,
+ * bukan dari rumus.
+ */
+const PIPER_TONE: Record<VoiceTone, { lengthScale: number; noiseScale: number; noiseWScale: number }> = {
+  energik: { lengthScale: 0.92, noiseScale: 0.75, noiseWScale: 0.9 },
+  sinematik: { lengthScale: 1.05, noiseScale: 0.6, noiseWScale: 0.8 },
+  hangat: { lengthScale: 1.1, noiseScale: 0.55, noiseWScale: 0.75 },
+  tegas: { lengthScale: 0.98, noiseScale: 0.5, noiseWScale: 0.7 },
+};
+
+/**
  * Sintesis dengan Piper, mesin saraf lokal.
  *
  * Piper menulis WAV mono 22 kHz. Berkas itu lalu dikonversi ke mp3 192 kbps
@@ -268,11 +282,19 @@ function synthesizeLocal(
   const tmpWav = opts.outFile.replace(/\.mp3$/i, '') + '.piper.wav';
   fs.mkdirSync(path.dirname(opts.outFile), { recursive: true });
 
-  const args = ['-m', model, '-f', tmpWav];
+  // Piper tidak punya "gaya", tapi tempo dan noise memberi karakter yang
+  // sejalan dengan niat tiap nada. Tanpa pemetaan ini pemilih nada di UI
+  // tidak berpengaruh apa pun saat penyedia lokal yang dipakai.
+  const gaya = PIPER_TONE[opts.tone ?? 'sinematik'];
+  const args = [
+    '-m', model,
+    '-f', tmpWav,
+    '--length-scale', String(gaya.lengthScale),
+    '--noise-scale', String(gaya.noiseScale),
+    '--noise-w-scale', String(gaya.noiseWScale),
+  ];
   // Panjang jeda antar kalimat; tanpa ini Piper berbicara terlalu rapat.
-  if (process.env.PIPER_SENTENCE_SILENCE) {
-    args.push('--sentence-silence', process.env.PIPER_SENTENCE_SILENCE);
-  }
+  args.push('--sentence-silence', process.env.PIPER_SENTENCE_SILENCE ?? '0.25');
 
   const run = spawnSync(bin, args, {
     input: text,

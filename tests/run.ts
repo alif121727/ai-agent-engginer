@@ -2155,6 +2155,27 @@ await check('TTS lokal menghasilkan mp3 44,1 kHz stereo 192 kbps', async () => {
   fs.rmSync(out, { force: true });
 });
 
+await check('nada suara mengubah tempo narasi pada mesin lokal', async () => {
+  const teks = 'Porsche 911 GT3 RS dengan mesin naturally aspirated.';
+  const durasi: Record<string, number> = {};
+  for (const tone of ['energik', 'hangat'] as const) {
+    const out = path.join(os.tmpdir(), `tone-${tone}-${Date.now()}.mp3`);
+    const res = await synthesize(teks, { outFile: out, tone });
+    if (res.provider !== 'piper') {
+      assert(res.skipped === true, 'tanpa piper harus skipped');
+      return;
+    }
+    const probe = spawnSync('ffprobe', ['-v', 'error', '-show_entries',
+      'format=duration', '-of', 'csv=p=0', out], { encoding: 'utf8' });
+    durasi[tone] = Number(probe.stdout.trim());
+    fs.rmSync(out, { force: true });
+  }
+  // "hangat" sengaja lebih lambat dari "energik"; kalau nilainya sama, pemetaan
+  // nada tidak sampai ke mesin dan pemilih di UI hanya hiasan.
+  assert(durasi.hangat > durasi.energik,
+    `hangat (${durasi.hangat}s) harus lebih lambat dari energik (${durasi.energik}s)`);
+});
+
 await check('narasi ditempatkan di awal scene-nya, bukan menumpuk di detik nol', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'vo-'));
   const mk = (freq: number, dur: number, name: string) => {

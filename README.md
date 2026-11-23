@@ -12,9 +12,16 @@ dipublikasikan ke Instagram (dry run sebagai default).
 | **GitHub Pages** (kanonik) | https://alif121727.github.io/ai-agent-engginer/ | Gratis, tanpa kredit, diperbarui otomatis tiap push ke `main` |
 | Netlify (cermin) | https://agent-studio-ai.netlify.app | Deploy manual; kredit build Netlify sudah habis |
 
-Masuk dengan `demo@studio.id` / `demo12345`. Keduanya menjalankan **mode demo**:
-pipeline disimulasikan di peramban (tanpa ffmpeg), dan UI mengatakannya terus
-terang. Untuk mp4 sungguhan, jalankan backend di bawah.
+Masuk dengan akun admin studio: `admin123` (atau `admin@studio.id`).
+Kedua situs memakai **backend nyata** di sandbox — login diverifikasi server,
+daftar proyek dan mp4 diambil dari API, bukan simulasi di peramban.
+
+Cara kerjanya: halaman statis di Netlify/Pages memanggil API sandbox lewat
+`__STUDIO_API__` (disuntik saat build dari `STUDIO_URL`). Sesi memakai
+**Bearer token** di `localStorage`, bukan cookie, karena Chrome/Safari
+memblokir cookie pihak ketiga untuk permintaan lintas situs. Token juga
+dikirim lewat `?token=` pada URL media, sebab tag `<video>`/`<img>` tidak bisa
+mengirim header. Backend harus menyetel `CORS_ORIGINS` berisi kedua domain.
 
 ## Jalankan
 
@@ -131,7 +138,7 @@ batas harian berhenti di status `awaiting_cost_approval` sampai disetujui.
 
 | Perintah | Kegunaan |
 | --- | --- |
-| `npm test` | 33 pemeriksaan (brief, durasi, tema, job desk, offline, DB, API) |
+| `npm test` | 130 pemeriksaan (brief, durasi, tema, job desk, offline, DB, API, CORS) |
 | `npm run build:ui` | Bundle UI ke `public/` |
 | `npm run api` | API + UI |
 | `npm run worker` | Worker agen |
@@ -152,6 +159,14 @@ src/worker   klaim job, orkestrasi tahap, jeda/lanjut
 src/publish  Instagram Reels (dry run default)
 ui/          React + design token (hitam, oranye, putih, krem)
 ```
+
+## Dokumentasi
+
+- [docs/PANDUAN-STUDIO.md](docs/PANDUAN-STUDIO.md) — cara masuk, membuat video,
+  menonton hasil, dan mengatasi kegagalan.
+- [docs/ARSITEKTUR-STUDIO.md](docs/ARSITEKTUR-STUDIO.md) — alur data, job desk
+  tiap agen, aturan yang mengikat, dan jebakan render.
+- [ASSUMPTIONS.md](ASSUMPTIONS.md) — asumsi teknis yang mengikat.
 
 ## Catatan
 

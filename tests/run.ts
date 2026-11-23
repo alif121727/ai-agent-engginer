@@ -394,6 +394,35 @@ await check('API menolak akses tanpa sesi', async () => {
   }
 });
 
+// Preflight browser menolak permintaan kalau `Authorization` tidak ada di
+// Access-Control-Allow-Headers, sehingga UI lintas situs tampak login padahal
+// semua panggilan API berikutnya gagal.
+await check('CORS preflight mengizinkan header Authorization', async () => {
+  const previous = process.env.CORS_ORIGINS;
+  process.env.CORS_ORIGINS = 'https://ui.contoh.id';
+  const { app } = createApp({ startWorker: false });
+  const server = app.listen(0);
+  const port = (server.address() as { port: number }).port;
+  try {
+    const res = await fetch(`http://127.0.0.1:${port}/api/jobs`, {
+      method: 'OPTIONS',
+      headers: {
+        origin: 'https://ui.contoh.id',
+        'access-control-request-method': 'GET',
+        'access-control-request-headers': 'authorization',
+      },
+    });
+    assert(res.status === 204, `status ${res.status}`);
+    const allowed = (res.headers.get('access-control-allow-headers') ?? '').toLowerCase();
+    assert(allowed.includes('authorization'), `allow-headers "${allowed}"`);
+    assert(res.headers.get('access-control-allow-origin') === 'https://ui.contoh.id', 'origin harus dipantulkan');
+  } finally {
+    server.close();
+    if (previous === undefined) delete process.env.CORS_ORIGINS;
+    else process.env.CORS_ORIGINS = previous;
+  }
+});
+
 await check('API setup, login, dan buat job', async () => {
   const { app } = createApp({ startWorker: false });
   const server = app.listen(0);

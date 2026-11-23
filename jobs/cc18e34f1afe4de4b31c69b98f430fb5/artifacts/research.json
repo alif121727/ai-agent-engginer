@@ -1,0 +1,41 @@
+{
+  "model": "Ferrari F40",
+  "catalog": {
+    "merk": "Ferrari",
+    "seri": "F40",
+    "tahun": "1987–1992",
+    "kategori": "klasik",
+    "mesin": "V8 2.9L twin-turbo (Tipo F120A)",
+    "tenaga": "478 PS",
+    "torsi": "577 Nm",
+    "layout": "mid-engine, RWD",
+    "berat": "1.254 kg",
+    "nol100": "4,1 dtk",
+    "vmax": "tidak disebut di sumber",
+    "sumber": "https://en.wikipedia.org/wiki/Ferrari_F40"
+  },
+  "specs": [
+    {
+      "text": "V8 2.9L twin-turbo (Tipo F120A) · 478 PS",
+      "source": "katalog"
+    },
+    {
+      "text": "Torsi 577 Nm · mid-engine, RWD",
+      "source": "katalog"
+    },
+    {
+      "text": "0–100 km/jam 4,1 dtk",
+      "source": "katalog"
+    },
+    {
+      "text": "Berat 1.254 kg · produksi 1987–1992",
+      "source": "katalog"
+    },
+    {
+      "text": "Tanpa ABS, tanpa power steering: 1.311 unit supercar mekanis murni.",
+      "source": "katalog"
+    }
+  ],
+  "missing": [],
+  "note": "angka dari brief didahulukan; sisanya dari katalog yang bersumber Wikipedia"
+}

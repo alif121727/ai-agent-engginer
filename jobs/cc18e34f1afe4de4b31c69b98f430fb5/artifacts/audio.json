@@ -1,0 +1,196 @@
+{
+  "loudnessLufs": -16,
+  "truePeakDbtp": -1,
+  "audioPlan": [
+    {
+      "sceneIndex": 0,
+      "sceneKey": "hook",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-jauh",
+      "eventDominan": "idle",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 8,
+        "firingPerRev": 4,
+        "rpm": 3410,
+        "redline": 6200
+      },
+      "sumber": "katalog:ferrari-f40"
+    },
+    {
+      "sceneIndex": 1,
+      "sceneKey": "exterior",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-dekat",
+      "eventDominan": "rev",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 8,
+        "firingPerRev": 4,
+        "rpm": 3410,
+        "redline": 6200
+      },
+      "sumber": "katalog:ferrari-f40"
+    },
+    {
+      "sceneIndex": 2,
+      "sceneKey": "features",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-dekat",
+      "eventDominan": "rev",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 8,
+        "firingPerRev": 4,
+        "rpm": 3410,
+        "redline": 6200
+      },
+      "sumber": "katalog:ferrari-f40"
+    },
+    {
+      "sceneIndex": 3,
+      "sceneKey": "interior",
+      "penggerak": "ICE",
+      "posisiKamera": "interior",
+      "eventDominan": "idle",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 8,
+        "firingPerRev": 4,
+        "rpm": 850,
+        "redline": 6200
+      },
+      "sumber": "katalog:ferrari-f40"
+    },
+    {
+      "sceneIndex": 4,
+      "sceneKey": "action",
+      "penggerak": "ICE",
+      "posisiKamera": "pass-by",
+      "eventDominan": "akselerasi",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 8,
+        "firingPerRev": 4,
+        "rpm": 3410,
+        "redline": 6200
+      },
+      "sumber": "katalog:ferrari-f40"
+    },
+    {
+      "sceneIndex": 5,
+      "sceneKey": "cta",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-jauh",
+      "eventDominan": "idle",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 8,
+        "firingPerRev": 4,
+        "rpm": 3410,
+        "redline": 6200
+      },
+      "sumber": "katalog:ferrari-f40"
+    }
+  ],
+  "music": {
+    "ducking": true,
+    "gain": -18
+  },
+  "engine": {
+    "profile": "V8 · 8 silinder · turbo · redline 6200 rpm",
+    "synthesizedLocally": true,
+    "externalPrompts": [
+      {
+        "id": "start",
+        "label": "Start & idle",
+        "scene": "Engine bay",
+        "prompt": "Car engine ignition start, starter motor cranking, twin-turbocharged V8 engine (Tipo F120A) coming to life, settling into a warm classic analog idle at 850 rpm, close-up microphone, high quality, studio recording, realistic, no music, no voice, dry signal"
+      },
+      {
+        "id": "rev",
+        "label": "Rev & akselerasi",
+        "scene": "Driving",
+        "prompt": "High-performance twin-turbocharged V8 engine revving hard through the gears up to 6200 rpm, warm classic analog exhaust note, turbo spool and blow-off flutter, turbo whistle, subtle exhaust overrun crackle, Ferrari F40, high quality, studio recording, realistic, no music, no voice, dry signal"
+      },
+      {
+        "id": "exhaust",
+        "label": "Knalpot dekat",
+        "scene": "Detail",
+        "prompt": "Close-mic exhaust recording of a twin-turbocharged V8 engine, warm classic analog tone, blipping the throttle, wastegate flutter, tailpipe resonance, high quality, studio recording, realistic, no music, no voice, dry signal"
+      },
+      {
+        "id": "passby",
+        "label": "Melintas (Doppler)",
+        "scene": "Action",
+        "prompt": "twin-turbocharged V8 car passing by at high speed, Doppler effect, warm classic analog exhaust note sweeping past, turbo spool, tyre noise on tarmac, realistic racing sound, high quality, studio recording, realistic, no music, no voice, dry signal"
+      },
+      {
+        "id": "idle",
+        "label": "Idle kabin",
+        "scene": "Interior",
+        "prompt": "Interior of a Ferrari F40, engine idling at 850 rpm, warm classic analog note muffled through the firewall, faint cabin ambience, high quality, studio recording, realistic, no music, no voice, dry signal"
+      }
+    ],
+    "negativePrompt": "music, melody, voice, speech, singing, robotic voice, clipping audio, background hiss, wind noise, distortion, cartoon sound, synthesized beeps, phone recording"
+  },
+  "sfx": [
+    {
+      "sceneIndex": 0,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 1,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 2,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 3,
+      "bed": "cabin-ambience",
+      "promptId": "idle"
+    },
+    {
+      "sceneIndex": 4,
+      "bed": "engine-rev",
+      "promptId": "passby"
+    },
+    {
+      "sceneIndex": 5,
+      "bed": "studio-room",
+      "promptId": "rev"
+    }
+  ],
+  "subtitles": [
+    {
+      "sceneIndex": 0,
+      "text": "Ferrari F40. Ferrari F40, 1987–1992."
+    },
+    {
+      "sceneIndex": 1,
+      "text": "Ini Ferrari F40, 1987–1992. Mesin V8 2.9L twin-turbo (Tipo F120A)."
+    },
+    {
+      "sceneIndex": 2,
+      "text": "Salah satu andalannya: 0–100 km/jam 4,1 dtk."
+    },
+    {
+      "sceneIndex": 3,
+      "text": "Kabin Ferrari F40, semua tersusun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "text": "Di jalan, 478 PS, nol sampai seratus 4,1 dtk."
+    },
+    {
+      "sceneIndex": 5,
+      "text": "Ferrari F40."
+    }
+  ],
+  "ttsAvailable": false
+}

@@ -1,0 +1,36 @@
+{
+  "model": "Ferrari F40",
+  "tagline": "",
+  "lines": [
+    {
+      "sceneIndex": 0,
+      "onScreenText": "Ferrari F40",
+      "voiceover": "Ferrari F40. Ferrari F40, 1987–1992."
+    },
+    {
+      "sceneIndex": 1,
+      "onScreenText": "Ferrari F40",
+      "voiceover": "Ini Ferrari F40, 1987–1992. Mesin V8 2.9L twin-turbo (Tipo F120A)."
+    },
+    {
+      "sceneIndex": 2,
+      "onScreenText": "",
+      "voiceover": "Salah satu andalannya: 0–100 km/jam 4,1 dtk."
+    },
+    {
+      "sceneIndex": 3,
+      "onScreenText": "",
+      "voiceover": "Kabin Ferrari F40, semua tersusun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "onScreenText": "",
+      "voiceover": "Di jalan, 478 PS, nol sampai seratus 4,1 dtk."
+    },
+    {
+      "sceneIndex": 5,
+      "onScreenText": "Ferrari F40",
+      "voiceover": "Ferrari F40."
+    }
+  ]
+}

@@ -30,6 +30,7 @@ import {
   dailyCost,
 } from '../db/repo.ts';
 import { stagesFor, listPresets } from '../agents/registry.ts';
+import { runwayCredits } from '../visuals/adapters.ts';
 import {
   authenticate,
   createSession,
@@ -187,6 +188,43 @@ export function createApp(opts: AppOptions = {}) {
       db: process.env.DB_KIND ?? 'sqlite',
       ffmpeg: ffmpegAvailable(),
     });
+  });
+
+  /**
+   * Which video models can actually run right now. The UI marks a model
+   * "siap" from this, so a model is never advertised as usable when its key
+   * is missing or its account has no credits.
+   */
+  app.get('/api/visual/readiness', async (_req, res) => {
+    const adapters = loadAdapters();
+    type Provider = { keyed: boolean; credits?: number; ready: boolean; note?: string };
+    const providers: Record<string, Provider> = {};
+    for (const a of Object.values(adapters.adapters)) {
+      if (a.kind !== 'video-gen') continue;
+      const provider = a.provider ?? 'generic';
+      const keyed = Boolean(a.envKey && process.env[a.envKey]);
+      if (!a.enabled || !keyed) {
+        providers[provider] = { keyed, ready: false, note: 'kunci API belum diisi' };
+        continue;
+      }
+      if (provider === 'runway') {
+        const credits = await runwayCredits();
+        providers[provider] = {
+          keyed,
+          ...(credits === null ? {} : { credits }),
+          ready: credits !== null && credits > 0,
+          ...(credits === 0
+            ? { note: 'saldo kredit habis' }
+            : credits === null
+              ? { note: 'saldo tidak bisa diperiksa' }
+              : {}),
+        };
+      } else {
+        // Kling has no balance endpoint; only a real generation reports it.
+        providers[provider] = { keyed, ready: true };
+      }
+    }
+    res.json({ ok: true, providers, local: true });
   });
 
   app.get('/api/bootstrap', async (_req, res) => {
@@ -434,7 +472,10 @@ export function createApp(opts: AppOptions = {}) {
       // ikut tersimpan akan hilang saat job dikerjakan.
       const templateId = typeof req.body?.templateId === 'string' ? req.body.templateId : '';
       const temaAi = req.body?.theme && typeof req.body.theme === 'object' ? req.body.theme : undefined;
-      const briefWithLook = { ...brief, templateId: templateId || undefined, temaAi };
+      // Model pilihan pengguna harus ikut tersimpan: worker memilih adapter
+      // dari brief, bukan dari state browser.
+      const modelId = typeof req.body?.modelId === 'string' ? req.body.modelId : undefined;
+      const briefWithLook = { ...brief, templateId: templateId || undefined, temaAi, modelId };
       const look = resolveBriefLook(briefWithLook);
       const { theme, template, aspect } = look;
       const preset = String(req.body?.preset ?? (await getSetting('agentPreset', defaults.agentPreset)));

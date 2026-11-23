@@ -4,27 +4,33 @@ import { Icon } from '../components/ui';
 import { VIDEO_MODELS } from '../data/models';
 import { LINKS } from '../links';
 import { APP_VERSION } from '../version';
+import { probeBackend, saveBackend, savedBackend, type ProviderState } from '../services/api';
 
 export function Models() {
-  const { settings, saveSettings, toast } = useStudio();
+  const { settings, saveSettings, toast, isModelReady, readiness } = useStudio();
   return (
     <div className="page stack" style={{ gap: 18 }}>
       <div>
         <div className="eyebrow">Model AI</div>
         <h1 style={{ marginTop: 4 }}>Mesin video</h1>
         <p className="muted small" style={{ marginTop: 4, maxWidth: '70ch' }}>
-          Hanya satu model yang benar-benar tersambung di lingkungan ini. Sisanya disiapkan sebagai adaptor:
-          antarmukanya ada, tapi butuh kunci API dan app review dari vendor masing-masing sebelum bisa dipakai.
+          Status di bawah dibaca langsung dari server: hijau berarti kunci API ada dan saldo kredit cukup,
+          jadi render benar-benar bisa jalan. Model yang belum siap tetap bisa dipilih, tapi hasilnya memakai
+          Studio Render lokal.
         </p>
       </div>
 
-      <div className="note note--warn">
-        <span className="note__icon"><Icon.Warn size={14} /></span>
-        <span>
-          Studio ini <strong>tidak</strong> akan mengaku bisa memanggil Veo/Kling/Seedance tanpa kredensial.
-          Kalau Anda memilih model yang belum siap, tahap render otomatis memakai Studio Render lokal dan UI memberi tahu Anda.
-        </span>
-      </div>
+      {readiness && (
+        <div className={`note ${(Object.values(readiness.providers) as ProviderState[]).some((p) => p.note) ? 'note--warn' : 'note--ok'}`}>
+          <span className="note__icon"><Icon.Info size={14} /></span>
+          <span>
+            {(Object.entries(readiness.providers) as Array<[string, ProviderState]>)
+              .filter(([, p]) => p.note)
+              .map(([name, p]) => `${name}: ${p.note}${typeof p.credits === 'number' ? ` (${p.credits} kredit)` : ''}`)
+              .join(' · ') || 'Semua kunci API aktif dan saldo cukup.'}
+          </span>
+        </div>
+      )}
 
       <div className="stack" style={{ gap: 12 }}>
         {VIDEO_MODELS.map((m) => (
@@ -33,7 +39,7 @@ export function Models() {
               <div style={{ minWidth: 0, flex: 1 }}>
                 <div className="row" style={{ gap: 8, marginBottom: 4 }}>
                   <h3>{m.name}</h3>
-                  {m.ready ? <span className="chip chip--ok"><span className="dot" /> siap dipakai</span> : <span className="chip chip--warn">butuh API key</span>}
+                  {isModelReady(m.id) ? <span className="chip chip--ok"><span className="dot" /> siap dipakai</span> : <span className="chip chip--warn">butuh API key</span>}
                   {settings.defaultModel === m.id && <span className="chip chip--accent">default</span>}
                 </div>
                 <div className="dim tiny" style={{ marginBottom: 8 }}>{m.vendor} · {m.strength}</div>
@@ -59,6 +65,69 @@ export function Models() {
   );
 }
 
+/**
+ * Lets the visitor point the static site at a live backend. Without this the
+ * only way out of demo mode was rebuilding with STUDIO_URL, which the user
+ * cannot do from the deployed site.
+ */
+function BackendForm({ onConnected }: { onConnected(): void }) {
+  const { toast, api } = useStudio();
+  const [url, setUrl] = React.useState(savedBackend() || LINKS.studio);
+  const [busy, setBusy] = React.useState(false);
+
+  async function connect() {
+    const clean = url.trim().replace(/\/$/, '');
+    if (!/^https?:\/\//.test(clean)) {
+      toast({ title: 'Alamat tidak valid', body: 'Mulai dengan http:// atau https://', kind: 'info' });
+      return;
+    }
+    setBusy(true);
+    const ok = await probeBackend(clean);
+    setBusy(false);
+    if (!ok) {
+      toast({ title: 'Backend tidak menjawab', body: `${clean}/api/health gagal. Pastikan server hidup.`, kind: 'info' });
+      return;
+    }
+    saveBackend(clean);
+    toast({ title: 'Backend tersambung', body: 'Memuat ulang studio dengan server nyata.', kind: 'ok' });
+    onConnected();
+  }
+
+  return (
+    <div className="stack" style={{ gap: 10 }}>
+      <div className="field">
+        <span className="field__label">Alamat backend</span>
+        <input
+          className="input mono"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="https://studio-anda.onrender.com"
+          spellCheck={false}
+        />
+        <span className="field__hint">
+          Diisi otomatis dengan alamat studio yang tercatat di aplikasi ini. Ganti kalau backend pindah host.
+        </span>
+      </div>
+      <div className="row row--wrap" style={{ gap: 8 }}>
+        <button className="btn btn--accent btn--sm" onClick={connect} disabled={busy}>
+          {busy ? 'Memeriksa…' : 'Sambungkan'}
+        </button>
+        {api.kind === 'http' && (
+          <button
+            className="btn btn--ghost btn--sm"
+            onClick={() => {
+              saveBackend('');
+              window.location.reload();
+            }}
+          >
+            Lupakan backend
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 const LINK_ROWS: Array<{ key: keyof typeof LINKS; label: string; note: string }> = [
   { key: 'studio', label: 'Studio lengkap', note: 'Backend nyata: render ffmpeg, worker, QA sungguhan.' },
   { key: 'pages', label: 'GitHub Pages', note: 'Salinan statis; bisa dibuka tanpa backend.' },
@@ -67,7 +136,7 @@ const LINK_ROWS: Array<{ key: keyof typeof LINKS; label: string; note: string }>
 ];
 
 export function Settings() {
-  const { settings, saveSettings, toast, user, api } = useStudio();
+  const { settings, saveSettings, toast, user, api, isModelReady } = useStudio();
 
   async function copy(url: string, label: string) {
     // navigator.clipboard butuh HTTPS + izin; kalau ditolak, pakai textarea
@@ -109,7 +178,7 @@ export function Settings() {
         <div className="field">
           <span className="field__label">Model video default</span>
           <select className="select" value={settings.defaultModel} onChange={(e) => saveSettings({ defaultModel: e.target.value })}>
-            {VIDEO_MODELS.map((m) => <option key={m.id} value={m.id}>{m.name}{m.ready ? '' : ' (butuh API key)'}</option>)}
+            {VIDEO_MODELS.map((m) => <option key={m.id} value={m.id}>{m.name}{isModelReady(m.id) ? '' : ' (butuh API key)'}</option>)}
           </select>
         </div>
         <div className="field">
@@ -157,6 +226,20 @@ export function Settings() {
           <span className="note__icon"><Icon.Info size={14} /></span>
           <span>Kalau Anda memberi kunci API, saya bisa mengaktifkan adaptor platform di backend dengan mode <span className="mono">PUBLISHER_MODE=mock</span> dulu agar aman diuji tanpa benar-benar mengunggah.</span>
         </div>
+      </div>
+
+      <div className="card stack">
+        <div className="row row--between">
+          <h2>Koneksi backend</h2>
+          <span className={`chip ${api.kind === 'http' ? 'chip--ok' : 'chip--warn'}`}>
+            {api.kind === 'http' ? 'tersambung' : 'mode demo'}
+          </span>
+        </div>
+        <p className="small muted" style={{ margin: 0 }}>
+          Mode demo hanya menyimpan proyek di peramban ini dan tidak menjalankan ffmpeg. Sambungkan ke
+          backend studio agar job benar-benar dirender dan proyek tersimpan di server.
+        </p>
+        <BackendForm onConnected={() => window.location.reload()} />
       </div>
 
       <div className="card stack">

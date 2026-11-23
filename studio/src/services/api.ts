@@ -187,7 +187,16 @@ export type StudioApi = {
   currentUser(): Promise<{ email: string; name: string } | null>;
   /** true bila server belum punya akun sama sekali (pendaftaran masih terbuka). */
   needsSetup(): Promise<boolean>;
+  /**
+   * Kesiapan model video menurut kredensial di server. Mode demo menjawab
+   * `null`: tidak ada backend, jadi tidak ada yang bisa dijanjikan.
+   */
+  modelReadiness(): Promise<Readiness | null>;
 };
+
+/** Kesiapan satu vendor: `ready` false berarti render akan ditolak vendor. */
+export type ProviderState = { keyed: boolean; credits?: number; ready: boolean; note?: string };
+export type Readiness = { providers: Record<string, ProviderState>; local: boolean };
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const rid = () => Math.random().toString(36).slice(2, 10);
@@ -335,7 +344,42 @@ export class DemoStudioApi implements StudioApi {
     return demoProjectsKey();
   }
 
+  /**
+   * Projects made before signing in are stored under the `anon` key, so they
+   * disappeared the moment a visitor logged in. Moving them across keeps the
+   * work a visitor already did instead of silently hiding it.
+   */
+  private adoptAnonymous(): void {
+    const own = demoProjectsKey();
+    const anonKey = 'asa.projects.anon';
+    if (own === anonKey) return;
+    let anon: Project[] = [];
+    try {
+      anon = JSON.parse(localStorage.getItem(anonKey) || '[]') as Project[];
+    } catch {
+      return;
+    }
+    if (!anon.length) return;
+    let mine: Project[] = [];
+    try {
+      mine = JSON.parse(localStorage.getItem(own) || '[]') as Project[];
+    } catch {
+      mine = [];
+    }
+    const known = new Set(mine.map((p) => p.id));
+    const merged = [...mine, ...anon.filter((p) => !known.has(p.id))].sort(
+      (a, b) => b.createdAt - a.createdAt,
+    );
+    try {
+      localStorage.setItem(own, JSON.stringify(merged.slice(0, 60)));
+      localStorage.removeItem(anonKey);
+    } catch {
+      /* kuota penuh -> biarkan, refresh berikutnya mencoba lagi */
+    }
+  }
+
   async listProjects(): Promise<Project[]> {
+    this.adoptAnonymous();
     await wait(120);
     const raw = localStorage.getItem(this.key());
     const deleted = new Set(deletedSeeds());
@@ -438,6 +482,10 @@ export class DemoStudioApi implements StudioApi {
   }
   async needsSetup(): Promise<boolean> {
     return false;
+  }
+  // Tanpa backend tidak ada kredensial yang bisa dilaporkan.
+  async modelReadiness(): Promise<Readiness | null> {
+    return null;
   }
   // Mode demo tidak punya kredensial maupun backend, jadi tidak pernah mengunggah.
   async publish(): Promise<PublishOutcome> {
@@ -549,6 +597,8 @@ export class HttpStudioApi implements StudioApi {
         // Nada suara ikut dikirim; tanpa ini pilihan pengguna hilang dan
         // server memakai nada otomatis.
         ...(input.suaraTone ? { suaraTone: input.suaraTone } : {}),
+        // Model yang dipilih di UI menentukan adapter vendor di worker.
+        ...(input.modelId ? { modelId: input.modelId } : {}),
       }),
     });
     // Job dari server memakai nama kolom snake_case; tanpa pemetaan ini UI
@@ -657,6 +707,16 @@ export class HttpStudioApi implements StudioApi {
       return false;
     }
   }
+  async modelReadiness(): Promise<Readiness | null> {
+    try {
+      const r = await fetch(this.base + '/api/visual/readiness', { credentials: 'include' });
+      if (!r.ok) return null;
+      const d = (await r.json()) as Partial<Readiness>;
+      return { providers: d.providers ?? {}, local: d.local !== false };
+    } catch {
+      return null;
+    }
+  }
   async publish(jobId: string, platform: string, caption: string): Promise<PublishOutcome> {
     // dryRun selalu true dari UI: unggahan sungguhan hanya lewat kredensial resmi.
     const d = await this.j<PublishOutcome & { note?: string }>(`/api/publish/${jobId}`, {
@@ -671,31 +731,62 @@ export class HttpStudioApi implements StudioApi {
 // Disuntik esbuild (lihat scripts/build-studio.ts); kosong saat dev.
 declare const __STUDIO_URL__: string | undefined;
 
+/**
+ * Backend yang dipilih pengguna dari halaman Pengaturan. Disimpan di
+ * localStorage supaya situs statis bisa diarahkan ke server mana pun tanpa
+ * build ulang — ini yang membedakan "mode demo" dari "backend nyata".
+ */
+export const BACKEND_KEY = 'studio.backend';
+
+export function savedBackend(): string {
+  try {
+    return (localStorage.getItem(BACKEND_KEY) ?? '').trim().replace(/\/$/, '');
+  } catch {
+    return '';
+  }
+}
+
+export function saveBackend(url: string): void {
+  try {
+    const clean = url.trim().replace(/\/$/, '');
+    if (clean) localStorage.setItem(BACKEND_KEY, clean);
+    else localStorage.removeItem(BACKEND_KEY);
+  } catch {
+    /* mode privat: pilihan hanya berlaku untuk sesi ini */
+  }
+}
+
+/** Cek satu kandidat backend; true kalau /api/health menjawab ok. */
+export async function probeBackend(base: string): Promise<boolean> {
+  try {
+    const r = await fetch(base.replace(/\/$/, '') + '/api/health', {
+      credentials: 'include',
+      signal: AbortSignal.timeout(4000),
+    });
+    if (!r.ok) return false;
+    const d = (await r.json()) as { ok?: boolean };
+    return Boolean(d?.ok);
+  } catch {
+    return false;
+  }
+}
+
 export async function pickApi(): Promise<StudioApi> {
-  // Urutan percobaan: override eksplisit, backend yang disuntikkan saat build
-  // (STUDIO_URL), origin sendiri, lalu demo. Demo berarti tidak ada backend.
+  // Urutan percobaan: backend pilihan pengguna, override eksplisit, backend
+  // yang disuntikkan saat build (STUDIO_URL), origin sendiri, lalu demo.
+  // Demo berarti tidak ada backend yang menjawab.
   //
   // `__STUDIO_API__` sengaja didahulukan: UI statis di Netlify/Pages memakai
   // backend sandbox yang hidup, sehingga situs itu tidak lagi "mode demo".
   const candidates = [
+    savedBackend(),
     (globalThis as any).__STUDIO_API__ as string | undefined,
     typeof __STUDIO_URL__ === 'string' && __STUDIO_URL__ ? __STUDIO_URL__ : undefined,
     globalThis.location?.origin,
   ].filter((b): b is string => typeof b === 'string' && b.length > 0);
 
   for (const base of candidates) {
-    try {
-      const r = await fetch(base.replace(/\/$/, '') + '/api/health', {
-        credentials: 'include',
-        signal: AbortSignal.timeout(2500),
-      });
-      if (r.ok) {
-        const d = (await r.json()) as { ok?: boolean };
-        if (d?.ok) return new HttpStudioApi(base.replace(/\/$/, ''));
-      }
-    } catch {
-      /* coba kandidat berikutnya */
-    }
+    if (await probeBackend(base)) return new HttpStudioApi(base.replace(/\/$/, ''));
   }
   return new DemoStudioApi();
 }

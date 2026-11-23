@@ -14,6 +14,11 @@ export const BriefSchema = z.object({
   /** Template yang dipilih pengguna; menentukan resep scene. */
   templateId: z.string().optional(),
   /**
+   * Model video yang dipilih di UI (mis. `veo-3.1`). Menentukan apakah tahap
+   * visual meminta klip video atau masih memakai foto.
+   */
+  modelId: z.string().optional(),
+  /**
    * Nada suara narasi. Boleh kosong: kalau tidak diisi, nada dipilih otomatis
    * dari jenis mobil supaya pengguna tidak perlu memikirkan istilah teknis.
    */

@@ -46,6 +46,13 @@ export interface Brief {
   deadlineMenit?: number;
   /** Template yang dipilih pengguna; menentukan resep scene. */
   templateId?: string;
+  /**
+   * Model video pilihan pengguna (mis. `veo-3.1`). Tahap visual memakainya
+   * untuk memilih adapter dan memutuskan perlu klip video atau foto.
+   */
+  modelId?: string;
+  /** Nada suara narasi; kosong = dipilih otomatis dari jenis mobil. */
+  suaraTone?: string;
   /** Tema buatan AI; mengalahkan tema kata kunci bawaan. */
   temaAi?: Partial<Theme>;
 }

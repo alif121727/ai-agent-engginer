@@ -10,7 +10,10 @@ export type VideoModel = {
   best: string;
   speed: 'cepat' | 'sedang' | 'lambat';
   maxDur: number;
+  /** true bila bisa dipakai tanpa kredensial tambahan (render lokal). */
   ready: boolean;
+  /** Adapter backend yang menjalankan model ini; kosong = render lokal. */
+  provider?: 'runway' | 'kling';
 };
 
 // Katalog model video. `ready: false` = belum ada kredensial/adaptor,
@@ -39,6 +42,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     speed: 'lambat',
     maxDur: 8,
     ready: false,
+    provider: 'runway',
   },
   {
     id: 'kling-3.0',
@@ -51,6 +55,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     speed: 'sedang',
     maxDur: 10,
     ready: false,
+    provider: 'kling',
   },
   {
     id: 'seedance-2.0',
@@ -63,6 +68,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     speed: 'cepat',
     maxDur: 12,
     ready: false,
+    provider: 'runway',
   },
   {
     id: 'runway-gen4',
@@ -75,6 +81,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     speed: 'sedang',
     maxDur: 10,
     ready: false,
+    provider: 'runway',
   },
 ];
 

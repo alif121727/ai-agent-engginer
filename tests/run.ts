@@ -2772,6 +2772,55 @@ await check('pencarian hybrid: kata kunci tak dikenal tidak mengarang hasil', as
   assert(Boolean(hasil.catatan), 'harus ada catatan alasan kosong');
 });
 
+await check('rute model: pilihan UI dipetakan ke adapter yang benar', async () => {
+  const { routeForModel, wantsVideoClip } = await import('../src/visuals/model-map.ts');
+  assert(routeForModel('local-render')?.adapterId === 'local', 'render lokal memakai adapter local');
+  assert(routeForModel('veo-3.1')?.adapterId === 'runway', 'Veo dilayani lewat Runway');
+  assert(routeForModel('veo-3.1')?.vendorModel === 'veo3.1', 'id model vendor Veo harus veo3.1');
+  assert(routeForModel('kling-3.0')?.adapterId === 'kling', 'Kling punya adapter sendiri');
+  assert(routeForModel('tidak-ada') === null, 'model asing tidak boleh menebak adapter');
+  assert(wantsVideoClip('veo-3.1') === true, 'model vendor meminta klip video');
+  assert(wantsVideoClip('local-render') === false, 'render lokal tetap foto');
+  assert(wantsVideoClip(undefined) === false, 'tanpa model tidak meminta klip');
+});
+
+await check('rute model: model vendor menimpa model di definisi adapter', async () => {
+  const { withVendorModel } = await import('../src/visuals/model-map.ts');
+  const def = { id: 'runway', label: 'Runway', kind: 'video-gen' as const, enabled: true, requiresKey: true, model: 'veo3.1' };
+  const patched = withVendorModel(def, { adapterId: 'runway', vendorModel: 'seedance2' });
+  assert(patched.model === 'seedance2', `model harus seedance2, dapat ${patched.model}`);
+  assert(def.model === 'veo3.1', 'definisi asli tidak boleh berubah');
+  const lokal = withVendorModel(def, { adapterId: 'local' });
+  assert(lokal.model === 'veo3.1', 'tanpa vendorModel definisi dibiarkan apa adanya');
+});
+
+await check('adapter vendor terdaftar dan hanya siap bila ada kunci', async () => {
+  const { loadAdapters } = await import('../src/core/config.ts');
+  const { buildAdapter } = await import('../src/visuals/index.ts');
+  const adapters = loadAdapters();
+  const runway = adapters.adapters.runway;
+  const kling = adapters.adapters.kling;
+  assert(Boolean(runway), 'adapter runway harus ada di config');
+  assert(runway?.provider === 'runway', 'runway memakai protokol runway');
+  assert(kling?.provider === 'kling', 'kling memakai protokol kling');
+  const built = buildAdapter(runway!);
+  assert(Boolean(built), 'adapter runway harus bisa dibangun');
+  const saved = process.env.RUNWAY_API_KEY;
+  delete process.env.RUNWAY_API_KEY;
+  assert(buildAdapter(runway!)!.available() === false, 'tanpa kunci runway tidak boleh siap');
+  process.env.RUNWAY_API_KEY = saved;
+});
+
+await check('durasi vendor dijepit ke nilai yang didukung API', async () => {
+  const { runwayDurationForTest } = await import('../src/visuals/adapters.ts');
+  assert(runwayDurationForTest('veo3.1', 5) === 6, 'Veo tidak punya 5s, ambil 6s terdekat di atasnya');
+  assert(runwayDurationForTest('veo3.1', 7) === 8, 'Veo 7s dibulatkan ke 8');
+  assert(runwayDurationForTest('veo3.1', 9) === 8, 'di atas maksimum Veo tetap 8s');
+  assert(runwayDurationForTest('seedance2', 5) === 5, 'Seedance menerima 5s');
+  assert(runwayDurationForTest('seedance2', 12) === 10, 'Seedance maksimum 10s');
+  assert(runwayDurationForTest('seedance2', 2) === 5, 'di bawah minimum tetap 5s');
+});
+
 console.log(`\n${passed} pemeriksaan lulus, ${failures.length} gagal`);
 if (failures.length) {
   for (const f of failures) console.log(`  - ${f}`);

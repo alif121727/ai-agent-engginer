@@ -22,6 +22,34 @@
       "requiresKey": false,
       "description": "Foto/video di assets/own/<slug-model>/ atau kolom referensi template. Prioritas tertinggi karena paling akurat."
     },
+    "runway": {
+      "id": "runway",
+      "label": "Runway (Veo 3.1 / Seedance 2.0 / Gen-4)",
+      "kind": "video-gen",
+      "provider": "runway",
+      "enabled": true,
+      "requiresKey": true,
+      "envKey": "RUNWAY_API_KEY",
+      "model": "veo3.1",
+      "timeoutMs": 600000,
+      "maxRetries": 1,
+      "minBytes": 100000,
+      "description": "Satu kunci Runway membuka Veo 3.1, Seedance 2.0, dan Gen-4. Model dipilih dari UI, bukan dari file ini."
+    },
+    "kling": {
+      "id": "kling",
+      "label": "Kling 3.0",
+      "kind": "video-gen",
+      "provider": "kling",
+      "enabled": true,
+      "requiresKey": true,
+      "envKey": "KLING_API_KEY",
+      "model": "kling-v3",
+      "timeoutMs": 600000,
+      "maxRetries": 1,
+      "minBytes": 100000,
+      "description": "Kling image-to-video dengan kontrol gerakan. Butuh KLING_API_KEY dari platform Kuaishou."
+    },
     "video-gen": {
       "id": "video-gen",
       "label": "Generator video (image-to-video)",

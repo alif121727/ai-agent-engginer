@@ -14,7 +14,7 @@ type Step = 0 | 1 | 2 | 3 | 4;
 const STEPS = ['Pilih Mobil', 'Data & Brief', 'Storyboard', 'Parameter', 'Pratinjau & Generate'];
 
 export function NewVideo({ go, preselect }: { go: (r: Route) => void; preselect?: string }) {
-  const { api, upsert, settings, toast } = useStudio();
+  const { api, upsert, settings, toast, isModelReady } = useStudio();
   const [step, setStep] = React.useState<Step>(0);
 
   const [car, setCar] = React.useState<Car | null>(null);
@@ -400,17 +400,17 @@ export function NewVideo({ go, preselect }: { go: (r: Route) => void; preselect?
                         <div className="dim tiny">{m.vendor}</div>
                       </div>
                     </div>
-                    {m.ready ? <span className="chip chip--ok"><span className="dot" /> siap</span> : <span className="chip chip--warn">butuh API key</span>}
+                    {isModelReady(m.id) ? <span className="chip chip--ok"><span className="dot" /> siap</span> : <span className="chip chip--warn">butuh API key</span>}
                   </div>
                   <p className="small muted" style={{ marginTop: 6 }}>{m.strength}</p>
                 </label>
               ))}
             </div>
-            {!pickedModel.ready && (
+            {!isModelReady(pickedModel.id) && (
               <div className="note note--warn">
                 <span className="note__icon"><Icon.Warn size={14} /></span>
                 <span>
-                  <strong>{pickedModel.name}</strong> belum punya adaptor/kunci API di lingkungan ini. Proyek tetap bisa dibuat,
+                  <strong>{pickedModel.name}</strong> belum punya kunci API di server ini. Proyek tetap bisa dibuat,
                   tapi tahap render akan memakai <strong>Studio Render (lokal)</strong>. Pilih itu kalau ingin hasil nyata sekarang.
                 </span>
               </div>
@@ -532,7 +532,7 @@ export function NewVideo({ go, preselect }: { go: (r: Route) => void; preselect?
               </div>
             </div>
 
-            {!pickedModel.ready && (
+            {!isModelReady(pickedModel.id) && (
               <div className="note note--warn">
                 <span className="note__icon"><Icon.Warn size={14} /></span>
                 <span><strong>{pickedModel.name}</strong> belum tersambung. Render akan memakai Studio Render lokal.</span>

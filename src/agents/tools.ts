@@ -7,13 +7,14 @@ import { pickTheme } from '../core/theme.ts';
 import { planScenes, estimateCost } from '../pipeline/scenes.ts';
 import { resolveBriefLook } from '../core/brief-look.ts';
 import { resolveSceneAsset } from '../visuals/index.ts';
-import { assetFolderSlug } from '../visuals/types.ts';
+import { routeForModel, wantsVideoClip, withVendorModel } from '../visuals/model-map.ts';
+import { assetFolderSlug, userAssetsFor } from '../visuals/types.ts';
 import { sanitizePrompt } from '../visuals/sanitize.ts';
 import { loadVisuals } from '../core/config.ts';
 import { findModel, specLines } from '../core/catalog.ts';
 import type { AssetRecord, Brief, ScenePlan } from '../core/types.ts';
 import { resolveDuration } from '../core/brief.ts';
-import { jobDir } from '../core/fsx.ts';
+import { paths, jobDir } from '../core/fsx.ts';
 import { checkAssets, isBelowMinimum } from '../pipeline/quality.ts';
 import { measureMotion } from '../pipeline/motion-score.ts';
 import { loadPolicy } from '../core/motion-policy.ts';
@@ -275,23 +276,46 @@ async function generateAssets(ctx: AgentContext, wantVideo: boolean): Promise<As
 
   const visuals = loadVisuals();
   const paceMs = Number(process.env.VISUAL_PACE_MS ?? 4000);
-  const order = wantVideo
-    ? visuals.order.filter((id) => id !== 'stock-api').concat('stock-api')
-    : visuals.order;
+  // A paid vendor adapter is only ever called when the user picked that model.
+  // Keying off the API key alone would silently bill every job that happens to
+  // have a key in the environment.
+  const route = routeForModel(brief.modelId);
+  const vendorId = route && route.adapterId !== 'local' ? route.adapterId : '';
+  const vendorConfigured = Boolean(
+    vendorId && adapters.adapters[vendorId]?.envKey && process.env[adapters.adapters[vendorId].envKey!],
+  );
+  const useVendor = Boolean(vendorId && vendorConfigured);
+  if (vendorId && !vendorConfigured) {
+    await ctx.log('warn', `model ${brief.modelId} dipilih tapi kuncinya belum diisi; memakai render lokal`, {
+      adapter: vendorId,
+    });
+  }
+
+  const isVendor = (id: string) => Boolean(adapters.adapters[id]?.provider);
+  const stills = visuals.order.filter((id) => id !== 'stock-api' && !isVendor(id));
+  const baseOrder = (wantVideo || useVendor ? stills.concat('stock-api') : visuals.order.filter((id) => !isVendor(id)));
+  // The chosen model goes first: the user asked for it explicitly. Local photos
+  // stay right behind it so a provider outage degrades instead of failing.
+  const order = useVendor ? [vendorId, ...baseOrder] : baseOrder;
+  const defs = { ...adapters.adapters };
+  if (useVendor && route) defs[vendorId] = withVendorModel(defs[vendorId], route);
 
   for (const scene of scenes) {
     if (done.has(scene.index)) continue;
     ctx.assertOnline();
     await ctx.setStageMessage(`scene ${scene.index + 1}/${scenes.length}`);
+    // Image-to-video needs a still to animate; reuse the model's own photos.
+    const own = userAssetsFor(brief.model, path.join(paths.assets, 'own')).filter((f) => !/\.(mp4|mov)$/i.test(f));
     const { result, attempts } = await resolveSceneAsset({
       order,
-      defs: adapters.adapters,
+      defs,
       fallback: visuals.fallback,
       request: {
         scene: { ...scene, prompt: sanitizePrompt(scene.prompt, brief.model) },
         theme,
         model: brief.model,
         aspect: brief.rasio ?? '16:9',
+        referenceImage: useVendor ? own[scene.index % Math.max(1, own.length)] : undefined,
         outDir,
       },
     });
@@ -341,7 +365,13 @@ async function generateAssets(ctx: AgentContext, wantVideo: boolean): Promise<As
   return assets;
 }
 
-tool('generate_image', 'Hasilkan keyframe per scene', async (_args, ctx) => generateAssets(ctx, false));
+// The stage tool list is fixed, so the "image" tool is the single entry point
+// and the brief decides whether it should return stills or clips. Without this
+// a job that selected Veo would still ask only for keyframes.
+tool('generate_image', 'Hasilkan keyframe per scene', async (_args, ctx) => {
+  const brief = ctx.brief as unknown as Brief;
+  return generateAssets(ctx, wantsVideoClip(brief.modelId));
+});
 tool('generate_video', 'Hasilkan klip per scene', async (_args, ctx) => generateAssets(ctx, true));
 
 tool('write_assets', 'Simpan daftar aset', async (_args, ctx) => {

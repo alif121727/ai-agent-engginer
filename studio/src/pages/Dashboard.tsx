@@ -6,7 +6,7 @@ import { STAGES, VIDEO_MODELS } from '../data/models';
 import { CATALOG } from '../data/catalog';
 
 export function Dashboard({ go }: { go: (r: Route) => void }) {
-  const { projects, user, settings } = useStudio();
+  const { projects, user, settings, isModelReady } = useStudio();
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
@@ -58,7 +58,7 @@ export function Dashboard({ go }: { go: (r: Route) => void }) {
           meta={`${done.length} selesai · ${running.length} berjalan${failed.length ? ` · ${failed.length} gagal` : ''}`}
         />
         <Stat label="Total durasi" value={`${totalSec}s`} meta="akumulasi semua proyek" />
-        <Stat label="Model default" value={model?.name.split(' ')[0] ?? '—'} meta={model?.ready ? 'siap dipakai' : 'butuh kunci API'} />
+        <Stat label="Model default" value={model?.name.split(' ')[0] ?? '—'} meta={model && isModelReady(model.id) ? 'siap dipakai' : 'butuh kunci API'} />
         <Stat label="Katalog" value={String(CATALOG.length)} meta="model mobil dengan data nyata" />
       </div>
 

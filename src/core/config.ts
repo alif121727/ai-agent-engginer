@@ -54,6 +54,16 @@ export interface VisualAdapterDef {
   requiresKey: boolean;
   envKey?: string;
   model?: string;
+  /**
+   * Wire protocol for video-gen adapters. `generic` keeps the original
+   * single-endpoint behaviour; `runway` and `kling` speak their own
+   * submit-then-poll APIs.
+   */
+  provider?: 'generic' | 'runway' | 'kling';
+  /** Base URL override; the adapter falls back to the vendor default. */
+  apiBase?: string;
+  /** Model ids the UI may select for this adapter (see studio/src/data/models.ts). */
+  uiModels?: string[];
   creditsFile?: string;
   description?: string;
   /** Static endpoint for keyless providers (e.g. pollinations). */

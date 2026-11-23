@@ -1,5 +1,13 @@
 import type { VisualAdapter, GenerateRequest, GenerateResult } from './types.ts';
-import { localAdapter, imageGenAdapter, videoGenAdapter, stockAdapter, pollinationsAdapter } from './adapters.ts';
+import {
+  localAdapter,
+  imageGenAdapter,
+  videoGenAdapter,
+  runwayVideoAdapter,
+  klingVideoAdapter,
+  stockAdapter,
+  pollinationsAdapter,
+} from './adapters.ts';
 import type { VisualAdapterDef } from '../core/config.ts';
 
 export function buildAdapter(def: VisualAdapterDef): VisualAdapter | null {
@@ -9,6 +17,8 @@ export function buildAdapter(def: VisualAdapterDef): VisualAdapter | null {
     case 'image-gen':
       return def.requiresKey ? imageGenAdapter(def) : pollinationsAdapter(def);
     case 'video-gen':
+      if (def.provider === 'runway') return runwayVideoAdapter(def);
+      if (def.provider === 'kling') return klingVideoAdapter(def);
       return videoGenAdapter(def);
     case 'stock-api':
       return stockAdapter(def);

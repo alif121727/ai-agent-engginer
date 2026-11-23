@@ -175,7 +175,7 @@ export function ProjectDetail({ id, go, autoRun }: { id: string; go: (r: Route) 
         <div className="bar"><div className="bar__fill" style={{ width: `${pct}%` }} /></div>
       </div>
 
-      {project.videoUrl && (
+      {project.videoUrl ? (
         <div className="card stack" style={{ gap: 10 }}>
           <div className="row row--between row--wrap">
             <span className="small" style={{ fontWeight: 600 }}>Hasil render</span>
@@ -187,13 +187,26 @@ export function ProjectDetail({ id, go, autoRun }: { id: string; go: (r: Route) 
             controls
             preload="metadata"
             playsInline
-            style={{ width: '100%', borderRadius: 10, background: '#000', aspectRatio: project.aspect === '9:16' ? '9 / 16' : '16 / 9', maxHeight: 460 }}
+            style={{ width: '100%', borderRadius: 10, background: '#000', aspectRatio: project.aspect === '9 / 16' || project.aspect === '9:16' ? '9 / 16' : '16 / 9', maxHeight: 460 }}
           />
           <div className="row row--wrap" style={{ gap: 8 }}>
             <a className="btn btn--sm" href={project.videoUrl} download><Icon.Download size={13} /> Unduh mp4</a>
             <span className="dim tiny">Dirender pipeline nyata dengan ffmpeg dari foto asli.</span>
           </div>
         </div>
+      ) : (
+        // Tanpa blok ini, proyek yang selesai di mode demo tampak "hilang hasilnya":
+        // tidak ada video, dan tidak ada penjelasan kenapa.
+        project.status === 'done' && (
+          <div className="note note--warn">
+            <span className="note__icon"><Icon.Info size={14} /></span>
+            <span>
+              {api.kind === 'http'
+                ? 'Tahap selesai tapi file mp4 tidak ditemukan di server. Jalankan ulang tahap Render untuk membuatnya.'
+                : 'Semua tahap simulasi selesai, tetapi mode demo tidak menjalankan ffmpeg sehingga tidak ada mp4. Sambungkan backend di halaman Pengaturan untuk render sungguhan.'}
+            </span>
+          </div>
+        )
       )}
 
       <div className="workbench">

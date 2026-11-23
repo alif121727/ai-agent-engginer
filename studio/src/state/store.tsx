@@ -1,5 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { pickApi, demoProjectsKey, rememberDeletion, type Project, type StudioApi } from '../services/api';
+import { VIDEO_MODELS } from '../data/models';
+import type { Readiness } from '../services/api';
 
 /* ------------------------------------------------------------------ types */
 export type User = { name: string; email: string };
@@ -24,6 +26,13 @@ type Ctx = {
   dismiss(id: string): void;
   settings: Settings;
   saveSettings(s: Partial<Settings>): void;
+  /**
+   * Kesiapan model video menurut server (`null` = mode demo / tidak diketahui).
+   * Halaman memakai ini untuk menandai model yang benar-benar bisa jalan.
+   */
+  readiness: Readiness | null;
+  /** true bila model ini punya kredensial di server saat ini. */
+  isModelReady(modelId: string): boolean;
 };
 
 export type Settings = {
@@ -201,12 +210,36 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const [readiness, setReadiness] = useState<Ctx['readiness']>(null);
+  useEffect(() => {
+    if (!api) return;
+    let live = true;
+    void api.modelReadiness().then((r) => {
+      if (live) setReadiness(r);
+    });
+    return () => {
+      live = false;
+    };
+  }, [api]);
+
+  const isModelReady = useCallback(
+    (modelId: string) => {
+      const model = VIDEO_MODELS.find((m) => m.id === modelId);
+      if (!model) return false;
+      // Render lokal selalu bisa; model vendor hanya bila server punya kunci
+      // DAN vendornya masih punya saldo kredit.
+      if (!model.provider) return model.ready;
+      return readiness?.providers?.[model.provider]?.ready === true;
+    },
+    [readiness],
+  );
+
   const value = useMemo<Ctx | null>(
     () =>
       api
-        ? { ready, api, user, login, register, logout, projects, loadingProjects, refresh, upsert, remove, toasts, toast, dismiss, settings, saveSettings }
+        ? { ready, api, user, login, register, logout, projects, loadingProjects, refresh, upsert, remove, toasts, toast, dismiss, settings, saveSettings, readiness, isModelReady }
         : null,
-    [ready, api, user, login, register, logout, projects, loadingProjects, refresh, upsert, remove, toasts, toast, dismiss, settings, saveSettings],
+    [ready, api, user, login, register, logout, projects, loadingProjects, refresh, upsert, remove, toasts, toast, dismiss, settings, saveSettings, readiness, isModelReady],
   );
 
   if (!value) {

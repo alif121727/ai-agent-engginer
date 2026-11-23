@@ -352,3 +352,23 @@ yang sudah tertaut (jadi `unlink` dulu). CLI ada di `/workspace/tools`
   The source of truth is branch `gh-pages`, not the live URL.
 - `jobs/` dirs can be deleted while the DB row survives; `honestStatus()` then
   reports such jobs as `failed` even though their QA passed. Not a bug.
+
+## Netlify (agent-studio-ai) — jalur deploy yang benar
+- Akun **Free**, dan build dari Git **selalu** gagal: `Skipped due to account
+  credit usage exceeded`. Push ke `main` TIDAK memperbarui situs.
+- Satu-satunya jalur yang jalan: `scripts/deploy-netlify.sh` — deploy
+  `deploy-preview` (tanpa otentikasi, tidak menyentuh kredit) lalu promosikan
+  ke produksi via API. `build_settings.cmd` tetap `None`.
+- Login CLI: `netlify login --request "<pesan>" --json` -> user membuka URL
+  otorisasi -> `netlify login --check <ticket>`. Token tersimpan plaintext di
+  `~/.config/netlify/config.json` dan **hilang saat sandbox reset**.
+- Verifikasi deploy dengan `?cb=$(date +%s)`; jangan percaya baris
+  "Live cocok" dari skrip.
+- Situs pembanding `tugas-alif-warung-go-digital` tidak pernah mati karena
+  hanya `styles.css` + `app.js`; situs ini membawa 159 MB video di
+  `netlify-site/video/`. Itu yang membakar kuota, bukan salah konfigurasi.
+
+## Sandbox mati (502)
+- Proses API+worker dimatikan sandbox tanpa peringatan. `scripts/keepalive.sh`
+  memeriksa `/api/health` tiap 30s dan menghidupkan ulang. Diuji: kill API ->
+  health 000 -> 200 dalam <35s. Tidak bisa menghidupkan sandbox yang mati total.

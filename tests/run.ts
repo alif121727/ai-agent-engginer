@@ -1657,6 +1657,29 @@ await check('sitemap dan robots menunjuk URL kanonik', async () => {
   assert(robots.includes('https://alif121727.github.io/ai-agent-engginer/sitemap.xml'), 'robots menunjuk sitemap salah');
 });
 
+// Berkas yang dilayani server harus ada di public/, kalau tidak catch-all
+// mengembalikan index.html dengan 200 text/html: kelihatan sehat di curl,
+// tapi service worker gagal karena MIME salah dan caches.addAll kena 404 ikon.
+await check('berkas PWA tersalin ke public/ dengan tipe yang benar', async () => {
+  const wajib = ['sw.js', 'sw-register.js', 'manifest.json', 'robots.txt', 'sitemap.xml', '404.html'];
+  for (const nama of wajib) {
+    const p = path.join('public', nama);
+    assert(fs.existsSync(p), `${nama} tidak ada di public/ (catch-all akan mengirim index.html)`);
+    const isi = fs.readFileSync(p, 'utf8');
+    assert(!isi.includes('__APP_VERSION__'), `${nama} masih template mentah`);
+    if (nama.endsWith('.json')) JSON.parse(isi);
+  }
+  for (const ikon of ['ikon-192.png', 'ikon-512.png']) {
+    const p = path.join('public', 'ikon', ikon);
+    assert(fs.existsSync(p), `${ikon} tidak ada di public/ikon/ (addAll akan gagal)`);
+    assert(fs.statSync(p).size > 1000, `${ikon} terlalu kecil untuk ikon asli`);
+  }
+  const sw = fs.readFileSync(path.join('public', 'sw.js'), 'utf8');
+  for (const m of sw.matchAll(/['"]\.\/([^'"]+)['"]/g)) {
+    assert(fs.existsSync(path.join('public', m[1])), `sw.js mem-precache ${m[1]} yang tidak ada`);
+  }
+});
+
 await check('404.html tersedia dan mandiri tanpa bundel', async () => {
   const html = fs.readFileSync(path.join('studio', '404.html'), 'utf8');
   assert(html.includes('404'), 'tidak menampilkan kode 404');

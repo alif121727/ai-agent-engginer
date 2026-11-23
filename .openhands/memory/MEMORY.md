@@ -372,3 +372,13 @@ yang sudah tertaut (jadi `unlink` dulu). CLI ada di `/workspace/tools`
 - Proses API+worker dimatikan sandbox tanpa peringatan. `scripts/keepalive.sh`
   memeriksa `/api/health` tiap 30s dan menghidupkan ulang. Diuji: kill API ->
   health 000 -> 200 dalam <35s. Tidak bisa menghidupkan sandbox yang mati total.
+
+## Deploy & galeri statis
+- Halaman "Semua Proyek" memakai snapshot `netlify-site/data/projects.json`
+  (dibuat `npm run export:projects`, di-commit). Job baru tidak muncul sampai
+  export + `build:studio` + deploy diulang. Dashboard tidak terpengaruh.
+- `deploy-netlify.sh` harus dijalankan di background (nohup) dan selesai dengan
+  baris `Live cocok:`. Pages butuh run kedua (`pages-build-deployment`).
+- Uji regresi CORS ada di `tests/run.ts` ("CORS preflight mengizinkan header
+  Authorization"); total suite kini 130 pemeriksaan.
+- Dokumentasi: `docs/PANDUAN-STUDIO.md` dan `docs/ARSITEKTUR-STUDIO.md`.

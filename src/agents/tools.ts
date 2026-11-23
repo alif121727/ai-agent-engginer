@@ -450,7 +450,11 @@ tool('synthesize_speech', 'Sintesis narasi jadi audio', async (args, ctx) => {
   const text = String(args.text ?? '').trim();
   if (!text) return { ok: false, error: 'teks kosong' };
   if (!ttsAvailable()) {
-    return { ok: false, skipped: true, error: 'TTS_API_KEY belum diisi' };
+    return {
+      ok: false,
+      skipped: true,
+      error: 'Tidak ada mesin TTS: isi TTS_API_KEY atau pasang Piper (scripts/fetch-tts-model.sh)',
+    };
   }
   const brief = ctx.brief as unknown as Brief;
   const dir = path.join(jobDir(ctx.jobId), 'audio', 'narration');
@@ -521,7 +525,9 @@ tool('write_audio_plan', 'Tulis rencana audio dan subtitle', async (_args, ctx) 
       sceneIndex: line.sceneIndex,
       text: line.voiceover,
     })),
-    ttsAvailable: Boolean(process.env.TTS_API_KEY),
+    // Bukan sekadar "ada kunci": mesin lokal juga bisa menyintesis. Nilai ini
+    // dipakai UI untuk memutuskan menampilkan peringatan narasi.
+    ttsAvailable: (await import('../tts/provider.ts')).ttsAvailable(),
   };
   writeOwned(ctx, 'audio.json', plan);
   return plan;

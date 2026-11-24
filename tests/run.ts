@@ -6,6 +6,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { spawnSync } from 'node:child_process';
+// Wajib lebih dulu: memperbaiki PATH bila sandbox me-reset ffmpeg, sama
+// seperti entrypoint api/worker. Tanpa ini tes render gagal palsu.
+import '../src/core/env.ts';
 import { openDb, closeDb } from '../src/db/index.ts';
 import { createJob, createStages, getJob, listStages, setStageStatus, nextPendingStage, dailyCost, addDailyCost } from '../src/db/repo.ts';
 import { parseBrief, resolveDuration, BriefError } from '../src/core/brief.ts';

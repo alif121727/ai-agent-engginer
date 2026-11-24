@@ -29,6 +29,19 @@ an mp4 using a team of AI agents with fixed job desks. Node + `--experimental-st
   use it. Validate a /tmp copy with the triggers block stripped.
 
 ## Environment quirks (expensive to learn)
+- **ffmpeg version matters more than logic.** Debian image = ffmpeg 5.1, host =
+  9.0. `loudnorm,aresample=48000` WITHOUT a trailing `aformat=...:channel_layouts=stereo`
+  works on 9 (it guesses the layout) but fails on 5.1 with "Cannot select channel
+  layout for the link between filters" — and `muxAudio` returns `false` silently,
+  so the video ships without audio and QA `ada-audio` rejects it. Guarded by a
+  *structural* test on the filter string (`mixNorm`); integration tests pass on
+  host even with the bug present. **Verify ffmpeg changes in Docker, not just `npm test`.**
+- **Docker image needs piper + the TTS model.** `assets/tts/*.onnx` is gitignored,
+  so the Dockerfile installs `piper-tts` in `/opt/piper` and downloads the model
+  AFTER `COPY . .` (before it would be overwritten). Without both, every job fails
+  at the QA `narasi-ada` gate.
+- To test the image: `docker run -e WORKER_IN_PROCESS=1 -e STUDIO_DATA_DIR=/var/data`.
+  Omitting `WORKER_IN_PROCESS=1` leaves jobs stuck in `queued` forever.
 - **Never pass `-ss` to ffmpeg for a still image** — it yields 0 frames, so
   `frameSharpness`/`perceptualHash`/`detectText` all return 0/empty and every
   photo is judged blurry. `seekArgs()` in `src/render/ffmpeg.ts` guards this.
@@ -105,7 +118,7 @@ an mp4 using a team of AI agents with fixed job desks. Node + `--experimental-st
 ## Accounts
 - Seeded admin: `admin@studio.id`. Login accepts **username or email** in the same
   field (`users.username`, unique index, added by a migration in
-  `SqliteDb` constructor). Current username: `admin123`.
+  `SqliteDb` constructor). Current username: `admin` (password direset 2026-11-20; lihat chat/log, JANGAN commit password ke repo publik).
 - Passwords are not stored in the repo; reset with
   `node --experimental-strip-types scripts/reset-password.ts <email|username> <password> [new-username]`
   (min 8 chars). `db().run()` returns void — check existence with `db().get()`

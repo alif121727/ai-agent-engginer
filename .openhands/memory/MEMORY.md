@@ -58,6 +58,19 @@ an mp4 using a team of AI agents with fixed job desks. Node + `--experimental-st
 - **Dashboard "Gagal" untuk job `done`**: itu `honestStatus()` — job `done`
   yang `video.mp4`-nya hilang sengaja dilaporkan gagal. Bukan bug.
 
+## Build gotcha (cost a debugging session)
+- **`build:ui` is the LEGACY UI** (`public/app.js`); **`build:studio` is
+  canonical** (`netlify-site/` + copy to `public/assets/studio.js`). `build:ui`
+  used to overwrite `public/index.html` and made the server serve legacy UI;
+  it now exits early when `public/assets/studio.js` exists.
+- Changing only the URL hash does not reload the bundle — test with `?cb=1`.
+
+## ffmpeg audio gotcha
+- Two `loudnorm` filters meeting at `amix` abort ffmpeg 7.x
+  (`Assertion best_input >= 0 failed`) **only on long input** (30 s ok-fail,
+  3 s passes). Always follow `loudnorm` with `aresample=48000`; see `norm()`
+  in `src/render/audio.ts`. Regression test covers the 30 s mix.
+
 ## Commands that matter
 - `npm test` -> 168 checks, exits non-zero on failure.
 - `npm run api` (port 8080) + `npm run worker` — both needed; jobs stall without the worker.

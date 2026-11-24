@@ -506,9 +506,15 @@ export function muxAudio(
    * failed") sehingga mux gagal dan video keluar tanpa trek audio. Menutup
    * setiap loudnorm dengan `aresample` mengunci laju ke 48 kHz dan
    * menghilangkan abort itu.
+   *
+   * `aformat` di ujung wajib ada: pada ffmpeg 5.x (image Docker Debian)
+   * `aresample` tidak menetapkan channel layout, sehingga ffmpeg gagal dengan
+   * "Cannot select channel layout for the link between filters" dan mux
+   * mengembalikan false tanpa pesan — video jadi tanpa audio. ffmpeg 9 di host
+   * menebak layout sendiri, jadi bug ini hanya muncul di container.
    */
   const norm = (lufs: number, tp: number, lra: number) =>
-    `loudnorm=I=${lufs}:TP=${tp}:LRA=${lra},aresample=48000`;
+    `loudnorm=I=${lufs}:TP=${tp}:LRA=${lra},aresample=48000,${fmt}`;
 
   /**
    * Narasi adalah trek utama dan harus paling jelas. Musik turun jauh di

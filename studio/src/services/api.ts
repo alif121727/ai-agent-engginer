@@ -772,20 +772,22 @@ export async function probeBackend(base: string): Promise<boolean> {
 }
 
 export async function pickApi(): Promise<StudioApi> {
-  // Urutan percobaan: backend pilihan pengguna, override eksplisit, backend
-  // yang disuntikkan saat build (STUDIO_URL), origin sendiri, lalu demo.
+  // Urutan percobaan: backend pilihan pengguna, origin sendiri, override
+  // runtime, backend yang disuntikkan saat build (STUDIO_URL), lalu demo.
   // Demo berarti tidak ada backend yang menjawab.
   //
-  // `__STUDIO_API__` sengaja didahulukan: UI statis di Netlify/Pages memakai
-  // backend sandbox yang hidup, sehingga situs itu tidak lagi "mode demo".
+  // Origin sendiri didahulukan karena pada deploy satu-alamat (Docker/Render)
+  // UI disajikan oleh backend yang sama, jadi jawabannya instan dan selalu
+  // benar. Di situs statis (Pages/Netlify) probe ini gagal cepat lalu
+  // diteruskan ke alamat backend yang tersimpan/dibekukan.
   const candidates = [
     savedBackend(),
+    globalThis.location?.origin,
     (globalThis as any).__STUDIO_API__ as string | undefined,
     typeof __STUDIO_URL__ === 'string' && __STUDIO_URL__ ? __STUDIO_URL__ : undefined,
-    globalThis.location?.origin,
   ].filter((b): b is string => typeof b === 'string' && b.length > 0);
 
-  for (const base of candidates) {
+  for (const base of new Set(candidates)) {
     if (await probeBackend(base)) return new HttpStudioApi(base.replace(/\/$/, ''));
   }
   return new DemoStudioApi();

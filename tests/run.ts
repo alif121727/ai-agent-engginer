@@ -1098,6 +1098,40 @@ await check('model dengan rekaman asli memakai rekaman, bukan sintesis', async (
   assert(r !== null && r!.recorded === true, 'jalur rekaman asli harus dipakai untuk GT3 RS');
 });
 
+await check('campuran mesin + musik 30 dtk tetap menghasilkan trek audio', async () => {
+  // Regresi: dua loudnorm bertemu di amix membuat ffmpeg 7.x abort
+  // ("Assertion best_input >= 0 failed") hanya pada durasi panjang, sehingga
+  // video 30 dtk keluar tanpa suara padahal audio 3 dtk baik-baik saja.
+  const { muxAudio } = await import('../src/render/audio.ts');
+  const { ffprobe } = await import('../src/render/ffmpeg.ts');
+  const job = 'uji-mux-30';
+  const dir = path.join('jobs', job);
+  fs.mkdirSync(dir, { recursive: true });
+  const silent = path.join(dir, 'video-silent.mp4');
+  const made = spawnSync(
+    'ffmpeg',
+    ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'testsrc2=size=320x180:rate=15:duration=30',
+     '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', silent],
+    { encoding: 'utf8' },
+  );
+  assert(made.status === 0, 'gagal membuat video uji 30 dtk');
+  const engine = path.join(dir, 'engine.m4a');
+  const music = path.join(dir, 'music.m4a');
+  for (const [out, hz, ac, ar] of [[engine, '200', '2', '48000'], [music, '90', '1', '96000']] as const) {
+    const r = spawnSync(
+      'ffmpeg',
+      ['-v', 'error', '-y', '-f', 'lavfi', '-i', `sine=f=${hz}:d=30`, '-ac', ac, '-ar', ar, '-c:a', 'aac', out],
+      { encoding: 'utf8' },
+    );
+    assert(r.status === 0, `gagal membuat trek uji ${path.basename(out)}`);
+  }
+  const out = path.join(dir, 'video.mp4');
+  assert(muxAudio(silent, music, out, -16, engine), 'muxAudio gagal pada campuran 30 dtk');
+  const probe = ffprobe(out);
+  assert(probe.hasAudio, 'video 30 dtk harus punya trek audio');
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
 await check('campuran mesin + musik menghasilkan audio stereo 48 kHz', async () => {
   const { buildMusicBed, buildEngineTrack, muxAudio } = await import('../src/render/audio.ts');
   const { loadThemes } = await import('../src/core/config.ts');

@@ -18,6 +18,8 @@ type Ctx = {
   projects: Project[];
   /** true selama daftar proyek pertama kali diambil dari server. */
   loadingProjects: boolean;
+  /** true setelah setidaknya satu pengambilan daftar proyek selesai. */
+  projectsLoaded: boolean;
   refresh(): Promise<void>;
   upsert(p: Project): Promise<void>;
   remove(id: string): Promise<void>;
@@ -58,6 +60,7 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
+  const [projectsLoaded, setProjectsLoaded] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [settings, setSettings] = useState<Settings>(DEFAULTS);
   const timers = useRef<Record<string, number>>({});
@@ -103,6 +106,7 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     setLoadingProjects(true);
     try {
       setProjects(await api.listProjects());
+      setProjectsLoaded(true);
     } finally {
       setLoadingProjects(false);
     }
@@ -237,9 +241,9 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<Ctx | null>(
     () =>
       api
-        ? { ready, api, user, login, register, logout, projects, loadingProjects, refresh, upsert, remove, toasts, toast, dismiss, settings, saveSettings, readiness, isModelReady }
+        ? { ready, api, user, login, register, logout, projects, loadingProjects, projectsLoaded, refresh, upsert, remove, toasts, toast, dismiss, settings, saveSettings, readiness, isModelReady }
         : null,
-    [ready, api, user, login, register, logout, projects, loadingProjects, refresh, upsert, remove, toasts, toast, dismiss, settings, saveSettings, readiness, isModelReady],
+    [ready, api, user, login, register, logout, projects, loadingProjects, projectsLoaded, refresh, upsert, remove, toasts, toast, dismiss, settings, saveSettings, readiness, isModelReady],
   );
 
   if (!value) {

@@ -457,6 +457,16 @@ export function muxAudio(
 
   const fmt = 'aformat=sample_rates=48000:channel_layouts=stereo';
   /**
+   * `loudnorm` mengeluarkan audio pada 192 kHz. Dua instance loudnorm yang
+   * bertemu di `amix` membuat ffmpeg 7.x abort ("Assertion best_input >= 0
+   * failed") sehingga mux gagal dan video keluar tanpa trek audio. Menutup
+   * setiap loudnorm dengan `aresample` mengunci laju ke 48 kHz dan
+   * menghilangkan abort itu.
+   */
+  const norm = (lufs: number, tp: number, lra: number) =>
+    `loudnorm=I=${lufs}:TP=${tp}:LRA=${lra},aresample=48000`;
+
+  /**
    * Narasi adalah trek utama dan harus paling jelas. Musik turun jauh di
    * bawahnya (-22 LUFS terhadap -16 narasi) dan di-duck 12:1 saat narasi
    * berbunyi, jadi kata-kata tidak pernah tertutup. Mesin ada di antaranya:
@@ -467,17 +477,17 @@ export function muxAudio(
 
   if (idx.engine !== undefined) {
     layers.push(
-      `[${idx.engine}:a]${fmt},loudnorm=I=${loudnessLufs - 6}:TP=-2:LRA=8[eng]`,
+      `[${idx.engine}:a]${fmt},${norm(loudnessLufs - 6, -2, 8)}[eng]`,
     );
     mixLabels.push('[eng]');
   }
   if (idx.music !== undefined) {
     layers.push(
-      `[${idx.music}:a]${fmt},volume=0.28,loudnorm=I=${loudnessLufs - 6}:TP=-4:LRA=9[bed]`,
+      `[${idx.music}:a]${fmt},volume=0.28,${norm(loudnessLufs - 6, -4, 9)}[bed]`,
     );
   }
   if (idx.narration !== undefined) {
-    layers.push(`[${idx.narration}:a]${fmt},loudnorm=I=${loudnessLufs}:TP=-1.5:LRA=9[vox]`);
+    layers.push(`[${idx.narration}:a]${fmt},${norm(loudnessLufs, -1.5, 9)}[vox]`);
   }
 
   // Musik hanya di-duck oleh narasi bila narasi ada; tanpa narasi ia tidak
@@ -505,7 +515,7 @@ export function muxAudio(
     filter =
       `${layers.join(';')};` +
       `${mixLabels.join('')}amix=inputs=${mixLabels.length}:duration=first:normalize=0,` +
-      `loudnorm=I=${loudnessLufs}:TP=-1.5:LRA=11[a]`;
+      `${norm(loudnessLufs, -1.5, 11)}[a]`;
     audioMap = '[a]';
   }
 

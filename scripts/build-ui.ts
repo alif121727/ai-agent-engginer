@@ -25,6 +25,18 @@ await build({
 const appJs = fs.readFileSync(path.join(outdir, 'app.js'));
 const version = createHash('sha256').update(appJs).digest('hex').slice(0, 10);
 
+/**
+ * `build:studio` menulis `public/index.html` yang menunjuk `assets/studio.js`.
+ * Skrip ini membangun UI lama, jadi menulis index.html di sini akan menimpa
+ * studio dan membuat `npm run api` menyajikan UI legacy. Index hanya ditulis
+ * bila studio belum pernah dibangun.
+ */
+const studioIndex = path.join(outdir, 'assets', 'studio.js');
+if (fs.existsSync(studioIndex)) {
+  console.log('UI legacy dibangun (public/index.html milik studio dibiarkan).');
+  process.exit(0);
+}
+
 fs.writeFileSync(
   path.join(outdir, 'index.html'),
   `<!doctype html>

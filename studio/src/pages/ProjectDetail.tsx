@@ -11,7 +11,7 @@ import { StatusChip } from './Dashboard';
 import { PromptPanel } from '../components/PromptPanel';
 
 export function ProjectDetail({ id, go, autoRun }: { id: string; go: (r: Route) => void; autoRun?: boolean }) {
-  const { projects, loadingProjects, api, upsert, toast } = useStudio();
+  const { projects, loadingProjects, projectsLoaded, api, upsert, toast } = useStudio();
   const project = projects.find((p) => p.id === id);
   const [running, setRunning] = React.useState(false);
   const [publishing, setPublishing] = React.useState<Platform | null>(null);
@@ -29,7 +29,10 @@ export function ProjectDetail({ id, go, autoRun }: { id: string; go: (r: Route) 
     void runFrom(0);
   }, [autoRun, project?.id]);
 
-  if (!project && loadingProjects) {
+  // `refresh` baru mulai setelah sesi siap, jadi proyek belum ada pada render
+  // pertama. Tanpa penanda ini, tautan langsung ke satu proyek langsung
+  // menampilkan "tidak ditemukan" sebelum daftar selesai dimuat.
+  if (!project && (loadingProjects || !projectsLoaded)) {
     return (
       <div className="page stack" style={{ gap: 14 }}>
         <div className="row" style={{ gap: 8 }}><Spinner size={14} /> <span className="small">Memuat proyek…</span></div>

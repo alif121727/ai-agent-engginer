@@ -1135,6 +1135,70 @@ await check('campuran mesin + musik 30 dtk tetap menghasilkan trek audio', async
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
+await check('rantai normalisasi campuran selalu menetapkan channel layout', async () => {
+  // Penjaga struktural: ffmpeg 9 di host menebak channel layout setelah
+  // aresample, ffmpeg 5.1 di image Docker tidak. Tanpa aformat, mux gagal
+  // senyap di container. Tes integrasi tidak bisa menangkapnya karena host
+  // memakai ffmpeg 9, jadi bentuk filter-nya diperiksa langsung.
+  const { mixNorm } = await import('../src/render/audio.ts');
+  for (const [lufs, tp, lra] of [[-16, -1.5, 9], [-22, -2, 8], [-22, -4, 9]] as const) {
+    const f = mixNorm(lufs, tp, lra);
+    assert(
+      f.includes('channel_layouts=stereo'),
+      `mixNorm(${lufs}) harus menetapkan channel_layouts=stereo: ${f}`,
+    );
+    assert(f.includes('aresample=48000'), `mixNorm(${lufs}) harus mengunci 48 kHz: ${f}`);
+    assert(
+      f.indexOf('aresample') < f.indexOf('channel_layouts'),
+      `channel layout harus ditetapkan setelah resample: ${f}`,
+    );
+  }
+});
+
+await check('campuran mesin + musik + narasi menghasilkan trek audio', async () => {
+  // Regresi: `norm()` menutup loudnorm dengan aresample tanpa channel layout.
+  // ffmpeg 9 (host) menebak layout, ffmpeg 5.1 (image Docker Debian) gagal
+  // dengan "Cannot select channel layout for the link between filters",
+  // sehingga muxAudio mengembalikan false dan video keluar tanpa audio.
+  // Tes ini memakai tiga trek sekaligus supaya jalur narasi ikut terjaga.
+  const { muxAudio } = await import('../src/render/audio.ts');
+  const { ffprobe } = await import('../src/render/ffmpeg.ts');
+  const job = 'uji-mux-narasi';
+  const dir = path.join('jobs', job);
+  fs.mkdirSync(dir, { recursive: true });
+  const silent = path.join(dir, 'video-silent.mp4');
+  const made = spawnSync(
+    'ffmpeg',
+    ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'testsrc2=size=320x180:rate=15:duration=30',
+     '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', silent],
+    { encoding: 'utf8' },
+  );
+  assert(made.status === 0, 'gagal membuat video uji 30 dtk');
+  const engine = path.join(dir, 'engine.m4a');
+  const music = path.join(dir, 'music.m4a');
+  const narration = path.join(dir, 'narration.wav');
+  for (const [out, hz, ac, ar, codec] of [
+    [engine, '200', '2', '48000', 'aac'],
+    [music, '90', '1', '96000', 'aac'],
+    [narration, '440', '1', '22050', 'pcm_s16le'],
+  ] as const) {
+    const r = spawnSync(
+      'ffmpeg',
+      ['-v', 'error', '-y', '-f', 'lavfi', '-i', `sine=f=${hz}:d=30`, '-ac', ac, '-ar', ar, '-c:a', codec, out],
+      { encoding: 'utf8' },
+    );
+    assert(r.status === 0, `gagal membuat trek uji ${path.basename(out)}`);
+  }
+  const out = path.join(dir, 'video.mp4');
+  assert(
+    muxAudio(silent, music, out, -16, engine, narration),
+    'muxAudio gagal saat narasi ikut dicampur',
+  );
+  const probe = ffprobe(out);
+  assert(probe.hasAudio, 'video dengan narasi harus punya trek audio');
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
 await check('campuran mesin + musik menghasilkan audio stereo 48 kHz', async () => {
   const { buildMusicBed, buildEngineTrack, muxAudio } = await import('../src/render/audio.ts');
   const { loadThemes } = await import('../src/core/config.ts');

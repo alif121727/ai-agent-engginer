@@ -16,6 +16,10 @@ an mp4 using a team of AI agents with fixed job desks. Node + `--experimental-st
 - **QA is a real gate**: it writes `qa.json` first, then throws `PermanentError`
   if the report fails or the video duration is off. A `done` QA stage must
   therefore always have `qa.json`.
+- **Never prepend a `referenceImage` that is already in the candidate list.**
+  `localCandidateOrder()` (`src/visuals/adapters.ts`) skips refs already in
+  `own`; duplicating them shifts the photo rotation by one so scenes 0 and 1
+  render the same file and QA rejects with "scene terlalu mirip".
 - **Rewind must clear the checkpoint** keyed by the *stage name*; otherwise the
   per-scene `done` list survives and assets are never regenerated.
 

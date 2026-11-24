@@ -18,6 +18,7 @@ import { paths, jobDir } from '../core/fsx.ts';
 import { checkAssets, isBelowMinimum } from '../pipeline/quality.ts';
 import { measureMotion } from '../pipeline/motion-score.ts';
 import { loadPolicy } from '../core/motion-policy.ts';
+import { recordedSegmentFor } from '../render/audio.ts';
 import {
   ffprobe,
   contactSheet,
@@ -505,7 +506,11 @@ tool('write_audio_plan', 'Tulis rencana audio dan subtitle', async (_args, ctx) 
     music: { ducking: true, gain: -18 },
     engine: {
       profile: describeProfile(profile),
-      synthesizedLocally: true,
+      /**
+       * Dilaporkan apa adanya, bukan `true` yang di-hardcode: artefak ini dipakai
+       * UI untuk memberi tahu user apakah suara mesin rekaman asli atau tiruan.
+       */
+      synthesizedLocally: recordedSegmentFor(model?.model ?? '') === null,
       /** Prompt untuk generator SFX eksternal; pipeline lokal tidak memakainya. */
       externalPrompts: sfxPrompts,
       negativePrompt: AUDIO_NEGATIVE,
@@ -701,6 +706,28 @@ tool('approve_job', 'Verifikasi hasil akhir lalu setujui atau tolak', async (_ar
     name: 'true-peak-aman',
     ok: peakOk,
     detail: loud.ok ? `${loud.truePeakDbtp?.toFixed(1)} dBTP (batas -1)` : 'tidak terukur',
+  });
+
+  /**
+   * Narasi harus benar-benar ada di video jadi.
+   *
+   * Gerbang lama hanya memeriksa "ada trek audio" dan loudness, jadi video yang
+   * isinya cuma musik + mesin tetap lolos 26/26. Itu terjadi pada 24 November:
+   * biner Piper hilang dan seluruh video keluar tanpa narasi tanpa satu pun
+   * peringatan. Di sini naskah (yang memang punya voiceover) dibandingkan
+   * dengan keberadaan trek narasi di hasil render.
+   */
+  const wantsNarration = scenes.some((s) => (s.voiceover ?? '').trim().length > 0);
+  const narrationFile = path.join(jobDir(ctx.jobId), 'audio', 'narration', 'narration.wav');
+  const hasNarrationTrack = fs.existsSync(narrationFile);
+  checks.push({
+    name: 'narasi-ada',
+    ok: !wantsNarration || hasNarrationTrack,
+    detail: !wantsNarration
+      ? 'naskah tanpa voiceover, tidak perlu narasi'
+      : hasNarrationTrack
+        ? `trek narasi ada (${scenes.filter((s) => (s.voiceover ?? '').trim()).length} scene bersuara)`
+        : 'naskah punya voiceover tetapi trek narasi tidak dibuat (TTS tidak tersedia?)',
   });
 
   // Mismatch penggerak: EV tidak boleh dinilai dengan profil ICE. Sumbernya

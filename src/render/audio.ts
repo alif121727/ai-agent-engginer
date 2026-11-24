@@ -356,9 +356,30 @@ function buildSynthTrack(
     // Peluruhan pulsa: makin tinggi rpm makin rapat letupan, jadi konstanta
     // peluruhan diikat ke laju nyala supaya timbre tidak berubah saat merev.
     const decay = (12 + profile.brightness * 6).toFixed(1);
-    const pulseL = `0.62*exp(-${decay}*${cycle})`;
+
+    /**
+     * Variasi per siklus pembakaran.
+     *
+     * `theta` adalah integral rpm, jadi ia periodik sempurna: setiap siklus
+     * identik dan hasilnya terukur sebagai drone (jitter f0 0,4% lawan 1,5%
+     * pada rekaman asli). Mesin sungguhan tidak pernah dua siklusnya sama —
+     * ada sisa gas buang, panas, dan tekanan yang berbeda tiap langkah.
+     *
+     * `n` menghitung siklus yang sudah lewat, lalu deret rasio emas
+     * (irasional, jadi tidak pernah berulang) memberi dua nilai acak-tetap
+     * per siklus: satu untuk amplitudo letupan, satu untuk detune halus.
+     */
+    const n = `floor((${theta})/6.283185)`;
+    const rndA = `mod(${n}*0.6180339887,1)`;
+    const rndB = `mod(${n}*0.3819660113+0.37,1)`;
+    // 0,86..1,14: cukup untuk terdengar hidup, tidak sampai terasa goyang.
+    const jitterAmp = `(0.86+0.28*${rndA})`;
+    // Detune per silinder ±0,35%: ketidakseimbangan kompresi antar silinder.
+    const jitterDetune = `(1+0.0035*(2*${rndB}-1))`;
+
+    const pulseL = `0.62*exp(-${decay}*${cycle})*${jitterAmp}`;
     // Kanal kanan bergeser sedikit: memberi lebar stereo tanpa phasing aneh.
-    const pulseR = `0.56*exp(-${decay}*mod((${theta})+0.35,6.283185)/6.283185)`;
+    const pulseR = `0.56*exp(-${decay}*mod((${theta})+0.35,6.283185)/6.283185)*${jitterAmp}`;
 
     const h2 = (0.20 * (1 - profile.brightness * 0.35)).toFixed(3);
     const h3 = (0.13 * profile.brightness + 0.05).toFixed(3);
@@ -368,7 +389,8 @@ function buildSynthTrack(
     const halfOrder = profile.layout === 'V8' ? 0.16 : profile.layout === 'V10' || profile.layout === 'V12' ? 0.08 : 0.05;
     const sub = `${halfOrder.toFixed(3)}*sin(0.5*(${theta}))`;
     const harmonics =
-      `${h2}*sin(2*(${theta}))+${h3}*sin(3*(${theta}))+${h4}*sin(4*(${theta}))+${h5}*sin(5*(${theta}))`;
+      `${h2}*sin(2*(${theta})*${jitterDetune})+${h3}*sin(3*(${theta}))+` +
+      `${h4}*sin(4*(${theta})*${jitterDetune})+${h5}*sin(5*(${theta}))`;
 
     // Rasp: noise yang hanya terbuka saat katup buang membuka.
     const rasp = (0.16 * profile.rasp).toFixed(3);
@@ -377,7 +399,29 @@ function buildSynthTrack(
     const intake = `0.06*sin(2.02*(${theta}))*(0.25+0.75*(${rpmExpr}))`;
 
     sources.push(`aevalsrc='${pulseL}+${sub}+${harmonics}+${raspSig}+${intake}|${pulseR}+${sub}+${harmonics}+${raspSig}+${intake}':d=${dur}:s=48000:c=stereo`);
+
+    /**
+     * Trek kedua: salinan yang pitch-nya bergeser 0,15% dan tertinggal ~7 ms.
+     *
+     * Ini meniru silinder yang tidak menyala persis bersamaan. Dua gelombang
+     * yang hampir sama tetapi tidak identik menghasilkan pelayangan lambat —
+     * komponen "kasar" yang hilang dari satu osilator deterministik.
+     */
+    const drift = `(1.0015)`;
+    const pulseL2 = `0.30*exp(-${decay}*${cycle})*${jitterAmp}`;
+    const pulseR2 = `0.28*exp(-${decay}*mod((${theta})+0.35,6.283185)/6.283185)*${jitterAmp}`;
+    const sub2 = `${(halfOrder * 0.6).toFixed(3)}*sin(0.5*(${theta})*${drift})`;
+    const harm2 =
+      `${(Number(h2) * 0.5).toFixed(3)}*sin(2*(${theta})*${drift})+` +
+      `${(Number(h3) * 0.5).toFixed(3)}*sin(3*(${theta})*${drift})`;
+    sources.push(`aevalsrc='${pulseL2}+${sub2}+${harm2}|${pulseR2}+${sub2}+${harm2}':d=${dur}:s=48000:c=stereo`);
+
     parts.push(`[0:a]highpass=f=45,lowpass=f=${Math.round(3200 + 5200 * profile.brightness)},volume=0.8[a0]`);
+    parts.push(
+      `[1:a]highpass=f=45,lowpass=f=${Math.round(2400 + 3600 * profile.brightness)},` +
+        `adelay=7|7,volume=0.55[a0b]`,
+    );
+    parts.push(`[a0][a0b]amix=inputs=2:duration=first:normalize=0[a0c]`);
 
     // Turbo whistle / supercharger whine: frekuensi hampir tetap, level ikut rpm.
     if (profile.whine > 0.12) {
@@ -386,10 +430,10 @@ function buildSynthTrack(
       const mod = `(0.15+0.85*(${rpmExpr}))`;
       const whistle = `${(0.07 * profile.whine).toFixed(3)}*sin(2*PI*(${base}+${span}*${mod})*t)*${mod}`;
       sources.push(`aevalsrc='${whistle}|${whistle}':d=${dur}:s=48000:c=stereo`);
-      parts.push(`[1:a]highpass=f=2000,volume=0.55[a1]`);
-      parts.push(`[a0][a1]amix=inputs=2:duration=longest:normalize=0[eng]`);
+      parts.push(`[${sources.length - 1}:a]highpass=f=2000,volume=0.55[whine]`);
+      parts.push(`[a0c][whine]amix=inputs=2:duration=first:normalize=0[eng]`);
     } else {
-      parts.push(`[a0]anull[eng]`);
+      parts.push(`[a0c]anull[eng]`);
     }
 
     // Overrun: letupan knalpot sporadis, hanya untuk mesin yang memang berisik.

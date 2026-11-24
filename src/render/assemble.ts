@@ -10,6 +10,7 @@ import type { AssetRecord, Brief, ScenePlan, Theme } from '../core/types.ts';
 import { ffprobe, contactSheet, ffmpegHasFilter } from './ffmpeg.ts';
 import { buildMusicBed, buildEngineTrack, muxAudio } from './audio.ts';
 import { buildNarration } from './narration.ts';
+import { ttsProviderName } from '../tts/provider.ts';
 import { describeProfile } from './engine.ts';
 import { cameraFilterFor } from './camera.ts';
 import { buildOverlayFilters, parseOverlay, describeOverlay } from './overlay.ts';
@@ -331,7 +332,16 @@ export async function assembleVideo(ctx: AgentContext): Promise<RenderResult> {
         `narasi ${over.length} scene lebih panjang dari durasinya, teks akan terpotong`,
       );
     }
-  } else if (!narration.skipped) {
+  } else if (narration.skipped) {
+    // Tanpa log ini narasi bisa hilang berbulan-bulan tanpa jejak: video tetap
+    // "done" dan QA lama tidak memeriksa isi audio. Pernah terjadi saat biner
+    // Piper hilang setelah sandbox di-reset.
+    await ctx.log(
+      'warn',
+      `narasi dilewati: tidak ada penyedia TTS (${ttsProviderName()}); ` +
+        'isi TTS_API_KEY atau pasang piper. Video akan tanpa suara narasi.',
+    );
+  } else {
     await ctx.log('warn', `narasi tidak dibuat: ${narration.errors[0] ?? 'tidak diketahui'}`);
   }
 

@@ -48,6 +48,62 @@
       "source": "https://commons.wikimedia.org/wiki/File:Subaru_WRX_STI_-_engine_and_exhaust_sound_(YouTube--bynUdphkbc).opus",
       "artist": "Hungarian Supercar Spotters (YouTube)",
       "license": "CC BY 3.0"
+    },
+    "mclaren-765lt": {
+      "file": "mclaren-765lt.m4a",
+      "start": 0.0,
+      "duration": 14.0,
+      "source": "https://commons.wikimedia.org/wiki/File:McLaren_765LT_-_engine_and_exhaust_sound_(YouTube_5oSRv66QFW0).opus",
+      "artist": "Hungarian Supercar Spotters (YouTube)",
+      "license": "CC BY 3.0"
+    },
+    "mclaren-720s": {
+      "file": "mclaren-720s.m4a",
+      "start": 0.0,
+      "duration": 14.0,
+      "source": "https://commons.wikimedia.org/wiki/File:McLaren_720S_with_Fi_Exhaust_-_engine_and_exhaust_sound_(YouTube_ijLY6Tl8ex0).opus",
+      "artist": "FiExhaust (YouTube)",
+      "license": "CC BY 3.0"
+    },
+    "ferrari-488-pista": {
+      "file": "ferrari-488-pista.m4a",
+      "start": 0.0,
+      "duration": 14.0,
+      "source": "https://commons.wikimedia.org/wiki/File:Ferrari_488_Pista_with_modified_exhaust_-_engine_and_exhaust_sound_(YouTube_mN21wNn_scg).opus",
+      "artist": "RichReviews (YouTube)",
+      "license": "CC BY 3.0"
+    },
+    "ferrari-f40": {
+      "file": "ferrari-f40.m4a",
+      "start": 0.0,
+      "duration": 14.0,
+      "source": "https://commons.wikimedia.org/wiki/File:Ferrari_F40_-_engine_and_exhaust_sound_(YouTube_yfF5gtwxBzY).opus",
+      "artist": "Car Trends (YouTube)",
+      "license": "CC BY 3.0"
+    },
+    "datsun-240z": {
+      "file": "datsun-240z.m4a",
+      "start": 0.0,
+      "duration": 14.0,
+      "source": "https://commons.wikimedia.org/wiki/File:Datsun_240Z_-_engine_and_exhaust_sound_(YouTube_onKs-1u-Aeo).opus",
+      "artist": "Played N Faved - Sound Effects &amp; Stock Footage (YouTube)",
+      "license": "CC BY 3.0"
+    },
+    "honda-nsx-2016": {
+      "file": "honda-nsx-2016.m4a",
+      "start": 0.0,
+      "duration": 14.0,
+      "source": "https://commons.wikimedia.org/wiki/File:Honda_NSX_(2016)_-_engine_and_exhaust_sound_(YouTube-_xqpIXpkUGk).opus",
+      "artist": "Motor1 (YouTube)",
+      "license": "CC BY 3.0"
+    },
+    "bmw-e30-m3": {
+      "file": "bmw-e30-m3.m4a",
+      "start": 0.0,
+      "duration": 14.0,
+      "source": "https://commons.wikimedia.org/wiki/File:BMW_M3_with_Fi_Exhaust_-_engine_and_exhaust_sound_(YouTube_ORJ68Rs1OSI).opus",
+      "artist": "FiExhaust (YouTube)",
+      "license": "CC BY 3.0"
     }
   }
 }

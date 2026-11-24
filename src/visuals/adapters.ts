@@ -8,10 +8,23 @@ import type { VisualAdapterDef } from '../core/config.ts';
 import { paths } from '../core/fsx.ts';
 import { i2vPrompt } from '../pipeline/scenes.ts';
 
+/**
+ * Rotates the user's own photos across scenes. `referenceImage` is one of `own`
+ * whenever image-to-video reuses a still; prepending it would add a duplicate
+ * that shifts the rotation by one and makes consecutive scenes render the same
+ * photo. Only a reference from outside `own` is added.
+ */
+export function localCandidateOrder(
+  own: string[],
+  referenceImage?: string,
+): string[] {
+  const ref = referenceImage && !own.includes(referenceImage) ? [referenceImage] : [];
+  return [...ref, ...own];
+}
+
 function localCandidates(req: GenerateRequest): string[] {
   const own = userAssetsFor(req.model, path.join(paths.assets, 'own'));
-  const ref = req.referenceImage ? [req.referenceImage] : [];
-  return [...ref, ...own];
+  return localCandidateOrder(own, req.referenceImage);
 }
 
 /** Highest priority: the user's own photos/videos for this model. */

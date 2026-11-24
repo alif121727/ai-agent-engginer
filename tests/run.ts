@@ -2855,6 +2855,24 @@ await check('durasi vendor dijepit ke nilai yang didukung API', async () => {
   assert(runwayDurationForTest('seedance2', 2) === 5, 'di bawah minimum tetap 5s');
 });
 
+await check('foto model tidak diulang di scene berurutan', async () => {
+  const { localCandidateOrder } = await import('../src/visuals/adapters.ts');
+  const own = ['foto-1.jpg', 'foto-2.jpg', 'foto-3.jpg', 'foto-4.jpg', 'foto-5.jpg', 'foto-6.jpg'];
+  // Kling memakai still yang sama sebagai referenceImage (image-to-video).
+  // Dulu file itu ditambahkan lagi di depan daftar, sehingga rotasi bergeser
+  // satu dan scene 0 + 1 memakai foto identik -> QA menolak "terlalu mirip".
+  for (const ref of own) {
+    const order = localCandidateOrder(own, ref);
+    assert(order.length === own.length, 'referenceImage dari own tidak boleh menggandakan daftar');
+    const picked = [0, 1, 2, 3, 4, 5].map((i) => order[i % order.length]);
+    const dup = picked.find((p, i) => i > 0 && p === picked[i - 1]);
+    assert(!dup, `scene berurutan memakai foto sama: ${dup}`);
+  }
+  // Reference dari luar own tetap dipakai supaya fitur referensi tidak hilang.
+  const outside = localCandidateOrder(own, 'lain.jpg');
+  assert(outside[0] === 'lain.jpg' && outside.length === own.length + 1, 'referensi luar tetap ditambahkan');
+});
+
 console.log(`\n${passed} pemeriksaan lulus, ${failures.length} gagal`);
 if (failures.length) {
   for (const f of failures) console.log(`  - ${f}`);

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useStudio } from '../state/store';
+import { lastProbeResults } from '../services/api';
 import { Icon } from '../components/ui';
 
 export function Auth() {
@@ -159,10 +160,42 @@ export function Auth() {
           <span>
             {api.kind === 'http'
               ? 'Form ini mengirim kredensial ke backend studio di mesin ini. Jangan pakai kata sandi yang Anda pakai di layanan lain.'
-              : 'Jangan masukkan kata sandi asli. Situs ini statis: tidak ada server yang memverifikasi, dan yang disimpan hanya nama di peramban Anda.'}
+              : 'Jangan masukkan kata sandi asli. Tidak ada server yang menjawab, jadi yang disimpan hanya nama di peramban Anda.'}
           </span>
         </div>
+
+        {api.kind === 'demo' && <BackendDiagnosis />}
       </div>
+    </div>
+  );
+}
+
+/**
+ * "Mode demo" punya dua sebab yang sangat berbeda: tidak ada alamat backend
+ * sama sekali, atau alamatnya ada tapi servernya mati. Tanpa membedakannya,
+ * pengguna hanya melihat "demo" dan tidak tahu apa yang harus diperbaiki.
+ */
+function BackendDiagnosis() {
+  const probes = lastProbeResults();
+  if (probes.length === 0) {
+    return (
+      <div className="note">
+        <span className="note__icon"><Icon.Info size={14} /></span>
+        <span>
+          Tidak ada alamat backend yang dikonfigurasi untuk situs ini. Buka{' '}
+          <strong>Model AI</strong> dan isi alamat server studio untuk memakai render nyata.
+        </span>
+      </div>
+    );
+  }
+  return (
+    <div className="note">
+      <span className="note__icon"><Icon.Info size={14} /></span>
+      <span>
+        Backend tidak menjawab. Alamat yang dicoba:{' '}
+        <span className="mono tiny">{probes.map((p) => p.base).join(', ')}</span>. Server
+        studio mungkin sedang mati — hidupkan lagi, lalu muat ulang halaman ini.
+      </span>
     </div>
   );
 }

@@ -771,6 +771,19 @@ export async function probeBackend(base: string): Promise<boolean> {
   }
 }
 
+/** Hasil percobaan terakhir; UI memakainya untuk menjelaskan mode demo. */
+export type BackendProbe = { base: string; ok: boolean };
+let lastProbe: BackendProbe[] = [];
+
+/**
+ * Alamat yang dicoba saat pemilihan terakhir. Kosong berarti memang tidak ada
+ * backend yang dikonfigurasi, bukan backend yang mati — dua hal berbeda yang
+ * dulu sama-sama tampil sebagai "mode demo".
+ */
+export function lastProbeResults(): BackendProbe[] {
+  return lastProbe;
+}
+
 export async function pickApi(): Promise<StudioApi> {
   // Urutan percobaan: backend pilihan pengguna, origin sendiri, override
   // runtime, backend yang disuntikkan saat build (STUDIO_URL), lalu demo.
@@ -787,8 +800,11 @@ export async function pickApi(): Promise<StudioApi> {
     typeof __STUDIO_URL__ === 'string' && __STUDIO_URL__ ? __STUDIO_URL__ : undefined,
   ].filter((b): b is string => typeof b === 'string' && b.length > 0);
 
+  lastProbe = [];
   for (const base of new Set(candidates)) {
-    if (await probeBackend(base)) return new HttpStudioApi(base.replace(/\/$/, ''));
+    const ok = await probeBackend(base);
+    lastProbe.push({ base, ok });
+    if (ok) return new HttpStudioApi(base.replace(/\/$/, ''));
   }
   return new DemoStudioApi();
 }

@@ -509,3 +509,10 @@ SSE progress (`/api/...` event stream), 15 template di `src/core/templates.ts`.
   13/33 model punya rekaman asli (CC BY 3.0, Wikimedia).
 - **`serve.sh` tidak me-restart API** kalau health masih OK. Bandingkan
   `ps -o lstart` dengan mtime `src/` sebelum menyimpulkan kode sudah aktif.
+- **Sandbox reset menghapus ffmpeg + piper.** Container restart me-reset PATH
+  dan paket apt; `spawnSync('ffmpeg')` gagal -> health `ffmpeg:false` -> UI
+  jatuh ke mode demo dan render mati. `src/core/env.ts` sekarang mencari biner
+  di `tools/bin`, `/workspace/tools/bin`, `/usr/local/bin` dan memperbaiki PATH
+  (di-import oleh api, worker, DAN tests/run.ts). Biner ffmpeg asli ada di
+  `/workspace/tools/bin/`. Piper dipasang ulang dengan `pip install piper-tts`
+  (~/.local/bin/piper); model onnx ada di `assets/tts/` dan selamat.

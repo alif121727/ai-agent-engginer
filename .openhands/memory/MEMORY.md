@@ -494,3 +494,18 @@ SSE progress (`/api/...` event stream), 15 template di `src/core/templates.ts`.
 - UI wajib jujur: label model "butuh API key" dari `/api/visual/readiness`,
   yang melaporkan `credits` juga (Runway saldo 0 => `ready:false`).
 - File media `/api/jobs/:id/file/*` butuh `?token=`; tanpa itu 401.
+
+## Audio & QA (mahal dipelajari)
+- **QA bisa lolos padahal audio cacat.** Gerbang `narasi-ada` (tools.ts,
+  `approve_job`) membandingkan `voiceover` di storyboard dengan
+  `jobs/<id>/audio/narration/narration.wav`. Tanpa itu video tanpa narasi
+  lolos 26/26 — pernah terjadi saat biner Piper hilang.
+- **Bukti narasi benar-benar terdengar**: korelasi selubung amplitudo audio
+  `video.mp4` vs `narration.wav` (16 kHz) = 0,879. Jangan percaya
+  `existsSync` saja.
+- **Jitter f0**: ukur dengan win 1024 @ 8 kHz (seperti `tests/run.ts`).
+  Jendela lebar (40 ms) meratakan siklus dan memberi angka palsu rendah.
+- **`synthesizedLocally`** dihitung dari `recordedSegmentFor()`, bukan `true`.
+  13/33 model punya rekaman asli (CC BY 3.0, Wikimedia).
+- **`serve.sh` tidak me-restart API** kalau health masih OK. Bandingkan
+  `ps -o lstart` dengan mtime `src/` sebelum menyimpulkan kode sudah aktif.

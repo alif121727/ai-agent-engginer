@@ -21,7 +21,12 @@ export type RenderedVideo = {
   fps: number;
   scenes: number;
   checks: number;
-  qa: 'lolos' | 'tanpa-foto';
+  /**
+   * 'lolos'      = foto asli dari garasi, QA pipeline lulus
+   * 'tanpa-foto' = aset generatif (AI), ditandai jujur
+   * 'render-3d'  = dirender dari geometri 3D prosedural, tanpa foto maupun AI
+   */
+  qa: 'lolos' | 'tanpa-foto' | 'render-3d';
   modelAi: string;
   /** Timestamp ISO dari plan.json job asli, bukan tanggal karangan. */
   renderedAt: string;
@@ -84,6 +89,16 @@ const RECORDED: Recorded[] = [
     // ada di katalog. Ditandai jujur, bukan disembunyikan.
     qa: 'tanpa-foto', modelAi: 'Studio Render (lokal)', renderedAt: '2026-11-19T18:44:12.689Z',
     specsFallback: ['V8 5.0L twin-turbo', '1.600 PS (E85)', '1.500 Nm', '1.420 kg'],
+  },
+  {
+    // Dirender terpisah di /workspace/car-chase (renderer numpy/OpenCV), bukan
+    // lewat pipeline job. Karena itu jobId kosong dan tidak muncul sebagai
+    // proyek demo — hanya di Perpustakaan.
+    slug: 'porsche-911-gt3-rs-992-car-chase', title: 'Porsche 911 GT3 RS 992 — Car Chase',
+    jobId: '',
+    dur: 60, aspect: '16:9', width: 1280, height: 720, fps: 24, scenes: 8, checks: 0,
+    qa: 'render-3d', modelAi: 'Studio Render 3D (lokal)', renderedAt: '2026-11-25T13:21:00.000Z',
+    catalogSlug: 'porsche-911-gt3-rs-992',
   },
 ];
 

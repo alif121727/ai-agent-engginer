@@ -35,13 +35,15 @@ export function Library({ go }: { go: (r: Route) => void }) {
         <div className="eyebrow">Perpustakaan</div>
         <h1 style={{ marginTop: 4 }}>Video yang sudah jadi</h1>
         <p className="muted small" style={{ marginTop: 4 }}>
-          {RENDERED.length} video hasil pipeline nyata — dirender dengan ffmpeg, bukan animasi placeholder.
+          {RENDERED.length} video jadi — dirender dengan ffmpeg, bukan animasi placeholder.
           {(() => {
-            const own = RENDERED.filter((v) => v.qa !== 'tanpa-foto').length;
-            const rest = RENDERED.length - own;
-            return rest === 0
-              ? ' Semuanya memakai foto asli dari garasi.'
-              : ` ${own} memakai foto asli dari garasi; ${rest} memakai gambar generatif dan ditandai "tanpa foto".`;
+            const own = RENDERED.filter((v) => v.qa === 'lolos').length;
+            const gen = RENDERED.filter((v) => v.qa === 'tanpa-foto').length;
+            const r3d = RENDERED.filter((v) => v.qa === 'render-3d').length;
+            const parts = [`${own} memakai foto asli dari garasi`];
+            if (r3d > 0) parts.push(`${r3d} dirender dari geometri 3D`);
+            if (gen > 0) parts.push(`${gen} memakai gambar generatif`);
+            return ` ${parts.join('; ')}.`;
           })()}
         </p>
       </div>
@@ -78,12 +80,20 @@ export function Library({ go }: { go: (r: Route) => void }) {
               <div className="vcard__media">
                 <video src={videoSrc(v)} poster={thumbSrc(v)} controls preload="metadata" playsInline />
                 <span className="vcard__badge">{v.dur}s</span>
-                <span className="vcard__ai">{v.qa === 'tanpa-foto' ? 'AI-GENERATED' : 'FOTO ASLI'}</span>
+                <span className="vcard__ai">
+                  {v.qa === 'tanpa-foto' ? 'AI-GENERATED' : v.qa === 'render-3d' ? 'RENDER 3D' : 'FOTO ASLI'}
+                </span>
               </div>
               <div className="vcard__body">
                 <div className="row row--between">
                   <h3 className="vcard__title truncate">{v.title}</h3>
-                  {v.qa === 'tanpa-foto' ? <span className="chip chip--warn">tanpa foto</span> : <span className="chip chip--ok">QA lolos</span>}
+                  {v.qa === 'tanpa-foto' ? (
+                    <span className="chip chip--warn">tanpa foto</span>
+                  ) : v.qa === 'render-3d' ? (
+                    <span className="chip">render 3D</span>
+                  ) : (
+                    <span className="chip chip--ok">QA lolos</span>
+                  )}
                 </div>
                 <div className="vcard__specs">{specsOf(v).map((s) => <span key={s}>{s}</span>)}</div>
                 <div className="row row--wrap" style={{ gap: 6, marginTop: 'auto' }}>

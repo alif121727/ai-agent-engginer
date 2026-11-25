@@ -1366,9 +1366,10 @@ await check('benih proyek demo memakai data nyata, bukan karangan', async () => 
 
   assert(seeds.length > 0, 'benih tidak boleh kosong, kalau kosong situs statis terbuka kosong');
   // Model tanpa entri katalog tidak boleh dibuatkan proyek: spesifikasinya
-  // tidak bersumber. Videonya tetap ada di Perpustakaan.
-  const withCatalog = RENDERED.filter((v) => v.catalogSlug);
-  assert(seeds.length === withCatalog.length, 'jumlah benih harus sama dengan video yang punya entri katalog');
+  // tidak bersumber. Video render-3d juga tidak, karena dibuat di luar pipeline
+  // sehingga tidak punya tahap/artefak/QA. Keduanya tetap ada di Perpustakaan.
+  const seedable = RENDERED.filter((v) => v.catalogSlug && v.qa !== 'render-3d');
+  assert(seeds.length === seedable.length, 'jumlah benih harus sama dengan video pipeline yang punya entri katalog');
 
   for (const p of seeds) {
     assert(p.stages.length === 9, `${p.title} harus punya 9 tahap`);

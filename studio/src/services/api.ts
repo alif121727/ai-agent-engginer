@@ -257,6 +257,9 @@ function seedFrom(v: RenderedVideo): Project | null {
   // Tanpa entri katalog tidak ada spesifikasi bersumber: jangan mengarang
   // proyek. Videonya tetap tersedia di Perpustakaan.
   if (!car) return null;
+  // Video render-3d dibuat di luar pipeline job, jadi tidak punya tahap,
+  // artefak, atau QA. Membuatkannya proyek akan mengarang riwayat kerja.
+  if (v.qa === 'render-3d') return null;
 
   const dur = Math.max(MIN_DUR, v.dur);
   const brief = buildBrief(car);

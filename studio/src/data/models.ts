@@ -13,7 +13,7 @@ export type VideoModel = {
   /** true bila bisa dipakai tanpa kredensial tambahan (render lokal). */
   ready: boolean;
   /** Adapter backend yang menjalankan model ini; kosong = render lokal. */
-  provider?: 'runway' | 'kling';
+  provider?: 'runway' | 'kling' | 'seedance';
 };
 
 // Katalog model video. `ready: false` = belum ada kredensial/adaptor,
@@ -60,15 +60,15 @@ export const VIDEO_MODELS: VideoModel[] = [
   {
     id: 'seedance-2.0',
     name: 'Seedance 2.0',
-    vendor: 'ByteDance',
+    vendor: 'ByteDance (via API publik seedance2ai.io)',
     strength: 'Cepat dan murah, banyak rasio sekaligus',
     detail:
-      'Cocok untuk produksi massal konten sosial media. Mendukung 16:9, 9:16, dan 1:1 dalam satu permintaan. Butuh kunci API ByteDance.',
+      'Teks-ke-video dan gambar-ke-video lewat API publik Seedance. Mendukung 16:9, 9:16, 1:1, dan 4:3 dalam satu permintaan, 4–15 detik per klip. Butuh SEEDANCE_API_KEY; kredit dipotong dari saldo pemilik kunci.',
     best: 'Reels/TikTok bervolume tinggi',
     speed: 'cepat',
-    maxDur: 12,
+    maxDur: 15,
     ready: false,
-    provider: 'runway',
+    provider: 'seedance',
   },
   {
     id: 'runway-gen4',

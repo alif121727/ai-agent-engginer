@@ -5,6 +5,7 @@ import {
   videoGenAdapter,
   runwayVideoAdapter,
   klingVideoAdapter,
+  seedanceVideoAdapter,
   stockAdapter,
   pollinationsAdapter,
 } from './adapters.ts';
@@ -19,6 +20,7 @@ export function buildAdapter(def: VisualAdapterDef): VisualAdapter | null {
     case 'video-gen':
       if (def.provider === 'runway') return runwayVideoAdapter(def);
       if (def.provider === 'kling') return klingVideoAdapter(def);
+      if (def.provider === 'seedance') return seedanceVideoAdapter(def);
       return videoGenAdapter(def);
     case 'stock-api':
       return stockAdapter(def);

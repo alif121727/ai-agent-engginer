@@ -2940,6 +2940,141 @@ await check('foto model tidak diulang di scene berurutan', async () => {
   assert(outside[0] === 'lain.jpg' && outside.length === own.length + 1, 'referensi luar tetap ditambahkan');
 });
 
+await check('seedance: durasi dijepit ke rentang 4-15 detik', async () => {
+  const { seedanceDurationForTest } = await import('../src/visuals/adapters.ts');
+  assert(seedanceDurationForTest(5) === 5, '5s diteruskan apa adanya');
+  assert(seedanceDurationForTest(1) === 4, 'di bawah minimum dinaikkan ke 4');
+  assert(seedanceDurationForTest(30) === 15, 'di atas maksimum dijepit ke 15');
+  assert(seedanceDurationForTest(7.6) === 8, 'pecahan dibulatkan');
+});
+
+await check('seedance: rute model memakai adapter seedance, bukan runway', async () => {
+  const { routeForModel } = await import('../src/visuals/model-map.ts');
+  const route = routeForModel('seedance-2.0');
+  assert(route?.adapterId === 'seedance', `adapter harus seedance, dapat ${route?.adapterId}`);
+  assert(route?.vendorModel === 'seedance2', 'id model vendor harus seedance2');
+  // Veo tetap di Runway: satu kunci Runway memang melayani Veo.
+  assert(routeForModel('veo-3.1')?.adapterId === 'runway', 'Veo tidak boleh ikut pindah');
+});
+
+await check('seedance: adapter terdaftar dan hanya siap bila kunci ada', async () => {
+  const { loadAdapters } = await import('../src/core/config.ts');
+  const { buildAdapter } = await import('../src/visuals/index.ts');
+  const def = loadAdapters().adapters.seedance;
+  assert(Boolean(def), 'adapter seedance harus ada di config/visuals.json');
+  assert(def.provider === 'seedance', 'protokol harus seedance');
+  assert(def.envKey === 'SEEDANCE_API_KEY', 'envKey harus SEEDANCE_API_KEY');
+  const saved = process.env.SEEDANCE_API_KEY;
+  delete process.env.SEEDANCE_API_KEY;
+  assert(buildAdapter(def)!.available() === false, 'tanpa kunci seedance tidak boleh siap');
+  process.env.SEEDANCE_API_KEY = 'uji-kunci';
+  assert(buildAdapter(def)!.available() === true, 'dengan kunci seedance harus siap');
+  if (saved === undefined) delete process.env.SEEDANCE_API_KEY;
+  else process.env.SEEDANCE_API_KEY = saved;
+});
+
+await check('seedance: generate tanpa kunci menolak, tidak mengarang aset', async () => {
+  const { loadAdapters } = await import('../src/core/config.ts');
+  const { seedanceVideoAdapter } = await import('../src/visuals/adapters.ts');
+  const saved = process.env.SEEDANCE_API_KEY;
+  delete process.env.SEEDANCE_API_KEY;
+  const adapter = seedanceVideoAdapter(loadAdapters().adapters.seedance);
+  let pesan = '';
+  try {
+    await adapter.generate({
+      scene: { index: 0, duration: 5, prompt: 'mobil', camera: 'pan' } as never,
+      theme: {} as never,
+      model: 'Mazda RX-7',
+      aspect: '16:9',
+      outDir: '/tmp/seedance-tes',
+      jobId: 'job-tes',
+    });
+  } catch (err) {
+    pesan = err instanceof Error ? err.message : String(err);
+  }
+  assert(/kunci Seedance belum diisi/.test(pesan), `harus menolak karena kunci, dapat: ${pesan}`);
+  if (saved !== undefined) process.env.SEEDANCE_API_KEY = saved;
+});
+
+await check('media: tanda tangan menolak sig salah, job lain, dan kedaluwarsa', async () => {
+  const { signMediaName, verifyMediaSignature } = await import('../src/visuals/media-sign.ts');
+  const saved = process.env.SESSION_SECRET;
+  process.env.SESSION_SECRET = 'rahasia-uji-media';
+  try {
+    const sig = signMediaName('job-a', 'foto-1.jpg');
+    assert(Boolean(sig), 'tanda tangan harus terbentuk');
+    assert(verifyMediaSignature('job-a', 'foto-1.jpg', sig) === null, 'sig benar harus lolos');
+    // Job id ikut ditandatangani: tautan sah satu job tidak boleh dipakai job lain.
+    assert(verifyMediaSignature('job-b', 'foto-1.jpg', sig) !== null, 'job lain harus ditolak');
+    assert(verifyMediaSignature('job-a', 'foto-2.jpg', sig) !== null, 'berkas lain harus ditolak');
+    assert(verifyMediaSignature('job-a', 'foto-1.jpg', undefined) !== null, 'tanpa sig harus ditolak');
+    const rusak = `${sig.slice(0, -2)}xx`;
+    assert(verifyMediaSignature('job-a', 'foto-1.jpg', rusak) !== null, 'sig diubah harus ditolak');
+    const kedaluwarsa = signMediaName('job-a', 'foto-1.jpg', Date.now() - 1000);
+    assert(verifyMediaSignature('job-a', 'foto-1.jpg', kedaluwarsa) === 'tautan kedaluwarsa', 'sig lewat waktu ditolak');
+  } finally {
+    if (saved === undefined) delete process.env.SESSION_SECRET;
+    else process.env.SESSION_SECRET = saved;
+  }
+});
+
+await check('media: tanpa SESSION_SECRET tidak menerbitkan tautan publik', async () => {
+  const { signMediaName } = await import('../src/visuals/media-sign.ts');
+  const saved = process.env.SESSION_SECRET;
+  const savedAlt = process.env.MEDIA_SIGNING_SECRET;
+  delete process.env.SESSION_SECRET;
+  delete process.env.MEDIA_SIGNING_SECRET;
+  assert(signMediaName('job-a', 'foto-1.jpg') === undefined, 'tanpa rahasia tidak boleh menandatangani');
+  if (saved !== undefined) process.env.SESSION_SECRET = saved;
+  if (savedAlt !== undefined) process.env.MEDIA_SIGNING_SECRET = savedAlt;
+});
+
+await check('seedance: permintaan memakai Idempotency-Key dan generate_audio=false', async () => {
+  const { loadAdapters } = await import('../src/core/config.ts');
+  const { seedanceVideoAdapter } = await import('../src/visuals/adapters.ts');
+  const saved = process.env.SEEDANCE_API_KEY;
+  const savedFetch = globalThis.fetch;
+  process.env.SEEDANCE_API_KEY = 'uji-kunci';
+  const calls: { url: string; init?: RequestInit }[] = [];
+  // Stub jaringan saja; logika adapter tetap yang diuji.
+  globalThis.fetch = (async (url: string, init?: RequestInit) => {
+    calls.push({ url: String(url), init });
+    return new Response(JSON.stringify({ error: { code: 'invalid_request', message: 'berhenti di sini' } }), {
+      status: 400,
+      headers: { 'content-type': 'application/json' },
+    });
+  }) as typeof fetch;
+  try {
+    const adapter = seedanceVideoAdapter(loadAdapters().adapters.seedance);
+    await adapter
+      .generate({
+        scene: { index: 2, duration: 5, prompt: 'mobil', camera: 'pan' } as never,
+        theme: {} as never,
+        model: 'Mazda RX-7',
+        aspect: '9:16',
+        outDir: '/tmp/seedance-tes',
+        jobId: 'job-tes',
+      })
+      .catch(() => undefined);
+    assert(calls.length === 1, `harus satu permintaan submit, dapat ${calls.length}`);
+    const kirim = calls[0];
+    assert(/\/video\/seedance2$/.test(kirim.url), `endpoint salah: ${kirim.url}`);
+    const headers = kirim.init?.headers as Record<string, string>;
+    assert(Boolean(headers['idempotency-key']), 'wajib ada Idempotency-Key agar retry tidak menagih dua kali');
+    assert(headers.authorization === 'Bearer uji-kunci', 'otorisasi harus Bearer');
+    const body = JSON.parse(String(kirim.init?.body));
+    assert(body.generate_audio === false, 'audio vendor dimatikan karena assemble memakai -an');
+    assert(body.aspect_ratio === '9:16', 'rasio diteruskan');
+    assert(body.duration === '5', `durasi string 5, dapat ${body.duration}`);
+    assert(body.mode === 'text-to-video', 'tanpa URL publik harus jatuh ke text-to-video');
+    assert(!('image_url' in body), 'jangan kirim URL yang tidak bisa diambil vendor');
+  } finally {
+    globalThis.fetch = savedFetch;
+    if (saved === undefined) delete process.env.SEEDANCE_API_KEY;
+    else process.env.SEEDANCE_API_KEY = saved;
+  }
+});
+
 console.log(`\n${passed} pemeriksaan lulus, ${failures.length} gagal`);
 if (failures.length) {
   for (const f of failures) console.log(`  - ${f}`);

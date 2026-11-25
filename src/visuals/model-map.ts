@@ -15,7 +15,7 @@ export type VideoModelRoute = {
 export const VIDEO_MODEL_ROUTES: Record<string, VideoModelRoute> = {
   'local-render': { adapterId: 'local' },
   'veo-3.1': { adapterId: 'runway', vendorModel: 'veo3.1' },
-  'seedance-2.0': { adapterId: 'runway', vendorModel: 'seedance2' },
+  'seedance-2.0': { adapterId: 'seedance', vendorModel: 'seedance2' },
   'runway-gen4': { adapterId: 'runway', vendorModel: 'gen4.5' },
   'kling-3.0': { adapterId: 'kling', vendorModel: 'kling-v3' },
 };

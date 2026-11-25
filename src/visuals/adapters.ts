@@ -4,6 +4,7 @@ import { ffprobe } from '../render/ffmpeg.ts';
 import path from 'node:path';
 import type { VisualAdapter, GenerateRequest, GenerateResult } from './types.ts';
 import { fileFor, userAssetsFor, validateAssetFile, withRetry, downloadToFile } from './types.ts';
+import { publishMedia } from './media-sign.ts';
 import type { VisualAdapterDef } from '../core/config.ts';
 import { paths } from '../core/fsx.ts';
 import { i2vPrompt } from '../pipeline/scenes.ts';
@@ -320,6 +321,129 @@ export function klingVideoAdapter(def: VisualAdapterDef): VisualAdapter {
       return { path: out, kind: 'video', provider: def.id, source: `kling:${def.model}`, cost: 0 };
     },
   };
+}
+
+/**
+ * Seedance 2.0 accepts 4-15s per clip, so a scene longer than 15s is requested
+ * at the ceiling and the caller trims the excess. A value below 4 is a hard 400.
+ */
+export function seedanceDurationForTest(wanted: number): number {
+  return seedanceDuration(wanted);
+}
+
+function seedanceDuration(wanted: number): number {
+  const rounded = Math.round(wanted);
+  return Math.min(15, Math.max(4, rounded));
+}
+
+/**
+ * The public Seedance API only reads media from public HTTPS URLs; base64 and
+ * `asset://` are rejected. The repo keeps stills on local disk behind a login,
+ * so image-to-video needs a signed URL the vendor can fetch. Without a usable
+ * URL the adapter falls back to text-to-video instead of sending one the vendor
+ * would reject, which would fail the scene after the credits were reserved.
+ */
+function publicMediaUrl(file: string, jobId: string | undefined): string | undefined {
+  if (!jobId) return undefined;
+  try {
+    return publishMedia(jobId, file);
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Seedance bills the key owner's personal balance, so a missing key must fail
+ * loudly here instead of silently spending nothing and returning a fake asset.
+ */
+export function seedanceVideoAdapter(def: VisualAdapterDef): VisualAdapter {
+  const apiKey = def.envKey ? process.env[def.envKey] : undefined;
+  const base = (def.apiBase ?? 'https://www.seedance2ai.io/api/v1').replace(/\/$/, '');
+  return {
+    id: def.id,
+    def,
+    available: () => Boolean(def.enabled && apiKey),
+    async generate(req: GenerateRequest): Promise<GenerateResult> {
+      if (!apiKey) throw new Error('kunci Seedance belum diisi');
+      const headers = { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` };
+      const imageUrl = req.referenceImage ? publicMediaUrl(req.referenceImage, req.jobId) : undefined;
+      const body: Record<string, unknown> = {
+        mode: imageUrl ? 'image-to-video' : 'text-to-video',
+        quality_tier: process.env.SEEDANCE_QUALITY ?? 'standard',
+        prompt: i2vPrompt(req.scene),
+        aspect_ratio: req.aspect,
+        duration: String(seedanceDuration(req.scene.duration)),
+        resolution: process.env.SEEDANCE_RESOLUTION ?? '1080p',
+        // Assembly strips clip audio and lays its own engine/music track on top,
+        // so a generated soundtrack would only cost credits and be discarded.
+        generate_audio: false,
+      };
+      if (imageUrl) body.image_url = imageUrl;
+
+      const created = await fetch(`${base}/video/seedance2`, {
+        method: 'POST',
+        headers: { ...headers, 'idempotency-key': `${req.jobId ?? 'job'}-scene-${req.scene.index + 1}` },
+        body: JSON.stringify(body),
+      });
+      const createdJson = (await created.json().catch(() => ({}))) as {
+        id?: string;
+        error?: { code?: string; message?: string };
+      };
+      if (!created.ok) {
+        const code = createdJson.error?.code;
+        const detail = createdJson.error?.message ?? `HTTP ${created.status}`;
+        throw new Error(`Seedance ${code ?? created.status}: ${detail}`);
+      }
+      const taskId = createdJson.id;
+      if (!taskId) throw new Error('Seedance tidak mengembalikan id tugas');
+
+      const deadline = Date.now() + (def.timeoutMs ?? 600_000);
+      let output: string | undefined;
+      while (Date.now() < deadline) {
+        await wait(5_000);
+        const poll = await fetch(`${base}/tasks/${taskId}`, { headers });
+        const json = (await poll.json().catch(() => ({}))) as {
+          status?: string;
+          result_urls?: string[];
+          output?: { video_url?: string };
+          error?: string | null;
+        };
+        if (json.status === 'completed') {
+          output = json.result_urls?.[0] ?? json.output?.video_url;
+          break;
+        }
+        if (json.status === 'failed') {
+          throw new Error(`Seedance gagal: ${json.error ?? 'tanpa alasan'}`);
+        }
+      }
+      if (!output) throw new Error('Seedance tidak selesai sebelum batas waktu');
+
+      const out = fileFor(req.outDir, req.scene.index, 'mp4');
+      await downloadToFile(output, out, 'video', def.minBytes ?? 100_000, def.timeoutMs ?? 600_000);
+      return { path: out, kind: 'video', provider: def.id, source: `seedance:${def.model ?? 'seedance2'}`, cost: 0 };
+    },
+  };
+}
+
+/**
+ * Balance is the difference between "key works" and "render will work":
+ * reporting only key presence promised renders the vendor then refused with 402.
+ */
+export async function seedanceCredits(): Promise<number | null> {
+  const key = process.env.SEEDANCE_API_KEY;
+  if (!key) return null;
+  try {
+    const base = (process.env.SEEDANCE_API_BASE ?? 'https://www.seedance2ai.io/api/v1').replace(/\/$/, '');
+    const res = await fetch(`${base}/balance`, {
+      headers: { authorization: `Bearer ${key}` },
+      signal: AbortSignal.timeout(8_000),
+    });
+    if (!res.ok) return null;
+    const json = (await res.json()) as { credits?: number };
+    return typeof json.credits === 'number' ? json.credits : null;
+  } catch {
+    return null;
+  }
 }
 
 /**

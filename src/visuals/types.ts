@@ -11,6 +11,8 @@ export interface GenerateRequest {
   aspect: string;
   referenceImage?: string;
   outDir: string;
+  /** Needed to publish a still as a signed public URL for vendors that fetch it. */
+  jobId?: string;
 }
 
 export interface GenerateResult {

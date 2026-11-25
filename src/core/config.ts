@@ -56,10 +56,10 @@ export interface VisualAdapterDef {
   model?: string;
   /**
    * Wire protocol for video-gen adapters. `generic` keeps the original
-   * single-endpoint behaviour; `runway` and `kling` speak their own
+   * single-endpoint behaviour; `runway`, `kling` and `seedance` speak their own
    * submit-then-poll APIs.
    */
-  provider?: 'generic' | 'runway' | 'kling';
+  provider?: 'generic' | 'runway' | 'kling' | 'seedance';
   /** Base URL override; the adapter falls back to the vendor default. */
   apiBase?: string;
   /** Model ids the UI may select for this adapter (see studio/src/data/models.ts). */

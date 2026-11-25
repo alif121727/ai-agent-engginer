@@ -16,6 +16,7 @@ import { planScenes, estimateCost } from '../pipeline/scenes.ts';
 import { ffmpegAvailable } from '../render/ffmpeg.ts';
 import { paths, slugify, jobDir } from '../core/fsx.ts';
 import { assetFolderSlug } from '../visuals/types.ts';
+import { verifyMediaSignature } from '../visuals/media-sign.ts';
 import {
   createJob,
   createStages,
@@ -30,7 +31,7 @@ import {
   dailyCost,
 } from '../db/repo.ts';
 import { stagesFor, listPresets } from '../agents/registry.ts';
-import { runwayCredits } from '../visuals/adapters.ts';
+import { runwayCredits, seedanceCredits } from '../visuals/adapters.ts';
 import {
   authenticate,
   createSession,
@@ -219,6 +220,18 @@ export function createApp(opts: AppOptions = {}) {
               ? { note: 'saldo tidak bisa diperiksa' }
               : {}),
         };
+      } else if (provider === 'seedance') {
+        const credits = await seedanceCredits();
+        providers[provider] = {
+          keyed,
+          ...(credits === null ? {} : { credits }),
+          ready: credits !== null && credits > 0,
+          ...(credits === 0
+            ? { note: 'saldo kredit habis' }
+            : credits === null
+              ? { note: 'saldo tidak bisa diperiksa' }
+              : {}),
+        };
       } else {
         // Kling has no balance endpoint; only a real generation reports it.
         providers[provider] = { keyed, ready: true };
@@ -301,6 +314,31 @@ export function createApp(opts: AppOptions = {}) {
 
   app.get('/api/me', async (req, res) => {
     res.json({ user: await readUser(req) });
+  });
+
+  /**
+   * Public, signed media URL for vendors that fetch reference frames
+   * themselves (Seedance rejects base64 and `asset://`). Only the job's
+   * `media/` folder is served, and the signature binds the job id, so a leaked
+   * link cannot be replayed against another job or expose the render itself.
+   */
+  app.get('/api/jobs/:id/media/:name', async (req, res) => {
+    const name = path.basename(req.params.name);
+    const reason = verifyMediaSignature(req.params.id, name, req.query.sig ? String(req.query.sig) : undefined);
+    if (reason) {
+      res.status(403).json({ error: reason });
+      return;
+    }
+    if (!/\.(jpe?g|png|webp)$/i.test(name)) {
+      res.status(400).json({ error: 'tipe berkas tidak didukung' });
+      return;
+    }
+    const file = path.join(jobDir(req.params.id), 'media', name);
+    if (!fs.existsSync(file)) {
+      res.status(404).json({ error: 'berkas tidak ada' });
+      return;
+    }
+    res.sendFile(file);
   });
 
   // ---- everything below needs a session ----

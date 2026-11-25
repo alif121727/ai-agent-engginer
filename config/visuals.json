@@ -1,17 +1,53 @@
 {
-  "order": ["local", "video-gen", "image-gen", "image-gen-free", "stock-api"],
+  "order": [
+    "local",
+    "video-gen",
+    "image-gen",
+    "image-gen-free",
+    "stock-api"
+  ],
   "fallback": {
-    "local": ["video-gen", "image-gen", "image-gen-free", "stock-api"],
-    "video-gen": ["image-gen", "image-gen-free", "stock-api"],
-    "image-gen": ["image-gen-free", "stock-api"],
-    "image-gen-free": ["stock-api"],
+    "local": [
+      "video-gen",
+      "image-gen",
+      "image-gen-free",
+      "stock-api"
+    ],
+    "video-gen": [
+      "image-gen",
+      "image-gen-free",
+      "stock-api"
+    ],
+    "image-gen": [
+      "image-gen-free",
+      "stock-api"
+    ],
+    "image-gen-free": [
+      "stock-api"
+    ],
     "stock-api": []
   },
   "perProvider": {
-    "video-gen": { "timeoutMs": 120000, "maxRetries": 2, "cooldownMs": 15000 },
-    "image-gen": { "timeoutMs": 60000, "maxRetries": 2, "cooldownMs": 10000 },
-    "image-gen-free": { "timeoutMs": 90000, "maxRetries": 4, "cooldownMs": 25000 },
-    "stock-api": { "timeoutMs": 20000, "maxRetries": 1, "cooldownMs": 5000 }
+    "video-gen": {
+      "timeoutMs": 120000,
+      "maxRetries": 2,
+      "cooldownMs": 15000
+    },
+    "image-gen": {
+      "timeoutMs": 60000,
+      "maxRetries": 2,
+      "cooldownMs": 10000
+    },
+    "image-gen-free": {
+      "timeoutMs": 90000,
+      "maxRetries": 4,
+      "cooldownMs": 25000
+    },
+    "stock-api": {
+      "timeoutMs": 20000,
+      "maxRetries": 1,
+      "cooldownMs": 5000
+    }
   },
   "adapters": {
     "local": {
@@ -99,6 +135,20 @@
       "model": "pexels",
       "creditsFile": "assets/credits.json",
       "description": "Klip stok berlisensi. Atribusi wajib disimpan di assets/credits.json."
+    },
+    "seedance": {
+      "id": "seedance",
+      "label": "Seedance 2.0 (API publik seedance2ai.io)",
+      "kind": "video-gen",
+      "provider": "seedance",
+      "enabled": true,
+      "requiresKey": true,
+      "envKey": "SEEDANCE_API_KEY",
+      "model": "seedance2",
+      "timeoutMs": 900000,
+      "maxRetries": 0,
+      "minBytes": 100000,
+      "description": "Teks-ke-video dan gambar-ke-video lewat API publik Seedance. Butuh SEEDANCE_API_KEY; setiap klip memotong kredit pemilik kunci, jadi hanya dipanggil bila model ini dipilih di UI."
     }
   }
 }

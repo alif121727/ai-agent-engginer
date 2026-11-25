@@ -318,6 +318,7 @@ async function generateAssets(ctx: AgentContext, wantVideo: boolean): Promise<As
         aspect: brief.rasio ?? '16:9',
         referenceImage: useVendor ? own[scene.index % Math.max(1, own.length)] : undefined,
         outDir,
+        jobId: ctx.jobId,
       },
     });
     if (attempts.length) {

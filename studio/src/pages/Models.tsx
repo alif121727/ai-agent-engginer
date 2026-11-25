@@ -8,6 +8,17 @@ import { probeBackend, saveBackend, savedBackend, type ProviderState } from '../
 
 export function Models() {
   const { settings, saveSettings, toast, isModelReady, readiness } = useStudio();
+  /**
+   * "butuh API key" menyembunyikan kasus yang lebih sering terjadi: kunci sudah
+   * ada tapi saldo habis. Menampilkan alasan sebenarnya mencegah user mengejar
+   * kunci baru padahal yang perlu diisi saldo.
+   */
+  const alasanBelumSiap = (modelId: string): string => {
+    const model = VIDEO_MODELS.find((m) => m.id === modelId);
+    const note = model?.provider ? readiness?.providers?.[model.provider]?.note : undefined;
+    if (!note) return 'butuh API key';
+    return note === 'saldo kredit habis' ? 'saldo habis' : note;
+  };
   return (
     <div className="page stack" style={{ gap: 18 }}>
       <div>
@@ -39,7 +50,7 @@ export function Models() {
               <div style={{ minWidth: 0, flex: 1 }}>
                 <div className="row" style={{ gap: 8, marginBottom: 4 }}>
                   <h3>{m.name}</h3>
-                  {isModelReady(m.id) ? <span className="chip chip--ok"><span className="dot" /> siap dipakai</span> : <span className="chip chip--warn">butuh API key</span>}
+                  {isModelReady(m.id) ? <span className="chip chip--ok"><span className="dot" /> siap dipakai</span> : <span className="chip chip--warn">{alasanBelumSiap(m.id)}</span>}
                   {settings.defaultModel === m.id && <span className="chip chip--accent">default</span>}
                 </div>
                 <div className="dim tiny" style={{ marginBottom: 8 }}>{m.vendor} · {m.strength}</div>

@@ -102,6 +102,22 @@ Detail panjang ada di `archive/MEMORY-full-2026-11-20.md` dan log harian.
 - Metrik faset butuh render terisolasi (latar abu + mask z-buffer); mask
   kecerahan `g<60` ikut menangkap aspal dan angkanya tak berarti.
 
+## Perpustakaan: tiga status, bukan dua
+- `rendered.ts` `qa` sekarang `'lolos' | 'tanpa-foto' | 'render-3d'`.
+  `render-3d` = dirender dari geometri 3D prosedural (car-chase), tanpa foto
+  maupun gambar AI. Jangan pernah melabelinya "FOTO ASLI".
+- Entri `render-3d` **tidak boleh** jadi proyek benih (`seedFrom` melewatinya):
+  video itu dibuat di luar pipeline, jadi tidak punya tahap/artefak/QA.
+  Membuatkannya proyek = mengarang riwayat kerja.
+- Tes "jumlah benih = video ber-katalog" harus memakai filter yang sama
+  (`catalogSlug && qa !== 'render-3d'`), kalau tidak tes gagal saat menambah
+  entri render-3d.
+- Video baru wajib ada di **dua** tempat: `netlify-site/video/<slug>.mp4` dan
+  `netlify-site/thumb/<slug>.jpg` (di-track git; Pages membangun dari
+  checkout bersih). Thumbnail: pilih frame dengan `ffprobe -f lavfi
+  movie=...:seek_point=<t>,signalstats` -> YAVG tertinggi, jangan menebak dari
+  ukuran berkas.
+
 ## Catatan kerja
 - Saya tidak bisa melihat gambar di lingkungan ini. Verifikasi visual dengan
   metrik numerik (ffprobe, statistik piksel, korelasi), bukan tangkapan layar.

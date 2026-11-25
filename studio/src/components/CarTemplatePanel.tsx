@@ -1,5 +1,6 @@
 import React from 'react';
-import { Icon, Spinner } from '../components/ui';
+import { Icon } from '../components/ui';
+import raw from '../data/car-templates.json';
 
 export type CarTemplate = {
   name: string;
@@ -17,42 +18,23 @@ export type CarTemplate = {
 /**
  * Katalog template mobil dari Car Template System (templates/cars/).
  *
- * Endpoint butuh login dan hanya ada di backend repo; di deploy statis
- * (Netlify/demo) panel ini menyembunyikan diri alih-alih menampilkan galat,
- * karena katalog mobil utama di bawahnya tetap berfungsi.
+ * Datanya dibundel oleh scripts/build-car-templates.ts, jadi panel ini tetap
+ * tampil di deploy statis (GitHub Pages/Netlify) yang tidak punya backend.
+ * `preview` hanya nama berkas; gambarnya dilayani dari folder pratinjau.
  */
+const TEMPLATES = (raw as { hasil?: CarTemplate[] }).hasil ?? [];
+
 export function CarTemplatePanel() {
-  const [items, setItems] = React.useState<CarTemplate[] | null>(null);
-  const [gagal, setGagal] = React.useState(false);
   const [buka, setBuka] = React.useState(true);
 
-  React.useEffect(() => {
-    let hidup = true;
-    (async () => {
-      try {
-        const r = await fetch('/api/car-templates', { credentials: 'include' });
-        if (!r.ok) throw new Error(String(r.status));
-        const d = (await r.json()) as { hasil?: CarTemplate[] };
-        if (hidup) setItems(d.hasil ?? []);
-      } catch {
-        if (hidup) setGagal(true);
-      }
-    })();
-    return () => {
-      hidup = false;
-    };
-  }, []);
-
-  if (gagal) return null;
+  if (TEMPLATES.length === 0) return null;
 
   return (
     <section className="stack" style={{ gap: 12 }}>
       <div className="row row--between row--wrap">
         <div>
           <div className="eyebrow">Template mobil</div>
-          <h2 style={{ marginTop: 4, fontSize: '1.05rem' }}>
-            {items ? `${items.length} template parametrik` : 'Memuat template…'}
-          </h2>
+          <h2 style={{ marginTop: 4, fontSize: '1.05rem' }}>{TEMPLATES.length} template parametrik</h2>
           <p className="muted small" style={{ marginTop: 4 }}>
             Geometri, material, dan livery berasal dari berkas JSON yang tervalidasi — bukan angka yang dikarang di kode.
           </p>
@@ -62,24 +44,13 @@ export function CarTemplatePanel() {
         </button>
       </div>
 
-      {buka && !items && (
-        <div className="row" style={{ gap: 8 }}>
-          <Spinner />
-          <span className="muted small">Membaca templates/cars…</span>
-        </div>
-      )}
-
-      {buka && items && items.length === 0 && (
-        <p className="muted small">Belum ada template konkret di templates/cars/.</p>
-      )}
-
-      {buka && items && items.length > 0 && (
+      {buka && (
         <div className="vgrid">
-          {items.map((t) => (
+          {TEMPLATES.map((t) => (
             <article key={t.name} className="card card--tight stack" style={{ gap: 8 }}>
               <div style={{ background: 'var(--bg-2, #12131c)', borderRadius: 10, overflow: 'hidden' }}>
                 <img
-                  src={t.preview}
+                  src={`cartpl-preview/${t.preview}`}
                   alt={`Pratinjau ${t.displayName}`}
                   loading="lazy"
                   style={{ width: '100%', display: 'block', aspectRatio: '1 / 1', objectFit: 'cover' }}

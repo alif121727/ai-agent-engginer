@@ -28,7 +28,6 @@ export type CarTemplate = {
 
 const CARS_DIR = path.join(paths.root, 'templates', 'cars');
 const VARIANTS_DIR = path.join(paths.root, 'variants');
-const PREVIEW_DIR = '/cartpl-preview';
 
 function readJson(file: string): any | null {
   try {
@@ -96,7 +95,7 @@ export function listCarTemplates(): CarTemplate[] {
         wheels: { rimDiameterIn: Number((rim / 0.0254).toFixed(1)), spokes: Number(spec.wheels?.spokes ?? 0) },
         wing: String(spec.wing?.type ?? 'none'),
         livery: String(spec.livery?.style ?? 'none'),
-        preview: `${PREVIEW_DIR}/${spec.meta.name}.png`,
+        preview: `${spec.meta.name}.png`,
         variants: variantsFor(String(spec.meta.name)),
       } satisfies CarTemplate;
     })

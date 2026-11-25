@@ -1,0 +1,172 @@
+{
+  "total": 6,
+  "hasil": [
+    {
+      "name": "front-engine-gt",
+      "displayName": "Front-engine GT",
+      "description": "Grand tourer mesin depan: kap panjang, kabin mundur, dek belakang rendah",
+      "tags": [
+        "GT",
+        "front-engine",
+        "tourer"
+      ],
+      "abstract": false,
+      "extends": "_base",
+      "dimensions": {
+        "lengthM": 4.55,
+        "widthM": 1.9,
+        "heightM": 1.35,
+        "wheelbaseM": 2.65,
+        "rideHeightM": 0.11
+      },
+      "wheels": {
+        "rimDiameterIn": 20,
+        "spokes": 5
+      },
+      "wing": "ducktail",
+      "livery": "none",
+      "preview": "front-engine-gt.png",
+      "variants": []
+    },
+    {
+      "name": "mid-engine-supercar",
+      "displayName": "Mid-engine Supercar",
+      "description": "Supercar mesin tengah dengan overhang pendek dan dek belakang tinggi",
+      "tags": [
+        "supercar",
+        "mid-engine",
+        "default"
+      ],
+      "abstract": false,
+      "extends": "_base",
+      "dimensions": {
+        "lengthM": 4.572,
+        "widthM": 1.92,
+        "heightM": 1.322,
+        "wheelbaseM": 2.457,
+        "rideHeightM": 0.1
+      },
+      "wheels": {
+        "rimDiameterIn": 20,
+        "spokes": 5
+      },
+      "wing": "high-fixed",
+      "livery": "none",
+      "preview": "mid-engine-supercar.png",
+      "variants": [
+        "mid-engine-supercar.candy-red",
+        "mid-engine-supercar.matte-black"
+      ]
+    },
+    {
+      "name": "rally-hatch",
+      "displayName": "Rally Hatch",
+      "description": "Hatchback rally: pendek, tinggi, ban tebal, lampu bulat ganda",
+      "tags": [
+        "hatch",
+        "rally",
+        "compact"
+      ],
+      "abstract": false,
+      "extends": "_base",
+      "dimensions": {
+        "lengthM": 3.8,
+        "widthM": 1.8,
+        "heightM": 1.5,
+        "wheelbaseM": 2.5,
+        "rideHeightM": 0.2
+      },
+      "wheels": {
+        "rimDiameterIn": 18,
+        "spokes": 6
+      },
+      "wing": "low",
+      "livery": "number-roundel",
+      "preview": "rally-hatch.png",
+      "variants": []
+    },
+    {
+      "name": "sedan-traffic",
+      "displayName": "Sedan Traffic",
+      "description": "Sedan biasa untuk lalu lintas: panjang, kabin besar, tanpa sayap",
+      "tags": [
+        "sedan",
+        "traffic",
+        "daily"
+      ],
+      "abstract": false,
+      "extends": "_base",
+      "dimensions": {
+        "lengthM": 4.8,
+        "widthM": 1.86,
+        "heightM": 1.48,
+        "wheelbaseM": 2.8,
+        "rideHeightM": 0.14
+      },
+      "wheels": {
+        "rimDiameterIn": 18,
+        "spokes": 5
+      },
+      "wing": "none",
+      "livery": "none",
+      "preview": "sedan-traffic.png",
+      "variants": []
+    },
+    {
+      "name": "track-focused",
+      "displayName": "Track-focused",
+      "description": "Mobil balap jalan raya: sayap besar, splitter dalam, ban lebar",
+      "tags": [
+        "track",
+        "aero",
+        "sport"
+      ],
+      "abstract": false,
+      "extends": "_base",
+      "dimensions": {
+        "lengthM": 4.3,
+        "widthM": 2.04,
+        "heightM": 1.2,
+        "wheelbaseM": 2.6,
+        "rideHeightM": 0.09
+      },
+      "wheels": {
+        "rimDiameterIn": 21,
+        "spokes": 10
+      },
+      "wing": "high-fixed",
+      "livery": "stripes",
+      "preview": "track-focused.png",
+      "variants": []
+    },
+    {
+      "name": "wedge-hypercar",
+      "displayName": "Wedge Hypercar",
+      "description": "Hypercar baji: hidung sangat rendah, bodi lebar, overhang minimal",
+      "tags": [
+        "supercar",
+        "wedge",
+        "hypercar"
+      ],
+      "abstract": false,
+      "extends": "_base",
+      "dimensions": {
+        "lengthM": 4.2,
+        "widthM": 2.04,
+        "heightM": 1.06,
+        "wheelbaseM": 2.7,
+        "rideHeightM": 0.08
+      },
+      "wheels": {
+        "rimDiameterIn": 20,
+        "spokes": 5
+      },
+      "wing": "active",
+      "livery": "none",
+      "preview": "wedge-hypercar.png",
+      "variants": [
+        "wedge-hypercar.satin-white"
+      ]
+    }
+  ]
+}

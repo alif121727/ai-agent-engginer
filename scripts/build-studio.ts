@@ -145,6 +145,12 @@ if (fs.existsSync(path.join(out, 'ikon'))) {
 }
 // Server menyajikan public/ dan catch-all-nya mengirim index.html untuk path
 // tak dikenal, jadi tautan.html harus ikut disalin ke sini.
+// Pratinjau template mobil dilayani sebagai berkas statis; tanpa salinan ini
+// kartu di Garasi menampilkan gambar rusak di deploy statis.
+const previewSrc = path.join(root, 'public', 'cartpl-preview');
+if (fs.existsSync(previewSrc)) {
+  fs.cpSync(previewSrc, path.join(out, 'cartpl-preview'), { recursive: true });
+}
 fs.copyFileSync(path.join(src, 'tautan.html'), path.join(pub, 'tautan.html'));
 fillStudioUrl(pub, 'tautan.html');
 

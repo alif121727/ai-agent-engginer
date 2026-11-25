@@ -11,7 +11,6 @@ import { generateAiTheme } from '../core/theme-ai.ts';
 import { searchTemplates } from '../core/templates.ts';
 import { resolveBriefLook } from '../core/brief-look.ts';
 import { loadCatalog, aliasesFor } from '../core/catalog.ts';
-import { listCarTemplates } from '../core/car-templates.ts';
 import { cariMobilHybrid, jumlahKatalog } from '../search/hybrid.ts';
 import { planScenes, estimateCost } from '../pipeline/scenes.ts';
 import { ffmpegAvailable } from '../render/ffmpeg.ts';
@@ -343,20 +342,6 @@ export function createApp(opts: AppOptions = {}) {
   });
 
   // ---- everything below needs a session ----
-  /**
-   * Katalog template mobil. Publik: isinya hanya geometri dan nama berkas,
-   * dan halaman Garasi menampilkannya sebelum pengguna punya sesi.
-   */
-  app.get('/api/car-templates', async (_req, res) => {
-    try {
-      const items = listCarTemplates();
-      res.json({ total: items.length, hasil: items });
-    } catch (err) {
-      logger.warn({ err }, 'gagal membaca templates/cars');
-      res.status(500).json({ error: 'templates tidak terbaca', hasil: [] });
-    }
-  });
-
   app.use('/api', requireAuth);
 
   app.get('/api/config', async (_req, res) => {

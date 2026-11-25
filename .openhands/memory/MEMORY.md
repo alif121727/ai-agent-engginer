@@ -122,3 +122,17 @@ Detail panjang ada di `archive/MEMORY-full-2026-11-20.md` dan log harian.
 - Saya tidak bisa melihat gambar di lingkungan ini. Verifikasi visual dengan
   metrik numerik (ffprobe, statistik piksel, korelasi), bukan tangkapan layar.
 - `npm test` = 183 pemeriksaan, keluar non-zero bila gagal.
+
+## Template mobil (cartpl) di studio
+- `templates/cars/` + `templates/schema/v1.json` mendeskripsikan mobil; `cartpl/`
+  (Python) satu-satunya validator/renderer. `src/core/car-templates.ts` hanya
+  membaca JSON untuk UI dan mengikuti rantai `meta.extends` sendiri.
+- `GET /api/car-templates` didaftarkan **sebelum** `app.use('/api', requireAuth)`
+  supaya Garasi bisa menampilkannya tanpa login. Pindahkan ke bawah middleware
+  itu dan panel hilang tanpa galat.
+- Pratinjau: `python3 -m cartpl render-preview --all -o public/cartpl-preview --size 512`.
+- Body default `_base.json` = `[0.02,0.02,0.025]` (hampir hitam) — frame hero
+  gelap itu warna spec, bukan bug.
+- Uji visibilitas hero: warnai `body_base` merah terang lalu hitung piksel merah
+  (15.5% frame, bbox rasio 2.53 = siluet mobil). Diff antar-model saja tidak
+  membuktikan apa pun karena latar juga bergeser.

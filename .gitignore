@@ -34,3 +34,7 @@ netlify-site/.netlify/
 # Model TTS lokal (63 MB), diunduh lewat scripts/fetch-tts-model.sh
 assets/tts/*.onnx
 assets/tts/*.onnx.json
+
+# Pratinjau lokal car-chase (video sudah di-commit di assets/car-chase/).
+# Dibuat ulang oleh scripts/preview-car-chase.sh; tidak perlu masuk git.
+public/media/

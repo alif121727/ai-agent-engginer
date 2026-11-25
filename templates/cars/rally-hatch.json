@@ -1,0 +1,271 @@
+{
+  "schema_version": "1.0.0",
+  "meta": {
+    "name": "rally-hatch",
+    "display_name": "Rally Hatch",
+    "description": "Hatchback rally: pendek, tinggi, ban tebal, lampu bulat ganda",
+    "extends": "_base",
+    "tags": [
+      "hatch",
+      "rally",
+      "compact"
+    ]
+  },
+  "dimensions": {
+    "wheelbase": 2.5,
+    "track_front": 1.52,
+    "track_rear": 1.5,
+    "overhang_front": 0.65,
+    "overhang_rear": 0.65,
+    "body_height": 1.5,
+    "ride_height": 0.2,
+    "body_width_max": 0.9
+  },
+  "sections": [
+    {
+      "z": -1.9,
+      "half_width": 0.616,
+      "y_bottom": 0.26,
+      "y_top": 0.92
+    },
+    {
+      "z": -1.5833,
+      "half_width": 0.7272,
+      "y_bottom": 0.26,
+      "y_top": 0.942
+    },
+    {
+      "z": -1.2667,
+      "half_width": 0.8018,
+      "y_bottom": 0.26,
+      "y_top": 0.9714
+    },
+    {
+      "z": -0.95,
+      "half_width": 0.847,
+      "y_bottom": 0.26,
+      "y_top": 0.9989
+    },
+    {
+      "z": -0.6333,
+      "half_width": 0.8702,
+      "y_bottom": 0.26,
+      "y_top": 1.0254
+    },
+    {
+      "z": -0.3167,
+      "half_width": 0.8788,
+      "y_bottom": 0.26,
+      "y_top": 1.0511
+    },
+    {
+      "z": -0.0,
+      "half_width": 0.88,
+      "y_bottom": 0.26,
+      "y_top": 1.0763
+    },
+    {
+      "z": 0.3167,
+      "half_width": 0.8788,
+      "y_bottom": 0.26,
+      "y_top": 1.099
+    },
+    {
+      "z": 0.6333,
+      "half_width": 0.8702,
+      "y_bottom": 0.26,
+      "y_top": 1.0743
+    },
+    {
+      "z": 0.95,
+      "half_width": 0.847,
+      "y_bottom": 0.26,
+      "y_top": 1.049
+    },
+    {
+      "z": 1.2667,
+      "half_width": 0.8018,
+      "y_bottom": 0.26,
+      "y_top": 1.0233
+    },
+    {
+      "z": 1.5833,
+      "half_width": 0.7272,
+      "y_bottom": 0.26,
+      "y_top": 0.9968
+    },
+    {
+      "z": 1.9,
+      "half_width": 0.616,
+      "y_bottom": 0.26,
+      "y_top": 0.9691
+    }
+  ],
+  "cabin": {
+    "sections": [
+      {
+        "z": -1.05,
+        "half_width": 0.629,
+        "y_bottom": 1.02,
+        "y_top": 1.2737
+      },
+      {
+        "z": -0.7,
+        "half_width": 0.6701,
+        "y_bottom": 1.0083,
+        "y_top": 1.3696
+      },
+      {
+        "z": -0.35,
+        "half_width": 0.7112,
+        "y_bottom": 0.9967,
+        "y_top": 1.4569
+      },
+      {
+        "z": 0.0,
+        "half_width": 0.7277,
+        "y_bottom": 0.985,
+        "y_top": 1.4602
+      },
+      {
+        "z": 0.35,
+        "half_width": 0.6866,
+        "y_bottom": 0.9733,
+        "y_top": 1.3732
+      },
+      {
+        "z": 0.7,
+        "half_width": 0.6454,
+        "y_bottom": 0.9617,
+        "y_top": 1.2778
+      },
+      {
+        "z": 1.05,
+        "half_width": 0.6043,
+        "y_bottom": 0.95,
+        "y_top": 1.1624
+      }
+    ],
+    "superellipse_exponent": 3.0
+  },
+  "wing": {
+    "type": "low",
+    "span_m": 1.3,
+    "chord_m": 0.18,
+    "height_above_deck_m": 0.06,
+    "supports": 2,
+    "endplates": true,
+    "material": "body"
+  },
+  "wheels": {
+    "rim_diameter_m": 0.457,
+    "rim_width_m": 0.24,
+    "tire_width_m": 0.26,
+    "tire_sidewall_m": 0.13,
+    "spokes": 6,
+    "spoke_style": "split",
+    "brake_caliper_color": [
+      40,
+      40,
+      44
+    ],
+    "arch_flare": true
+  },
+  "colors": {
+    "body_base": [
+      0.42,
+      0.035,
+      0.04
+    ],
+    "body_finish": "gloss",
+    "glass_tint": 0.3,
+    "carbon_weave": false
+  },
+  "surface_response": {
+    "body_specular": 0.45,
+    "body_gloss": 45,
+    "body_rim": 0.3,
+    "glass_specular": 0.5,
+    "glass_rim": 0.2
+  },
+  "side_details": {
+    "intake_side": "none",
+    "sill_skirt": true,
+    "mirror_shape": "angular"
+  },
+  "lights": {
+    "headlight": "quad-round",
+    "headlight_color": [
+      255,
+      240,
+      210
+    ],
+    "taillight": "segmented",
+    "taillight_color": [
+      235,
+      30,
+      25
+    ],
+    "drl": true
+  },
+  "livery": {
+    "style": "number-roundel",
+    "primary": [
+      0.42,
+      0.035,
+      0.04
+    ],
+    "secondary": [
+      0.95,
+      0.95,
+      0.95
+    ],
+    "stripe_width_m": 0.1,
+    "number": 7
+  },
+  "physics": {
+    "mass_kg": 1230,
+    "drag_cd": 0.38,
+    "frontal_area_m2": 2.2,
+    "gear_ratios": [
+      3.8,
+      2.4,
+      1.75,
+      1.35,
+      1.1,
+      0.9
+    ]
+  },
+  "preview_camera": {
+    "azimuth_deg": 40,
+    "elevation_deg": 18,
+    "distance_m": 7.5,
+    "fov_deg": 38
+  },
+  "lods": [
+    {
+      "max_distance_m": 200,
+      "n_sections": 40,
+      "n_ring": 24,
+      "spokes": 6
+    },
+    {
+      "max_distance_m": 80,
+      "n_sections": 24,
+      "n_ring": 16,
+      "spokes": 6
+    },
+    {
+      "max_distance_m": 30,
+      "n_sections": 16,
+      "n_ring": 12,
+      "spokes": 4
+    },
+    {
+      "max_distance_m": 12,
+      "n_sections": 12,
+      "n_ring": 8,
+      "spokes": 0
+    }
+  ]
+}

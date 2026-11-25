@@ -1,0 +1,217 @@
+{
+  "schema_version": "1.0.0",
+  "meta": {
+    "name": "mid-engine-supercar",
+    "display_name": "Mid-engine Supercar",
+    "description": "Supercar mesin tengah dengan overhang pendek dan dek belakang tinggi",
+    "extends": "_base",
+    "tags": [
+      "supercar",
+      "mid-engine",
+      "default"
+    ]
+  },
+  "dimensions": {
+    "wheelbase": 2.457,
+    "track_front": 1.7,
+    "track_rear": 1.66,
+    "overhang_front": 0.99,
+    "overhang_rear": 1.125,
+    "body_height": 1.322,
+    "ride_height": 0.1,
+    "body_width_max": 0.96
+  },
+  "sections": [
+    {
+      "z": -2.286,
+      "half_width": 0.665,
+      "y_bottom": 0.17,
+      "y_top": 0.78
+    },
+    {
+      "z": -1.905,
+      "half_width": 0.7851,
+      "y_bottom": 0.17,
+      "y_top": 0.8039
+    },
+    {
+      "z": -1.524,
+      "half_width": 0.8656,
+      "y_bottom": 0.17,
+      "y_top": 0.8357
+    },
+    {
+      "z": -1.143,
+      "half_width": 0.9144,
+      "y_bottom": 0.17,
+      "y_top": 0.8655
+    },
+    {
+      "z": -0.762,
+      "half_width": 0.9394,
+      "y_bottom": 0.17,
+      "y_top": 0.8941
+    },
+    {
+      "z": -0.381,
+      "half_width": 0.9487,
+      "y_bottom": 0.17,
+      "y_top": 0.94
+    },
+    {
+      "z": 0.0,
+      "half_width": 0.95,
+      "y_bottom": 0.17,
+      "y_top": 0.9493
+    },
+    {
+      "z": 0.381,
+      "half_width": 0.9487,
+      "y_bottom": 0.17,
+      "y_top": 0.9739
+    },
+    {
+      "z": 0.762,
+      "half_width": 0.9394,
+      "y_bottom": 0.17,
+      "y_top": 0.9471
+    },
+    {
+      "z": 1.143,
+      "half_width": 0.9144,
+      "y_bottom": 0.17,
+      "y_top": 0.9198
+    },
+    {
+      "z": 1.524,
+      "half_width": 0.8656,
+      "y_bottom": 0.17,
+      "y_top": 0.8919
+    },
+    {
+      "z": 1.905,
+      "half_width": 0.7851,
+      "y_bottom": 0.17,
+      "y_top": 0.8631
+    },
+    {
+      "z": 2.286,
+      "half_width": 0.665,
+      "y_bottom": 0.17,
+      "y_top": 0.8332
+    }
+  ],
+  "cabin": {
+    "sections": [
+      {
+        "z": -1.285,
+        "half_width": 0.6375,
+        "y_bottom": 0.9,
+        "y_top": 1.1183
+      },
+      {
+        "z": -0.8567,
+        "half_width": 0.6792,
+        "y_bottom": 0.8908,
+        "y_top": 1.2047
+      },
+      {
+        "z": -0.4283,
+        "half_width": 0.7208,
+        "y_bottom": 0.8817,
+        "y_top": 1.2832
+      },
+      {
+        "z": 0.0,
+        "half_width": 0.7375,
+        "y_bottom": 0.8725,
+        "y_top": 1.2862
+      },
+      {
+        "z": 0.4283,
+        "half_width": 0.6958,
+        "y_bottom": 0.8633,
+        "y_top": 1.2079
+      },
+      {
+        "z": 0.8567,
+        "half_width": 0.6542,
+        "y_bottom": 0.8542,
+        "y_top": 1.122
+      },
+      {
+        "z": 1.285,
+        "half_width": 0.6125,
+        "y_bottom": 0.845,
+        "y_top": 1.0182
+      }
+    ],
+    "superellipse_exponent": 3.0
+  },
+  "wing": {
+    "type": "high-fixed",
+    "span_m": 1.62,
+    "chord_m": 0.3,
+    "height_above_deck_m": 0.26,
+    "supports": 2,
+    "endplates": true,
+    "material": "carbon"
+  },
+  "aero_front": {
+    "splitter": true,
+    "splitter_depth_m": 0.14,
+    "canards": 2,
+    "intake_hood": "vents"
+  },
+  "side_details": {
+    "intake_side": "scoop",
+    "sill_skirt": true,
+    "mirror_shape": "teardrop"
+  },
+  "lods": [
+    {
+      "max_distance_m": 200,
+      "n_sections": 40,
+      "n_ring": 24,
+      "spokes": 5
+    },
+    {
+      "max_distance_m": 80,
+      "n_sections": 24,
+      "n_ring": 16,
+      "spokes": 5
+    },
+    {
+      "max_distance_m": 30,
+      "n_sections": 16,
+      "n_ring": 12,
+      "spokes": 4
+    },
+    {
+      "max_distance_m": 12,
+      "n_sections": 12,
+      "n_ring": 8,
+      "spokes": 0
+    }
+  ],
+  "physics": {
+    "mass_kg": 1450,
+    "drag_cd": 0.36,
+    "frontal_area_m2": 2.05,
+    "gear_ratios": [
+      3.75,
+      2.38,
+      1.72,
+      1.34,
+      1.11,
+      0.96,
+      0.84
+    ]
+  },
+  "preview_camera": {
+    "azimuth_deg": 42,
+    "elevation_deg": 14,
+    "distance_m": 8.5,
+    "fov_deg": 35
+  }
+}

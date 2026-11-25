@@ -1,0 +1,1164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cartpl/schema/v1",
+  "title": "Car Template v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "meta",
+    "dimensions",
+    "sections",
+    "cabin",
+    "superellipse_exponent",
+    "wheels",
+    "geometry",
+    "wing",
+    "aero_front",
+    "side_details",
+    "lights",
+    "colors",
+    "surface_response"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "meta": {
+      "type": "object",
+      "required": [
+        "name",
+        "display_name",
+        "description"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z_][a-z0-9._-]{1,40}$"
+        },
+        "display_name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+        },
+        "abstract": {
+          "type": "boolean",
+          "default": false
+        },
+        "extends": {
+          "type": "string",
+          "pattern": "^[a-z_][a-z0-9._-]+$"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "dimensions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "wheelbase",
+        "track_front",
+        "track_rear",
+        "overhang_front",
+        "overhang_rear",
+        "body_height",
+        "ride_height",
+        "body_width_max"
+      ],
+      "properties": {
+        "wheelbase": {
+          "type": "number",
+          "minimum": 1.8,
+          "maximum": 4.0
+        },
+        "track_front": {
+          "type": "number",
+          "minimum": 1.3,
+          "maximum": 2.2
+        },
+        "track_rear": {
+          "type": "number",
+          "minimum": 1.3,
+          "maximum": 2.2
+        },
+        "overhang_front": {
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 1.8
+        },
+        "overhang_rear": {
+          "type": "number",
+          "minimum": 0.5,
+          "maximum": 1.8
+        },
+        "body_height": {
+          "type": "number",
+          "minimum": 0.9,
+          "maximum": 1.8
+        },
+        "ride_height": {
+          "type": "number",
+          "minimum": 0.06,
+          "maximum": 0.3
+        },
+        "body_width_max": {
+          "type": "number",
+          "minimum": 0.8,
+          "maximum": 1.2
+        }
+      }
+    },
+    "sections": {
+      "$ref": "#/$defs/sectionList"
+    },
+    "cabin": {
+      "$ref": "#/$defs/cabin"
+    },
+    "superellipse_exponent": {
+      "type": "number",
+      "minimum": 2.2,
+      "maximum": 4.5
+    },
+    "wheels": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rim_diameter_m",
+        "rim_width_m",
+        "tire_width_m",
+        "tire_sidewall_m",
+        "spokes",
+        "spoke_style",
+        "arch_flare"
+      ],
+      "properties": {
+        "rim_diameter_m": {
+          "type": "number",
+          "minimum": 0.35,
+          "maximum": 0.65
+        },
+        "rim_width_m": {
+          "type": "number",
+          "minimum": 0.18,
+          "maximum": 0.4
+        },
+        "tire_width_m": {
+          "type": "number",
+          "minimum": 0.16,
+          "maximum": 0.36
+        },
+        "tire_sidewall_m": {
+          "type": "number",
+          "minimum": 0.06,
+          "maximum": 0.18
+        },
+        "spokes": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 20
+        },
+        "spoke_style": {
+          "enum": [
+            "straight",
+            "split",
+            "twin",
+            "y-shape"
+          ]
+        },
+        "brake_caliper_color": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "arch_flare": {
+          "type": "boolean"
+        }
+      }
+    },
+    "geometry": {
+      "$ref": "#/$defs/geometry"
+    },
+    "wing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "none",
+            "ducktail",
+            "low",
+            "high-fixed",
+            "active"
+          ]
+        },
+        "span_m": {
+          "type": "number",
+          "minimum": 0.8,
+          "maximum": 2.4
+        },
+        "chord_m": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 0.6
+        },
+        "height_above_deck_m": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 0.7
+        },
+        "supports": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4
+        },
+        "endplates": {
+          "type": "boolean"
+        },
+        "material": {
+          "enum": [
+            "carbon",
+            "body"
+          ]
+        }
+      }
+    },
+    "aero_front": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "splitter",
+        "canards",
+        "intake_hood"
+      ],
+      "properties": {
+        "splitter": {
+          "type": "boolean"
+        },
+        "splitter_depth_m": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.35
+        },
+        "canards": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4
+        },
+        "intake_hood": {
+          "enum": [
+            "none",
+            "naca",
+            "vents",
+            "full"
+          ]
+        }
+      }
+    },
+    "side_details": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "intake_side",
+        "sill_skirt",
+        "mirror_shape"
+      ],
+      "properties": {
+        "intake_side": {
+          "enum": [
+            "none",
+            "scoop",
+            "full-length"
+          ]
+        },
+        "sill_skirt": {
+          "type": "boolean"
+        },
+        "mirror_shape": {
+          "enum": [
+            "teardrop",
+            "angular",
+            "camera"
+          ]
+        }
+      }
+    },
+    "lights": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "headlight",
+        "headlight_color",
+        "taillight",
+        "taillight_color",
+        "drl"
+      ],
+      "properties": {
+        "headlight": {
+          "enum": [
+            "thin-led",
+            "quad-round",
+            "pop-up",
+            "matrix"
+          ]
+        },
+        "headlight_color": {
+          "$ref": "#/$defs/rgb255"
+        },
+        "taillight": {
+          "enum": [
+            "y-shape",
+            "full-width",
+            "quad-round",
+            "segmented"
+          ]
+        },
+        "taillight_color": {
+          "$ref": "#/$defs/rgb255"
+        },
+        "drl": {
+          "type": "boolean"
+        }
+      }
+    },
+    "colors": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "body_base",
+        "body_finish",
+        "glass_tint",
+        "carbon_weave"
+      ],
+      "properties": {
+        "body_base": {
+          "$ref": "#/$defs/rgb01"
+        },
+        "body_finish": {
+          "enum": [
+            "matte",
+            "satin",
+            "gloss",
+            "metallic"
+          ]
+        },
+        "glass_tint": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 0.95
+        },
+        "carbon_weave": {
+          "type": "boolean"
+        },
+        "livery_secondary_default": {
+          "$ref": "#/$defs/rgb01"
+        }
+      }
+    },
+    "surface_response": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "body_specular",
+        "body_gloss",
+        "body_rim",
+        "glass_specular",
+        "glass_rim"
+      ],
+      "properties": {
+        "body_specular": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "body_gloss": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 256
+        },
+        "body_rim": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "glass_specular": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "glass_rim": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        }
+      }
+    },
+    "lods": {
+      "$ref": "#/$defs/lods"
+    },
+    "physics": {
+      "$ref": "#/$defs/physics"
+    },
+    "livery": {
+      "$ref": "#/$defs/livery"
+    },
+    "variant_of": {
+      "type": "string"
+    },
+    "preview_camera": {
+      "$ref": "#/$defs/camera"
+    }
+  },
+  "$defs": {
+    "rgb255": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 255
+      },
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "dims3": {
+      "type": "array",
+      "description": "Tiga ukuran dalam meter (x, y, z).",
+      "items": {
+        "type": "number",
+        "minimum": 0.001,
+        "maximum": 2.0
+      },
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "rgb01": {
+      "type": "array",
+      "items": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "section": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "z",
+        "half_width",
+        "y_bottom",
+        "y_top"
+      ],
+      "properties": {
+        "z": {
+          "type": "number",
+          "minimum": -6.0,
+          "maximum": 6.0
+        },
+        "half_width": {
+          "type": "number",
+          "minimum": 0.2,
+          "maximum": 1.3
+        },
+        "y_bottom": {
+          "type": "number",
+          "minimum": 0.05,
+          "maximum": 0.6
+        },
+        "y_top": {
+          "type": "number",
+          "minimum": 0.2,
+          "maximum": 1.8
+        }
+      }
+    },
+    "sectionList": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 24,
+      "items": {
+        "$ref": "#/$defs/section"
+      }
+    },
+    "cabinSection": {
+      "type": "object",
+      "description": "Section kabin: y_bottom/y_top lebih tinggi dari bodi karena kabin duduk di atas bodi.",
+      "additionalProperties": false,
+      "required": [
+        "z",
+        "half_width",
+        "y_bottom",
+        "y_top"
+      ],
+      "properties": {
+        "z": {
+          "type": "number",
+          "minimum": -6.0,
+          "maximum": 6.0
+        },
+        "half_width": {
+          "type": "number",
+          "minimum": 0.2,
+          "maximum": 1.3
+        },
+        "y_bottom": {
+          "type": "number",
+          "minimum": 0.2,
+          "maximum": 1.7
+        },
+        "y_top": {
+          "type": "number",
+          "minimum": 0.3,
+          "maximum": 2.1
+        }
+      }
+    },
+    "cabinSectionList": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 16,
+      "items": {
+        "$ref": "#/$defs/cabinSection"
+      }
+    },
+    "cabin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sections",
+        "superellipse_exponent"
+      ],
+      "properties": {
+        "sections": {
+          "$ref": "#/$defs/cabinSectionList"
+        },
+        "superellipse_exponent": {
+          "type": "number",
+          "minimum": 2.2,
+          "maximum": 4.5
+        }
+      }
+    },
+    "geometry": {
+      "type": "object",
+      "description": "Konstanta pembentuk mesh. Semua angka yang dipakai builder tinggal di sini supaya builder.py tidak memuat magic number.",
+      "additionalProperties": false,
+      "required": [
+        "body_n_sections",
+        "body_n_ring",
+        "cabin_n_sections",
+        "cabin_n_ring",
+        "tire_segments",
+        "rim_segments",
+        "spoke_inner_radius_m",
+        "spoke_outer_frac",
+        "spoke_half_width_m",
+        "rim_disc_frac",
+        "rim_disc_offset_m",
+        "wheel_out_inset_m",
+        "wheel_depth_m",
+        "brake_box_dims_m",
+        "brake_radius_frac",
+        "brake_angle_deg",
+        "brake_angle_step_deg",
+        "arch_radius_frac",
+        "proportions",
+        "shading"
+      ],
+      "properties": {
+        "body_n_sections": {
+          "type": "integer",
+          "minimum": 8,
+          "maximum": 128
+        },
+        "body_n_ring": {
+          "type": "integer",
+          "minimum": 8,
+          "maximum": 64
+        },
+        "cabin_n_sections": {
+          "type": "integer",
+          "minimum": 8,
+          "maximum": 128
+        },
+        "cabin_n_ring": {
+          "type": "integer",
+          "minimum": 8,
+          "maximum": 64
+        },
+        "tire_segments": {
+          "type": "integer",
+          "minimum": 8,
+          "maximum": 48
+        },
+        "rim_segments": {
+          "type": "integer",
+          "minimum": 8,
+          "maximum": 48
+        },
+        "spoke_inner_radius_m": {
+          "type": "number",
+          "minimum": 0.02,
+          "maximum": 0.2
+        },
+        "spoke_outer_frac": {
+          "type": "number",
+          "minimum": 0.4,
+          "maximum": 0.95
+        },
+        "spoke_half_width_m": {
+          "type": "number",
+          "minimum": 0.005,
+          "maximum": 0.08
+        },
+        "rim_disc_frac": {
+          "type": "number",
+          "minimum": 0.4,
+          "maximum": 0.95
+        },
+        "rim_disc_offset_m": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 0.05
+        },
+        "wheel_out_inset_m": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 0.12
+        },
+        "wheel_depth_m": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 0.45
+        },
+        "brake_box_dims_m": {
+          "$ref": "#/$defs/dims3"
+        },
+        "brake_radius_frac": {
+          "type": "number",
+          "minimum": 0.2,
+          "maximum": 0.8
+        },
+        "brake_angle_deg": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "brake_angle_step_deg": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 60
+        },
+        "arch_radius_frac": {
+          "type": "number",
+          "minimum": 1.05,
+          "maximum": 1.6
+        },
+        "proportions": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Rasio dan offset pembentuk aksesori, relatif terhadap lebar/tinggi bodi.",
+          "required": [
+            "canard_dims_m",
+            "canard_dy_m",
+            "canard_x_frac",
+            "canard_y0_frac",
+            "canard_z_offset_m",
+            "head_inner_m",
+            "head_outer_frac",
+            "intake_depth_full_m",
+            "intake_depth_scoop_m",
+            "intake_height_m",
+            "intake_thickness_m",
+            "intake_x_frac",
+            "intake_y0_frac",
+            "light_h_m",
+            "light_y0_frac",
+            "livery_aspect",
+            "mirror_angular_m",
+            "mirror_camera_m",
+            "mirror_teardrop_m",
+            "mirror_x_frac",
+            "mirror_y0_frac",
+            "mirror_z_offset_m",
+            "quad_dx1_m",
+            "quad_dx2_m",
+            "quad_hw_m",
+            "roof_normal_threshold",
+            "sill_height_m",
+            "sill_shrink_m",
+            "sill_thickness_m",
+            "sill_x_frac",
+            "sill_y0_frac",
+            "splitter_thickness_m",
+            "splitter_width_frac",
+            "tail_gap_m",
+            "tail_h_m",
+            "tail_inner_m",
+            "tail_outer_frac",
+            "tail_y0_frac",
+            "thin_h_m",
+            "underside_threshold",
+            "wing_rear_offset_frac",
+            "wing_support_scale",
+            "y_drop_m",
+            "y_rise_m"
+          ],
+          "properties": {
+            "roof_normal_threshold": {
+              "type": "number",
+              "minimum": 0.5,
+              "maximum": 0.95
+            },
+            "underside_threshold": {
+              "type": "number",
+              "minimum": -0.95,
+              "maximum": -0.2
+            },
+            "wing_support_scale": {
+              "type": "number",
+              "minimum": 0.05,
+              "maximum": 1.0
+            },
+            "wing_rear_offset_frac": {
+              "type": "number",
+              "minimum": 0.1,
+              "maximum": 1.5
+            },
+            "splitter_width_frac": {
+              "type": "number",
+              "minimum": 0.5,
+              "maximum": 1.0
+            },
+            "splitter_thickness_m": {
+              "type": "number",
+              "minimum": 0.005,
+              "maximum": 0.1
+            },
+            "canard_x_frac": {
+              "type": "number",
+              "minimum": 0.7,
+              "maximum": 1.0
+            },
+            "canard_y0_frac": {
+              "type": "number",
+              "minimum": 0.02,
+              "maximum": 0.5
+            },
+            "canard_dy_m": {
+              "type": "number",
+              "minimum": 0.01,
+              "maximum": 0.3
+            },
+            "canard_z_offset_m": {
+              "type": "number",
+              "minimum": 0.05,
+              "maximum": 0.8
+            },
+            "canard_dims_m": {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0.001,
+                "maximum": 1.0
+              },
+              "minItems": 3,
+              "maxItems": 3
+            },
+            "intake_x_frac": {
+              "type": "number",
+              "minimum": 0.7,
+              "maximum": 1.05
+            },
+            "intake_y0_frac": {
+              "type": "number",
+              "minimum": 0.05,
+              "maximum": 0.7
+            },
+            "intake_thickness_m": {
+              "type": "number",
+              "minimum": 0.01,
+              "maximum": 0.2
+            },
+            "intake_height_m": {
+              "type": "number",
+              "minimum": 0.05,
+              "maximum": 0.6
+            },
+            "intake_depth_scoop_m": {
+              "type": "number",
+              "minimum": 0.05,
+              "maximum": 0.8
+            },
+            "intake_depth_full_m": {
+              "type": "number",
+              "minimum": 0.3,
+              "maximum": 2.0
+            },
+            "sill_x_frac": {
+              "type": "number",
+              "minimum": 0.7,
+              "maximum": 1.05
+            },
+            "sill_y0_frac": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 0.3
+            },
+            "sill_thickness_m": {
+              "type": "number",
+              "minimum": 0.01,
+              "maximum": 0.2
+            },
+            "sill_height_m": {
+              "type": "number",
+              "minimum": 0.02,
+              "maximum": 0.3
+            },
+            "sill_shrink_m": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            "mirror_x_frac": {
+              "type": "number",
+              "minimum": 0.6,
+              "maximum": 1.0
+            },
+            "mirror_y0_frac": {
+              "type": "number",
+              "minimum": 0.2,
+              "maximum": 0.9
+            },
+            "mirror_z_offset_m": {
+              "type": "number",
+              "minimum": 0.1,
+              "maximum": 1.2
+            },
+            "mirror_teardrop_m": {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0.001,
+                "maximum": 1.0
+              },
+              "minItems": 3,
+              "maxItems": 3
+            },
+            "mirror_angular_m": {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0.001,
+                "maximum": 1.0
+              },
+              "minItems": 3,
+              "maxItems": 3
+            },
+            "mirror_camera_m": {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0.001,
+                "maximum": 1.0
+              },
+              "minItems": 3,
+              "maxItems": 3
+            },
+            "light_y0_frac": {
+              "type": "number",
+              "minimum": 0.05,
+              "maximum": 0.6
+            },
+            "light_h_m": {
+              "type": "number",
+              "minimum": 0.02,
+              "maximum": 0.3
+            },
+            "tail_y0_frac": {
+              "type": "number",
+              "minimum": 0.05,
+              "maximum": 0.6
+            },
+            "tail_h_m": {
+              "type": "number",
+              "minimum": 0.02,
+              "maximum": 0.3
+            },
+            "head_inner_m": {
+              "type": "number",
+              "minimum": 0.02,
+              "maximum": 0.6
+            },
+            "head_outer_frac": {
+              "type": "number",
+              "minimum": 0.5,
+              "maximum": 1.0
+            },
+            "thin_h_m": {
+              "type": "number",
+              "minimum": 0.01,
+              "maximum": 0.15
+            },
+            "quad_dx1_m": {
+              "type": "number",
+              "minimum": 0.05,
+              "maximum": 0.7
+            },
+            "quad_dx2_m": {
+              "type": "number",
+              "minimum": 0.1,
+              "maximum": 0.9
+            },
+            "quad_hw_m": {
+              "type": "number",
+              "minimum": 0.02,
+              "maximum": 0.25
+            },
+            "tail_inner_m": {
+              "type": "number",
+              "minimum": 0.01,
+              "maximum": 0.4
+            },
+            "tail_outer_frac": {
+              "type": "number",
+              "minimum": 0.5,
+              "maximum": 1.0
+            },
+            "tail_gap_m": {
+              "type": "number",
+              "minimum": 0.01,
+              "maximum": 0.4
+            },
+            "y_drop_m": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 0.2
+            },
+            "y_rise_m": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 0.2
+            },
+            "livery_aspect": {
+              "type": "number",
+              "minimum": 0.5,
+              "maximum": 4.0
+            }
+          }
+        },
+        "shading": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Bias shading per jenis material (dipakai renderer, bukan geometri).",
+          "required": [
+            "bias_arch",
+            "bias_brake",
+            "bias_carbon",
+            "bias_lamp",
+            "bias_rim",
+            "bias_spoke",
+            "bias_tire",
+            "bias_tire_disc",
+            "bias_trim"
+          ],
+          "properties": {
+            "bias_tire": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            "bias_tire_disc": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            "bias_rim": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            "bias_spoke": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            "bias_brake": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            "bias_arch": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            "bias_lamp": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            "bias_trim": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            "bias_carbon": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            }
+          }
+        }
+      }
+    },
+    "lods": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "required": [
+          "max_distance_m",
+          "n_sections",
+          "n_ring"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "max_distance_m": {
+            "type": "number",
+            "minimum": 0
+          },
+          "n_sections": {
+            "type": "integer",
+            "minimum": 8,
+            "maximum": 128
+          },
+          "n_ring": {
+            "type": "integer",
+            "minimum": 8,
+            "maximum": 64
+          },
+          "spokes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20
+          }
+        }
+      }
+    },
+    "physics": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mass_kg": {
+          "type": "number",
+          "minimum": 600,
+          "maximum": 2500
+        },
+        "drag_cd": {
+          "type": "number",
+          "minimum": 0.2,
+          "maximum": 0.6
+        },
+        "frontal_area_m2": {
+          "type": "number",
+          "minimum": 1.2,
+          "maximum": 3.0
+        },
+        "wheel_radius_m": {
+          "type": "number",
+          "minimum": 0.28,
+          "maximum": 0.42
+        },
+        "gear_ratios": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 5,
+          "maxItems": 8
+        }
+      }
+    },
+    "livery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "style"
+      ],
+      "properties": {
+        "style": {
+          "enum": [
+            "none",
+            "stripes",
+            "two-tone",
+            "number-roundel",
+            "split"
+          ]
+        },
+        "primary": {
+          "$ref": "#/$defs/rgb01"
+        },
+        "secondary": {
+          "$ref": "#/$defs/rgb01"
+        },
+        "stripe_width_m": {
+          "type": "number",
+          "minimum": 0.02,
+          "maximum": 0.4
+        },
+        "number": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 999
+        }
+      }
+    },
+    "camera": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "azimuth_deg": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        },
+        "elevation_deg": {
+          "type": "number",
+          "minimum": -10,
+          "maximum": 80
+        },
+        "distance_m": {
+          "type": "number",
+          "minimum": 3,
+          "maximum": 30
+        },
+        "fov_deg": {
+          "type": "number",
+          "minimum": 20,
+          "maximum": 90
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,240 @@
+{
+  "schema_version": "1.0.0",
+  "meta": {
+    "name": "sedan-traffic",
+    "display_name": "Sedan Traffic",
+    "description": "Sedan biasa untuk lalu lintas: panjang, kabin besar, tanpa sayap",
+    "extends": "_base",
+    "tags": [
+      "sedan",
+      "traffic",
+      "daily"
+    ]
+  },
+  "dimensions": {
+    "wheelbase": 2.8,
+    "track_front": 1.58,
+    "track_rear": 1.56,
+    "overhang_front": 0.95,
+    "overhang_rear": 1.05,
+    "body_height": 1.48,
+    "ride_height": 0.14,
+    "body_width_max": 0.93
+  },
+  "sections": [
+    {
+      "z": -2.4,
+      "half_width": 0.644,
+      "y_bottom": 0.25,
+      "y_top": 0.96
+    },
+    {
+      "z": -2.0,
+      "half_width": 0.7603,
+      "y_bottom": 0.25,
+      "y_top": 0.9747
+    },
+    {
+      "z": -1.6,
+      "half_width": 0.8382,
+      "y_bottom": 0.25,
+      "y_top": 0.9943
+    },
+    {
+      "z": -1.2,
+      "half_width": 0.8855,
+      "y_bottom": 0.25,
+      "y_top": 1.0126
+    },
+    {
+      "z": -0.8,
+      "half_width": 0.9098,
+      "y_bottom": 0.25,
+      "y_top": 1.0302
+    },
+    {
+      "z": -0.4,
+      "half_width": 0.9187,
+      "y_bottom": 0.25,
+      "y_top": 1.05
+    },
+    {
+      "z": 0.0,
+      "half_width": 0.92,
+      "y_bottom": 0.25,
+      "y_top": 1.0642
+    },
+    {
+      "z": 0.4,
+      "half_width": 0.9187,
+      "y_bottom": 0.25,
+      "y_top": 1.0793
+    },
+    {
+      "z": 0.8,
+      "half_width": 0.9098,
+      "y_bottom": 0.25,
+      "y_top": 1.0628
+    },
+    {
+      "z": 1.2,
+      "half_width": 0.8855,
+      "y_bottom": 0.25,
+      "y_top": 1.046
+    },
+    {
+      "z": 1.6,
+      "half_width": 0.8382,
+      "y_bottom": 0.25,
+      "y_top": 1.0288
+    },
+    {
+      "z": 2.0,
+      "half_width": 0.7603,
+      "y_bottom": 0.25,
+      "y_top": 1.0112
+    },
+    {
+      "z": 2.4,
+      "half_width": 0.644,
+      "y_bottom": 0.25,
+      "y_top": 0.9928
+    }
+  ],
+  "cabin": {
+    "sections": [
+      {
+        "z": -1.425,
+        "half_width": 0.646,
+        "y_bottom": 1.02,
+        "y_top": 1.2537
+      },
+      {
+        "z": -0.95,
+        "half_width": 0.6882,
+        "y_bottom": 1.01,
+        "y_top": 1.3496
+      },
+      {
+        "z": -0.475,
+        "half_width": 0.7304,
+        "y_bottom": 1.0,
+        "y_top": 1.4369
+      },
+      {
+        "z": 0.0,
+        "half_width": 0.7473,
+        "y_bottom": 0.99,
+        "y_top": 1.4402
+      },
+      {
+        "z": 0.475,
+        "half_width": 0.7051,
+        "y_bottom": 0.98,
+        "y_top": 1.3532
+      },
+      {
+        "z": 0.95,
+        "half_width": 0.6629,
+        "y_bottom": 0.97,
+        "y_top": 1.2578
+      },
+      {
+        "z": 1.425,
+        "half_width": 0.6207,
+        "y_bottom": 0.96,
+        "y_top": 1.1424
+      }
+    ],
+    "superellipse_exponent": 3.0
+  },
+  "wing": {
+    "type": "none",
+    "supports": 0,
+    "endplates": false,
+    "material": "body"
+  },
+  "wheels": {
+    "rim_diameter_m": 0.457,
+    "rim_width_m": 0.22,
+    "tire_width_m": 0.24,
+    "tire_sidewall_m": 0.12,
+    "spokes": 5,
+    "spoke_style": "straight",
+    "brake_caliper_color": [
+      150,
+      150,
+      155
+    ],
+    "arch_flare": false
+  },
+  "colors": {
+    "body_base": [
+      0.62,
+      0.62,
+      0.65
+    ],
+    "body_finish": "metallic",
+    "glass_tint": 0.35,
+    "carbon_weave": false
+  },
+  "surface_response": {
+    "body_specular": 0.55,
+    "body_gloss": 80,
+    "body_rim": 0.28,
+    "glass_specular": 0.5,
+    "glass_rim": 0.2
+  },
+  "side_details": {
+    "intake_side": "none",
+    "sill_skirt": false,
+    "mirror_shape": "teardrop"
+  },
+  "lights": {
+    "headlight": "matrix",
+    "headlight_color": [
+      250,
+      250,
+      245
+    ],
+    "taillight": "full-width",
+    "taillight_color": [
+      200,
+      25,
+      25
+    ],
+    "drl": true
+  },
+  "preview_camera": {
+    "azimuth_deg": 35,
+    "elevation_deg": 12,
+    "distance_m": 9.5,
+    "fov_deg": 35
+  },
+  "lods": [
+    {
+      "max_distance_m": 200,
+      "n_sections": 36,
+      "n_ring": 22,
+      "spokes": 5
+    },
+    {
+      "max_distance_m": 80,
+      "n_sections": 22,
+      "n_ring": 14,
+      "spokes": 5
+    },
+    {
+      "max_distance_m": 30,
+      "n_sections": 14,
+      "n_ring": 10,
+      "spokes": 4
+    },
+    {
+      "max_distance_m": 12,
+      "n_sections": 12,
+      "n_ring": 8,
+      "spokes": 0
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0.0",
+  "variant_of": "mid-engine-supercar",
+  "meta": {
+    "name": "mid-engine-supercar.matte-black",
+    "display_name": "Supercar Matte Black",
+    "description": "Bodi hitam matte dengan kaliber kuning"
+  },
+  "colors": {
+    "body_base": [
+      0.025,
+      0.025,
+      0.028
+    ],
+    "body_finish": "matte",
+    "glass_tint": 0.75,
+    "carbon_weave": true
+  },
+  "surface_response": {
+    "body_specular": 0.1,
+    "body_gloss": 18,
+    "body_rim": 0.3,
+    "glass_specular": 0.62,
+    "glass_rim": 0.18
+  },
+  "wheels": {
+    "brake_caliper_color": [
+      235,
+      200,
+      20
+    ]
+  }
+}

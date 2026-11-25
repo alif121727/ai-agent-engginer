@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0.0",
+  "variant_of": "wedge-hypercar",
+  "meta": {
+    "name": "wedge-hypercar.satin-white",
+    "display_name": "Hypercar Satin White",
+    "description": "Bodi putih satin dengan aksen karbon"
+  },
+  "colors": {
+    "body_base": [
+      0.92,
+      0.92,
+      0.93
+    ],
+    "body_finish": "satin",
+    "glass_tint": 0.8,
+    "carbon_weave": true
+  },
+  "surface_response": {
+    "body_specular": 0.32,
+    "body_gloss": 55,
+    "body_rim": 0.35,
+    "glass_specular": 0.72,
+    "glass_rim": 0.3
+  },
+  "livery": {
+    "style": "two-tone",
+    "primary": [
+      0.92,
+      0.92,
+      0.93
+    ],
+    "secondary": [
+      0.08,
+      0.08,
+      0.09
+    ],
+    "stripe_width_m": 0.12
+  }
+}

@@ -5,6 +5,7 @@ import type { Route } from '../components/shell';
 import { CATALOG } from '../data/catalog';
 import { listResearched } from '../data/researched';
 import { StatusChip } from './Dashboard';
+import { CarTemplatePanel } from '../components/CarTemplatePanel';
 
 export function Projects({ go }: { go: (r: Route) => void }) {
   const { projects, remove, toast } = useStudio();
@@ -95,6 +96,8 @@ export function Garage({ go }: { go: (r: Route) => void }) {
           {CATALOG.length} model katalog{researched.length > 0 ? ` + ${researched.length} hasil riset web` : ''} — semua angka bersumber dari Wikipedia. Studio tidak mengarang spesifikasi; kolom yang tidak ada ditandai kosong.
         </p>
       </div>
+
+      <CarTemplatePanel />
 
       <div className="row row--wrap">
         <div className="row" style={{ flex: 1, minWidth: 220, position: 'relative' }}>

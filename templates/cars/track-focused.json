@@ -1,0 +1,262 @@
+{
+  "schema_version": "1.0.0",
+  "meta": {
+    "name": "track-focused",
+    "display_name": "Track-focused",
+    "description": "Mobil balap jalan raya: sayap besar, splitter dalam, ban lebar",
+    "extends": "_base",
+    "tags": [
+      "track",
+      "aero",
+      "sport"
+    ]
+  },
+  "dimensions": {
+    "wheelbase": 2.6,
+    "track_front": 1.72,
+    "track_rear": 1.7,
+    "overhang_front": 0.9,
+    "overhang_rear": 0.8,
+    "body_height": 1.2,
+    "ride_height": 0.09,
+    "body_width_max": 1.02
+  },
+  "sections": [
+    {
+      "z": -2.15,
+      "half_width": 0.7,
+      "y_bottom": 0.15,
+      "y_top": 0.74
+    },
+    {
+      "z": -1.7917,
+      "half_width": 0.8264,
+      "y_bottom": 0.15,
+      "y_top": 0.7657
+    },
+    {
+      "z": -1.4333,
+      "half_width": 0.9111,
+      "y_bottom": 0.15,
+      "y_top": 0.8
+    },
+    {
+      "z": -1.075,
+      "half_width": 0.9625,
+      "y_bottom": 0.15,
+      "y_top": 0.8321
+    },
+    {
+      "z": -0.7167,
+      "half_width": 0.9889,
+      "y_bottom": 0.15,
+      "y_top": 0.8629
+    },
+    {
+      "z": -0.3583,
+      "half_width": 0.9986,
+      "y_bottom": 0.15,
+      "y_top": 0.9
+    },
+    {
+      "z": 0.0,
+      "half_width": 1.0,
+      "y_bottom": 0.15,
+      "y_top": 0.9223
+    },
+    {
+      "z": 0.3583,
+      "half_width": 0.9986,
+      "y_bottom": 0.15,
+      "y_top": 0.9489
+    },
+    {
+      "z": 0.7167,
+      "half_width": 0.9889,
+      "y_bottom": 0.15,
+      "y_top": 0.92
+    },
+    {
+      "z": 1.075,
+      "half_width": 0.9625,
+      "y_bottom": 0.15,
+      "y_top": 0.8906
+    },
+    {
+      "z": 1.4333,
+      "half_width": 0.9111,
+      "y_bottom": 0.15,
+      "y_top": 0.8605
+    },
+    {
+      "z": 1.7917,
+      "half_width": 0.8264,
+      "y_bottom": 0.15,
+      "y_top": 0.8295
+    },
+    {
+      "z": 2.15,
+      "half_width": 0.7,
+      "y_bottom": 0.15,
+      "y_top": 0.7973
+    }
+  ],
+  "cabin": {
+    "sections": [
+      {
+        "z": -1.1,
+        "half_width": 0.629,
+        "y_bottom": 0.86,
+        "y_top": 1.0452
+      },
+      {
+        "z": -0.7333,
+        "half_width": 0.6701,
+        "y_bottom": 0.85,
+        "y_top": 1.1108
+      },
+      {
+        "z": -0.3667,
+        "half_width": 0.7112,
+        "y_bottom": 0.84,
+        "y_top": 1.1705
+      },
+      {
+        "z": 0.0,
+        "half_width": 0.7277,
+        "y_bottom": 0.83,
+        "y_top": 1.1728
+      },
+      {
+        "z": 0.3667,
+        "half_width": 0.6866,
+        "y_bottom": 0.82,
+        "y_top": 1.1133
+      },
+      {
+        "z": 0.7333,
+        "half_width": 0.6454,
+        "y_bottom": 0.81,
+        "y_top": 1.048
+      },
+      {
+        "z": 1.1,
+        "half_width": 0.6043,
+        "y_bottom": 0.8,
+        "y_top": 0.969
+      }
+    ],
+    "superellipse_exponent": 3.0
+  },
+  "wing": {
+    "type": "high-fixed",
+    "span_m": 1.9,
+    "chord_m": 0.42,
+    "height_above_deck_m": 0.4,
+    "supports": 2,
+    "endplates": true,
+    "material": "carbon"
+  },
+  "aero_front": {
+    "splitter": true,
+    "splitter_depth_m": 0.28,
+    "canards": 4,
+    "intake_hood": "vents"
+  },
+  "side_details": {
+    "intake_side": "scoop",
+    "sill_skirt": true,
+    "mirror_shape": "angular"
+  },
+  "wheels": {
+    "rim_diameter_m": 0.533,
+    "rim_width_m": 0.32,
+    "tire_width_m": 0.34,
+    "tire_sidewall_m": 0.075,
+    "spokes": 10,
+    "spoke_style": "y-shape",
+    "brake_caliper_color": [
+      230,
+      190,
+      20
+    ],
+    "arch_flare": true
+  },
+  "colors": {
+    "body_base": [
+      0.9,
+      0.9,
+      0.92
+    ],
+    "body_finish": "gloss",
+    "glass_tint": 0.35,
+    "carbon_weave": true
+  },
+  "surface_response": {
+    "body_specular": 0.58,
+    "body_gloss": 90,
+    "body_rim": 0.4,
+    "glass_specular": 0.55,
+    "glass_rim": 0.22
+  },
+  "livery": {
+    "style": "stripes",
+    "primary": [
+      0.9,
+      0.9,
+      0.92
+    ],
+    "secondary": [
+      0.85,
+      0.1,
+      0.1
+    ],
+    "stripe_width_m": 0.14,
+    "number": 47
+  },
+  "physics": {
+    "mass_kg": 1290,
+    "drag_cd": 0.42,
+    "frontal_area_m2": 2.1,
+    "gear_ratios": [
+      3.6,
+      2.3,
+      1.7,
+      1.32,
+      1.08,
+      0.9
+    ]
+  },
+  "preview_camera": {
+    "azimuth_deg": 45,
+    "elevation_deg": 16,
+    "distance_m": 8.2,
+    "fov_deg": 36
+  },
+  "lods": [
+    {
+      "max_distance_m": 200,
+      "n_sections": 44,
+      "n_ring": 26,
+      "spokes": 10
+    },
+    {
+      "max_distance_m": 80,
+      "n_sections": 24,
+      "n_ring": 16,
+      "spokes": 10
+    },
+    {
+      "max_distance_m": 30,
+      "n_sections": 16,
+      "n_ring": 12,
+      "spokes": 6
+    },
+    {
+      "max_distance_m": 12,
+      "n_sections": 12,
+      "n_ring": 8,
+      "spokes": 0
+    }
+  ]
+}

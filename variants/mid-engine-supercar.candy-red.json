@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0.0",
+  "variant_of": "mid-engine-supercar",
+  "meta": {
+    "name": "mid-engine-supercar.candy-red",
+    "display_name": "Supercar Candy Red",
+    "description": "Bodi merah candy gloss"
+  },
+  "colors": {
+    "body_base": [
+      0.72,
+      0.04,
+      0.04
+    ],
+    "body_finish": "gloss",
+    "glass_tint": 0.6,
+    "carbon_weave": true
+  },
+  "surface_response": {
+    "body_specular": 0.55,
+    "body_gloss": 120,
+    "body_rim": 0.25,
+    "glass_specular": 0.6,
+    "glass_rim": 0.18
+  }
+}

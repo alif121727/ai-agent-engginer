@@ -1,0 +1,234 @@
+{
+  "schema_version": "1.0.0",
+  "meta": {
+    "name": "wedge-hypercar",
+    "display_name": "Wedge Hypercar",
+    "description": "Hypercar baji: hidung sangat rendah, bodi lebar, overhang minimal",
+    "extends": "_base",
+    "tags": [
+      "supercar",
+      "wedge",
+      "hypercar"
+    ]
+  },
+  "dimensions": {
+    "wheelbase": 2.7,
+    "track_front": 1.74,
+    "track_rear": 1.7,
+    "overhang_front": 0.7,
+    "overhang_rear": 0.8,
+    "body_height": 1.06,
+    "ride_height": 0.08,
+    "body_width_max": 1.02
+  },
+  "sections": [
+    {
+      "z": -2.1,
+      "half_width": 0.7,
+      "y_bottom": 0.14,
+      "y_top": 0.66
+    },
+    {
+      "z": -1.75,
+      "half_width": 0.8264,
+      "y_bottom": 0.14,
+      "y_top": 0.6918
+    },
+    {
+      "z": -1.4,
+      "half_width": 0.9111,
+      "y_bottom": 0.14,
+      "y_top": 0.7343
+    },
+    {
+      "z": -1.05,
+      "half_width": 0.9625,
+      "y_bottom": 0.14,
+      "y_top": 0.774
+    },
+    {
+      "z": -0.7,
+      "half_width": 0.9889,
+      "y_bottom": 0.14,
+      "y_top": 0.8122
+    },
+    {
+      "z": -0.35,
+      "half_width": 0.9986,
+      "y_bottom": 0.14,
+      "y_top": 0.86
+    },
+    {
+      "z": 0.0,
+      "half_width": 1.0,
+      "y_bottom": 0.14,
+      "y_top": 0.8857
+    },
+    {
+      "z": 0.35,
+      "half_width": 0.9986,
+      "y_bottom": 0.14,
+      "y_top": 0.9186
+    },
+    {
+      "z": 0.7,
+      "half_width": 0.9889,
+      "y_bottom": 0.14,
+      "y_top": 0.8828
+    },
+    {
+      "z": 1.05,
+      "half_width": 0.9625,
+      "y_bottom": 0.14,
+      "y_top": 0.8464
+    },
+    {
+      "z": 1.4,
+      "half_width": 0.9111,
+      "y_bottom": 0.14,
+      "y_top": 0.8092
+    },
+    {
+      "z": 1.75,
+      "half_width": 0.8264,
+      "y_bottom": 0.14,
+      "y_top": 0.7709
+    },
+    {
+      "z": 2.1,
+      "half_width": 0.7,
+      "y_bottom": 0.14,
+      "y_top": 0.731
+    }
+  ],
+  "cabin": {
+    "sections": [
+      {
+        "z": -1.025,
+        "half_width": 0.612,
+        "y_bottom": 0.8,
+        "y_top": 0.9528
+      },
+      {
+        "z": -0.6833,
+        "half_width": 0.652,
+        "y_bottom": 0.7867,
+        "y_top": 0.9982
+      },
+      {
+        "z": -0.3417,
+        "half_width": 0.692,
+        "y_bottom": 0.7733,
+        "y_top": 1.0396
+      },
+      {
+        "z": 0.0,
+        "half_width": 0.708,
+        "y_bottom": 0.76,
+        "y_top": 1.0412
+      },
+      {
+        "z": 0.3417,
+        "half_width": 0.668,
+        "y_bottom": 0.7467,
+        "y_top": 1.0
+      },
+      {
+        "z": 0.6833,
+        "half_width": 0.628,
+        "y_bottom": 0.7333,
+        "y_top": 0.9547
+      },
+      {
+        "z": 1.025,
+        "half_width": 0.588,
+        "y_bottom": 0.72,
+        "y_top": 0.9001
+      }
+    ],
+    "superellipse_exponent": 3.0
+  },
+  "wing": {
+    "type": "active",
+    "span_m": 1.75,
+    "chord_m": 0.36,
+    "height_above_deck_m": 0.3,
+    "supports": 2,
+    "endplates": true,
+    "material": "carbon"
+  },
+  "aero_front": {
+    "splitter": true,
+    "splitter_depth_m": 0.22,
+    "canards": 4,
+    "intake_hood": "full"
+  },
+  "side_details": {
+    "intake_side": "full-length",
+    "sill_skirt": true,
+    "mirror_shape": "camera"
+  },
+  "colors": {
+    "body_base": [
+      0.86,
+      0.86,
+      0.88
+    ],
+    "body_finish": "satin",
+    "glass_tint": 0.7,
+    "carbon_weave": true
+  },
+  "surface_response": {
+    "body_specular": 0.3,
+    "body_gloss": 50,
+    "body_rim": 0.3,
+    "glass_specular": 0.7,
+    "glass_rim": 0.3
+  },
+  "lods": [
+    {
+      "max_distance_m": 200,
+      "n_sections": 44,
+      "n_ring": 28,
+      "spokes": 10
+    },
+    {
+      "max_distance_m": 80,
+      "n_sections": 24,
+      "n_ring": 16,
+      "spokes": 10
+    },
+    {
+      "max_distance_m": 30,
+      "n_sections": 16,
+      "n_ring": 12,
+      "spokes": 6
+    },
+    {
+      "max_distance_m": 12,
+      "n_sections": 12,
+      "n_ring": 8,
+      "spokes": 0
+    }
+  ],
+  "physics": {
+    "mass_kg": 1180,
+    "drag_cd": 0.31,
+    "frontal_area_m2": 1.95,
+    "gear_ratios": [
+      3.9,
+      2.5,
+      1.8,
+      1.4,
+      1.14,
+      0.95,
+      0.82
+    ]
+  },
+  "preview_camera": {
+    "azimuth_deg": 50,
+    "elevation_deg": 10,
+    "distance_m": 8.0,
+    "fov_deg": 38
+  }
+}

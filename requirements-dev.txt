@@ -1,0 +1,6 @@
+-r requirements.txt
+pytest>=8.0
+# Menyediakan biner ffmpeg + ffprobe. Sandbox sering hanya punya ffmpeg (atau
+# tidak sama sekali), dan tanpa ffprobe empat test audio gagal palsu.
+imageio-ffmpeg>=0.5
+static-ffmpeg>=2.7

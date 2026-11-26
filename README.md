@@ -45,6 +45,23 @@ docker compose --profile postgres up --build    # + Postgres
 docker compose --profile split up --build       # worker terpisah dari api
 ```
 
+## Gerbang kualitas (wajib sebelum commit)
+
+Satu perintah menjalankan semua pemeriksaan yang pernah gagal diam-diam:
+
+```bash
+pip install -r requirements-dev.txt   # sekali saja: numpy, cv2, pytest, ffmpeg+ffprobe
+./scripts/check.sh                    # typecheck + npm test + pytest + build
+```
+
+`scripts/check.sh` berhenti dengan kode non-nol bila ada yang gagal. Workflow
+`.github/workflows/ci.yml` menjalankan pemeriksaan yang sama pada setiap push
+ke `main` dan setiap pull request, jadi masalah terlihat sebelum deploy.
+
+`scripts/ensure-tools.sh` menyediakan `ffmpeg` **dan** `ffprobe`; tanpa
+`ffprobe` tes audio gagal dengan pesan yang menyesatkan. `src/core/env.ts`
+melakukan hal yang sama otomatis saat API/worker/test dijalankan.
+
 ## Alamat permanen
 
 Tautan sandbox (`work-*.prod-runtime.all-hands.dev`) mati saat sesi berakhir.

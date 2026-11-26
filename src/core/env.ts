@@ -1,5 +1,6 @@
 import path from 'node:path';
 import fs from 'node:fs';
+import os from 'node:os';
 
 /**
  * Loads `.env` from the project root once. Node does not read it on its own,
@@ -22,28 +23,39 @@ try {
  * Semua kode memanggil `spawnSync('ffmpeg')`, jadi cukup perbaiki PATH di sini
  * sekali agar API dan worker sama-sama menemukannya.
  */
-const ffmpegDirs = [
+const toolDirs = [
   path.join(root, 'tools', 'bin'),
   '/workspace/tools/bin',
   '/usr/local/bin',
+  path.join(os.homedir(), '.local', 'bin'),
 ];
 
-const hasFfmpegOnPath = (process.env.PATH ?? '')
-  .split(path.delimiter)
-  .some((dir) => {
-    try {
-      fs.accessSync(path.join(dir, 'ffmpeg'), fs.constants.X_OK);
-      return true;
-    } catch {
-      return false;
-    }
-  });
+/**
+ * `ffprobe` wajib ikut dicari, bukan hanya `ffmpeg`. Sandbox kadang hanya punya
+ * `ffmpeg`; `ffprobe` lalu gagal dan pemeriksaan audio melaporkan "berkas tidak
+ * terbaca sebagai audio" — kegagalan lingkungan yang menyamar sebagai bug kode.
+ */
+const hasTool = (name: string) =>
+  (process.env.PATH ?? '')
+    .split(path.delimiter)
+    .some((dir) => {
+      try {
+        fs.accessSync(path.join(dir, name), fs.constants.X_OK);
+        return true;
+      } catch {
+        return false;
+      }
+    });
 
-if (!hasFfmpegOnPath) {
-  const found = ffmpegDirs.find((dir) => {
+const missing = ['ffmpeg', 'ffprobe'].filter((name) => !hasTool(name));
+
+if (missing.length > 0) {
+  const found = toolDirs.find((dir) => {
     try {
-      fs.accessSync(path.join(dir, 'ffmpeg'), fs.constants.X_OK);
-      return true;
+      return missing.every((name) => {
+        fs.accessSync(path.join(dir, name), fs.constants.X_OK);
+        return true;
+      });
     } catch {
       return false;
     }

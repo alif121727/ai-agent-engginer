@@ -36,7 +36,7 @@ import { checkAssets } from '../src/pipeline/quality.ts';
 import { createApp } from '../src/api/server.ts';
 import { fingerprintFor } from '../src/publish/instagram.ts';
 import { readCheckpoint, writeCheckpoint, markSceneDone, readSceneCheckpoint, isStageComplete, clearCheckpoint } from '../src/pipeline/checkpoint.ts';
-import { frameSharpness, perceptualHash, measureLoudness } from '../src/render/ffmpeg.ts';
+import { frameSharpness, perceptualHash, measureLoudness, ffprobe } from '../src/render/ffmpeg.ts';
 import { buildTrack } from '../src/render/narration.ts';
 import { synthesize, voiceForTone, toneForModel, TTS_MODEL, TTS_OUTPUT_FORMAT, VOICE_SETTINGS } from '../src/tts/provider.ts';
 import { analyseAudio } from '../scripts/validate-audio.ts';
@@ -358,6 +358,26 @@ await check('ketajaman gambar statis terbaca (bukan 0 karena -ss)', () => {
   const sharp = frameSharpness(png);
   assert(sharp > 0, `ketajaman gambar statis ${sharp}, seharusnya > 0`);
   assert(perceptualHash(png) !== '0'.repeat(16), 'hash gambar statis tidak boleh nol');
+});
+
+// Kegagalan paling mahal: sandbox hanya punya `ffmpeg` tanpa `ffprobe`, lalu
+// empat tes audio gagal dan terlihat seperti bug pipeline. `src/core/env.ts`
+// harus memulihkan KEDUANYA, bukan hanya ffmpeg.
+await check('env.ts memulihkan ffmpeg dan ffprobe sekaligus', () => {
+  const src = fs.readFileSync(path.join('src', 'core', 'env.ts'), 'utf8');
+  const wanted = src.match(/\['ffmpeg',\s*'ffprobe'\]/);
+  assert(wanted, 'env.ts harus mencari ffmpeg DAN ffprobe, bukan ffmpeg saja');
+  assert(
+    src.includes("homedir()") && src.includes("'.local'"),
+    'env.ts harus menyertakan ~/.local/bin sebagai lokasi biner cadangan',
+  );
+});
+
+await check('kedua biner tersedia setelah env.ts dimuat', () => {
+  for (const bin of ['ffmpeg', 'ffprobe']) {
+    const res = spawnSync(bin, ['-version'], { encoding: 'utf8' });
+    assert(res.status === 0, `${bin} tidak bisa dijalankan (status ${res.status})`);
+  }
 });
 
 await check('fingerprint publish stabil dan unik per platform', () => {
@@ -1356,6 +1376,41 @@ await check('setiap video di Perpustakaan benar-benar ada berkasnya', async () =
   }
   const slugs = RENDERED.map((v) => v.slug);
   assert(new Set(slugs).size === slugs.length, 'slug video harus unik');
+});
+
+// Berkas yang ada tapi rusak tetap lolos pemeriksaan `existsSync` di atas.
+// Dua bug nyata yang pernah terjadi: video tanpa audio (mux gagal diam-diam)
+// dan video yang ter-encode dengan setelan terlalu agresif sehingga detailnya
+// habis. Keduanya tidak terlihat dari ukuran berkas, hanya dari stream-nya.
+await check('setiap video Perpustakaan punya audio dan durasi yang cocok', async () => {
+  const { RENDERED } = await import('../studio/src/data/rendered.ts');
+  for (const v of RENDERED) {
+    const mp4 = path.join(process.cwd(), 'netlify-site', 'video', `${v.slug}.mp4`);
+    const info = ffprobe(mp4);
+    assert(info.ok, `${v.slug}: stream video tidak terbaca`);
+    assert(info.hasAudio, `${v.slug}: tidak punya stream audio, mux gagal diam-diam`);
+    const dur = info.durationSec ?? 0;
+    assert(
+      Math.abs(dur - v.dur) <= 2,
+      `${v.slug}: durasi berkas ${dur.toFixed(1)}s beda dari metadata ${v.dur}s`,
+    );
+    assert(
+      (info.width ?? 0) >= 640 && (info.height ?? 0) >= 360,
+      `${v.slug}: resolusi ${info.width}x${info.height} terlalu kecil`,
+    );
+  }
+});
+
+await check('audio Perpustakaan tidak senyap', async () => {
+  const { RENDERED } = await import('../studio/src/data/rendered.ts');
+  for (const v of RENDERED) {
+    const mp4 = path.join(process.cwd(), 'netlify-site', 'video', `${v.slug}.mp4`);
+    const loud = measureLoudness(mp4);
+    assert(loud.ok, `${v.slug}: loudness tidak terukur (${loud.error ?? '?'})`);
+    const lufs = loud.integratedLufs ?? -Infinity;
+    assert(lufs > -45, `${v.slug}: audio praktis senyap (${lufs.toFixed(1)} LUFS)`);
+    assert(lufs < 0, `${v.slug}: loudness ${lufs.toFixed(1)} LUFS tidak masuk akal`);
+  }
 });
 
 await check('benih proyek demo memakai data nyata, bukan karangan', async () => {

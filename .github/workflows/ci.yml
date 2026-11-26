@@ -1,0 +1,67 @@
+# Gerbang kualitas: setiap push dan PR harus lulus semua pemeriksaan ini.
+#
+# Kenapa ada: sebelumnya workflow hanya `npm install` lalu `build:studio`.
+# Build statis tidak pernah menyentuh logika pipeline, jadi bug seperti
+# `TypeError: must be real number, not complex` di renderer dan setelan encode
+# yang menghapus detail video bisa masuk ke `main` dan ter-deploy tanpa ada
+# yang gagal. Workflow ini menjalankan tes yang benar-benar menyentuh kode.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Pasang dependensi Node
+        run: npm ci --include=dev --no-audit --no-fund
+
+      - name: Pasang dependensi Python
+        run: pip install -r requirements-dev.txt
+
+      # Sediakan ffmpeg + ffprobe. Runner GitHub biasanya sudah punya keduanya,
+      # tetapi langkah ini membuat perilakunya sama dengan sandbox lokal.
+      - name: Sediakan ffmpeg + ffprobe
+        run: |
+          if ! command -v ffprobe >/dev/null; then
+            sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+          fi
+          ffmpeg -version | head -1
+          ffprobe -version | head -1
+
+      - name: Tipe TypeScript studio
+        run: npm run typecheck:studio
+
+      - name: Test Node
+        run: npm test
+
+      - name: Test Python
+        run: python3 -m pytest tests/ -q
+
+      # Build dijalankan setelah tes supaya kegagalan build juga terlihat di PR,
+      # bukan baru saat deploy.
+      - name: Build studio
+        run: npm run build:studio

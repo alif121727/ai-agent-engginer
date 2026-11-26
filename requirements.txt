@@ -1,0 +1,9 @@
+# Dependensi Python untuk `cartpl` (pembangun mesh mobil) dan `car-chase`
+# (renderer numpy/OpenCV). Sebelumnya daftar ini hanya ada di memori agen,
+# sehingga lingkungan baru kehilangan numpy/cv2 dan 180 test pytest tidak bisa
+# dijalankan sama sekali.
+numpy>=1.26
+scipy>=1.11
+pillow>=10.0
+jsonschema>=4.20
+opencv-python-headless>=4.9

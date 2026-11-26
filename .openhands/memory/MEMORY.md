@@ -171,3 +171,18 @@ Detail panjang ada di `archive/MEMORY-full-2026-11-20.md` dan log harian.
   palsu karenanya. Perbaikan: `pip install static-ffmpeg` lalu symlink
   `.../static_ffmpeg/bin/linux/{ffmpeg,ffprobe}` ke `~/.local/bin/`.
   Suite jadi **183 lulus, 0 gagal**.
+## Kenapa bug lolos (root cause, bukan tebakan)
+- CI lama HANYA `npm install` + `build:studio`. Build statis tidak menyentuh
+  logika pipeline, jadi `TypeError: complex` di renderer dan crf yang
+  menghapus detail bisa masuk `main` dan ter-deploy tanpa ada yang gagal.
+  Sekarang `.github/workflows/ci.yml` menjalankan typecheck + npm test +
+  pytest + build pada push & PR.
+- Tidak ada `requirements.txt`: lingkungan baru kehilangan numpy/cv2/pytest
+  dan 180+ test Python tak bisa jalan sama sekali. Sekarang ada
+  `requirements.txt` + `requirements-dev.txt`.
+- `src/core/env.ts` dulu hanya memulihkan `ffmpeg`, BUKAN `ffprobe`. Sandbox
+  tanpa ffprobe membuat 4 test audio gagal dengan pesan menyesatkan
+  ("berkas tidak terbaca sebagai audio"). Sekarang keduanya dicari, termasuk
+  `~/.local/bin`.
+- `./scripts/check.sh` = gerbang lokal satu perintah (typecheck, npm test,
+  pytest, build). Jalankan sebelum commit.

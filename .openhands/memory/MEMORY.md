@@ -162,3 +162,12 @@ Detail panjang ada di `archive/MEMORY-full-2026-11-20.md` dan log harian.
 - Tidak bisa "melihat" gambar: verifikasi selalu kuantitatif lewat
   `work/cmp.py` (region_stats) dan `work/zoom.py` (statistik crop).
   Nama file `work/inspect.py` membayangi modul stdlib `inspect` — jangan.
+- **Encode final car-chase: crf 23,5 + `-x264-params aq-mode=3`, preset slow.**
+  crf 24 (default lama di `make.sh`) membuang tekstur: tepi Laplacian turun
+  8,1 -> 2,3 pada klip yang sama. crf 20 mempertahankan detail (8,1) tapi
+  ~76 MB. crf 23,5 + aq3 = ~19 MB dengan tepi 3,1-4,8. Ukur dengan
+  `|Laplacian|.mean()` pada frame hasil `ffmpeg -ss`.
+- `ffprobe` TIDAK ada di sandbox ini (hanya `ffmpeg`). 4 test audio gagal
+  palsu karenanya. Perbaikan: `pip install static-ffmpeg` lalu symlink
+  `.../static_ffmpeg/bin/linux/{ffmpeg,ffprobe}` ke `~/.local/bin/`.
+  Suite jadi **183 lulus, 0 gagal**.

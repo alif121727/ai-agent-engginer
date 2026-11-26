@@ -1,0 +1,44 @@
+[
+  {
+    "sceneIndex": 0,
+    "kind": "image",
+    "path": "/workspace/project/jobs/00fb13e12e0345c6b13cd6b90238fe55/assets/scene-01.jpg",
+    "source": "/workspace/project/assets/own/porsche-911-gt3-rs-992/foto-1.jpg",
+    "provider": "local"
+  },
+  {
+    "sceneIndex": 1,
+    "kind": "image",
+    "path": "/workspace/project/jobs/00fb13e12e0345c6b13cd6b90238fe55/assets/scene-02.jpg",
+    "source": "/workspace/project/assets/own/porsche-911-gt3-rs-992/foto-2.jpg",
+    "provider": "local"
+  },
+  {
+    "sceneIndex": 2,
+    "kind": "image",
+    "path": "/workspace/project/jobs/00fb13e12e0345c6b13cd6b90238fe55/assets/scene-03.jpg",
+    "source": "/workspace/project/assets/own/porsche-911-gt3-rs-992/foto-3.jpg",
+    "provider": "local"
+  },
+  {
+    "sceneIndex": 3,
+    "kind": "image",
+    "path": "/workspace/project/jobs/00fb13e12e0345c6b13cd6b90238fe55/assets/scene-04.jpg",
+    "source": "/workspace/project/assets/own/porsche-911-gt3-rs-992/foto-4.jpg",
+    "provider": "local"
+  },
+  {
+    "sceneIndex": 4,
+    "kind": "image",
+    "path": "/workspace/project/jobs/00fb13e12e0345c6b13cd6b90238fe55/assets/scene-05.jpg",
+    "source": "/workspace/project/assets/own/porsche-911-gt3-rs-992/foto-5.jpg",
+    "provider": "local"
+  },
+  {
+    "sceneIndex": 5,
+    "kind": "image",
+    "path": "/workspace/project/jobs/00fb13e12e0345c6b13cd6b90238fe55/assets/scene-06.jpg",
+    "source": "/workspace/project/assets/own/porsche-911-gt3-rs-992/foto-6.jpg",
+    "provider": "local"
+  }
+]

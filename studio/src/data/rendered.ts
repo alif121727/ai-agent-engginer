@@ -97,7 +97,7 @@ const RECORDED: Recorded[] = [
     slug: 'porsche-911-gt3-rs-992-car-chase', title: 'Porsche 911 GT3 RS 992 — Car Chase',
     jobId: '',
     dur: 60, aspect: '16:9', width: 1280, height: 720, fps: 24, scenes: 8, checks: 0,
-    qa: 'render-3d', modelAi: 'Studio Render 3D (lokal)', renderedAt: '2026-11-25T13:21:00.000Z',
+    qa: 'render-3d', modelAi: 'Studio Render 3D (lokal)', renderedAt: '2026-11-26T12:19:00.000Z',
     catalogSlug: 'porsche-911-gt3-rs-992',
   },
 ];

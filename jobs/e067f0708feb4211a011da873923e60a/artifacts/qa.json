@@ -1,0 +1,221 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "name": "berkas-video",
+      "ok": true,
+      "detail": "71.4 MB"
+    },
+    {
+      "name": "terbaca-ffprobe",
+      "ok": true,
+      "detail": "h264 1920x1080 60.0 dtk"
+    },
+    {
+      "name": "durasi-sesuai",
+      "ok": true,
+      "detail": "video 60.0 dtk vs rencana 60.0 dtk"
+    },
+    {
+      "name": "ada-audio",
+      "ok": true,
+      "detail": "codec aac"
+    },
+    {
+      "name": "resolusi",
+      "ok": true,
+      "detail": "1920x1080"
+    },
+    {
+      "name": "tanpa-fallback",
+      "ok": true,
+      "detail": "semua aset nyata"
+    },
+    {
+      "name": "audio-plan-lengkap",
+      "ok": true,
+      "detail": "9/9 scene punya rencana audio"
+    },
+    {
+      "name": "loudness-sesuai",
+      "ok": true,
+      "detail": "-16.5 LUFS vs target -16 (selisih 0.5 LU)"
+    },
+    {
+      "name": "true-peak-aman",
+      "ok": true,
+      "detail": "-3.6 dBTP (batas -1)"
+    },
+    {
+      "name": "penggerak-konsisten",
+      "ok": true,
+      "detail": "profil \"V8 · 8 silinder · turbo · redline 8000 rpm\" cocok dengan rencana"
+    },
+    {
+      "name": "frame-1",
+      "ok": true,
+      "detail": "ketajaman 15"
+    },
+    {
+      "name": "frame-2",
+      "ok": true,
+      "detail": "ketajaman 19"
+    },
+    {
+      "name": "frame-3",
+      "ok": true,
+      "detail": "ketajaman 18"
+    },
+    {
+      "name": "frame-4",
+      "ok": true,
+      "detail": "ketajaman 17"
+    },
+    {
+      "name": "frame-5",
+      "ok": true,
+      "detail": "ketajaman 14"
+    },
+    {
+      "name": "frame-6",
+      "ok": true,
+      "detail": "ketajaman 19"
+    },
+    {
+      "name": "tidak-kosong",
+      "ok": true,
+      "detail": "rata-rata ketajaman 17.0"
+    },
+    {
+      "name": "tidak-beku",
+      "ok": true,
+      "detail": "6 dari 6 frame berbeda"
+    },
+    {
+      "name": "gerakan-terukur",
+      "ok": true,
+      "detail": "skor 0.655 (min 0.2), global 0.59, lokal 0.255"
+    },
+    {
+      "name": "gerakan-scene-1",
+      "ok": true,
+      "detail": "hook: skor 0.405 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-2",
+      "ok": true,
+      "detail": "exterior: skor 0.693 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-3",
+      "ok": true,
+      "detail": "features: skor 0.731 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-4",
+      "ok": true,
+      "detail": "interior: skor 0.643 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-5",
+      "ok": true,
+      "detail": "action: skor 0.245 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-6",
+      "ok": true,
+      "detail": "detail_wheel: skor 0.752 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-7",
+      "ok": true,
+      "detail": "detail_engine: skor 0.735 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-8",
+      "ok": true,
+      "detail": "night: skor 0.79 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-9",
+      "ok": true,
+      "detail": "cta: skor 0.474 (min 0.2)"
+    }
+  ],
+  "assets": {
+    "passed": true,
+    "issues": []
+  },
+  "motion": {
+    "score": 0.655,
+    "globalMotion": 0.59,
+    "localMotion": 0.255,
+    "localRatio": 0.432,
+    "frames": 480,
+    "passed": true
+  },
+  "motionPerScene": [
+    {
+      "scene": 0,
+      "key": "hook",
+      "score": 0.405,
+      "passed": true
+    },
+    {
+      "scene": 1,
+      "key": "exterior",
+      "score": 0.693,
+      "passed": true
+    },
+    {
+      "scene": 2,
+      "key": "features",
+      "score": 0.731,
+      "passed": true
+    },
+    {
+      "scene": 3,
+      "key": "interior",
+      "score": 0.643,
+      "passed": true
+    },
+    {
+      "scene": 4,
+      "key": "action",
+      "score": 0.245,
+      "passed": true
+    },
+    {
+      "scene": 5,
+      "key": "detail_wheel",
+      "score": 0.752,
+      "passed": true
+    },
+    {
+      "scene": 6,
+      "key": "detail_engine",
+      "score": 0.735,
+      "passed": true
+    },
+    {
+      "scene": 7,
+      "key": "night",
+      "score": 0.79,
+      "passed": true
+    },
+    {
+      "scene": 8,
+      "key": "cta",
+      "score": 0.474,
+      "passed": true
+    }
+  ],
+  "video": {
+    "file": "/workspace/project/jobs/e067f0708feb4211a011da873923e60a/video.mp4",
+    "durationSec": 60,
+    "width": 1920,
+    "height": 1080,
+    "codec": "h264"
+  },
+  "checkedAt": "2026-11-23T17:28:27.401Z"
+}

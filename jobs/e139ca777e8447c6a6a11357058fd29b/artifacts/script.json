@@ -1,0 +1,37 @@
+{
+  "model": "Porsche 911 GT3 RS",
+  "tagline": "Presisi tanpa kompromi",
+  "lines": [
+    {
+      "sceneIndex": 0,
+      "onScreenText": "Presisi tanpa kompromi",
+      "voiceover": "Ini Porsche 911 GT3 RS."
+    },
+    {
+      "sceneIndex": 1,
+      "onScreenText": "Porsche 911 GT3 RS",
+      "voiceover": "Garis bodinya bukan kebetulan."
+    },
+    {
+      "sceneIndex": 2,
+      "onScreenText": "aerodinamika aktif",
+      "voiceover": "Salah satu andalannya: flat-6 4.0L naturally."
+    },
+    {
+      "sceneIndex": 3,
+      "onScreenText": "525 PS",
+      "voiceover": "Semua kontrol ada di tempat yang benar."
+    },
+    {
+      "sceneIndex": 4,
+      "onScreenText": "",
+      "voiceover": "Di jalan, 525 PS terasa langsung."
+    },
+    {
+      "sceneIndex": 5,
+      "onScreenText": "Porsche 911 GT3 RS",
+      "voiceover": "Porsche 911 GT3 RS. Presisi."
+    }
+  ],
+  "sumber": "lokal"
+}

@@ -1,0 +1,33 @@
+{
+  "model": "BMW M4 GT3",
+  "catalog": {
+    "merk": "BMW",
+    "seri": "G82 M4 GT3",
+    "tahun": "2022–sekarang",
+    "kategori": "balap",
+    "mesin": "Inline-six 3.0L turbo (versi balap)",
+    "tenaga": "tidak disebut di sumber",
+    "torsi": "tidak disebut di sumber",
+    "layout": "front-engine, RWD",
+    "berat": "tidak disebut di sumber",
+    "nol100": "tidak disebut di sumber",
+    "vmax": "tidak disebut di sumber",
+    "sumber": "https://en.wikipedia.org/wiki/BMW_M4"
+  },
+  "specs": [
+    {
+      "text": "front-engine, RWD",
+      "source": "katalog"
+    },
+    {
+      "text": "Produksi 2022–sekarang",
+      "source": "katalog"
+    },
+    {
+      "text": "Penerus M6 GT3 sejak musim 2022; fender melebar, knalpot keluar di belakang roda depan, dan sayap gooseneck. Versi Evo debut di Dubai 24 Hour 2025.",
+      "source": "katalog"
+    }
+  ],
+  "missing": [],
+  "note": "angka dari brief didahulukan; sisanya dari katalog yang bersumber Wikipedia"
+}

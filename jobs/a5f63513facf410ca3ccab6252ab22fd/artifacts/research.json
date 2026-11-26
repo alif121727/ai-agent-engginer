@@ -1,0 +1,41 @@
+{
+  "model": "Lamborghini Huracan STO",
+  "catalog": {
+    "merk": "Lamborghini",
+    "seri": "STO (Super Trofeo Omologata)",
+    "tahun": "2021–2024",
+    "kategori": "balap",
+    "mesin": "V10 5.2L naturally aspirated (DGF)",
+    "tenaga": "640 PS",
+    "torsi": "601 Nm @ 6.500 rpm",
+    "layout": "mid-engine, RWD",
+    "berat": "1.339 kg",
+    "nol100": "3,0 dtk",
+    "vmax": "325 km/jam",
+    "sumber": "https://en.wikipedia.org/wiki/Lamborghini_Huracán"
+  },
+  "specs": [
+    {
+      "text": "V10 5.2L naturally aspirated (DGF) · 640 PS",
+      "source": "katalog"
+    },
+    {
+      "text": "Torsi 601 Nm @ 6.500 rpm · mid-engine, RWD",
+      "source": "katalog"
+    },
+    {
+      "text": "0–100 km/jam 3,0 dtk · top speed 325 km/jam",
+      "source": "katalog"
+    },
+    {
+      "text": "Berat 1.339 kg · produksi 2021–2024",
+      "source": "katalog"
+    },
+    {
+      "text": "75% panel karbon, kaca depan aerodinamis, dan geometri sasis warisan Super Trofeo.",
+      "source": "katalog"
+    }
+  ],
+  "missing": [],
+  "note": "angka dari brief didahulukan; sisanya dari katalog yang bersumber Wikipedia"
+}

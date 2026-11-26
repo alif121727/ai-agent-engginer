@@ -1,0 +1,49 @@
+{
+  "model": "BMW M3 E30",
+  "catalog": {
+    "merk": "BMW M",
+    "seri": "E30",
+    "tahun": "1986–1991",
+    "kategori": "klasik",
+    "mesin": "I4 2.3L DOHC (S14)",
+    "tenaga": "195 PS",
+    "torsi": "tidak disebut di sumber",
+    "layout": "front-engine, RWD",
+    "berat": "1.200 kg",
+    "nol100": "6,7 dtk",
+    "vmax": "235 km/jam",
+    "sumber": "https://en.wikipedia.org/wiki/BMW_M3"
+  },
+  "specs": [
+    {
+      "text": "I4 2.3L DOHC (S14)",
+      "source": "brief"
+    },
+    {
+      "text": "195 PS",
+      "source": "brief"
+    },
+    {
+      "text": "front-engine, RWD",
+      "source": "brief"
+    },
+    {
+      "text": "I4 2.3L DOHC (S14) · 195 PS",
+      "source": "katalog"
+    },
+    {
+      "text": "0–100 km/jam 6,7 dtk · top speed 235 km/jam",
+      "source": "katalog"
+    },
+    {
+      "text": "Berat 1.200 kg · produksi 1986–1991",
+      "source": "katalog"
+    },
+    {
+      "text": "Dibangun untuk Grup A: blok S14 dan geometri sasis yang seimbang.",
+      "source": "katalog"
+    }
+  ],
+  "missing": [],
+  "note": "angka dari brief didahulukan; sisanya dari katalog yang bersumber Wikipedia"
+}

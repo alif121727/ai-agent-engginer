@@ -1,0 +1,44 @@
+[
+  {
+    "sceneIndex": 0,
+    "kind": "image",
+    "path": "/workspace/project/jobs/ab9e1719be13481c841705b98b383fb2/assets/scene-01.jpg",
+    "source": "/workspace/project/assets/own/bmw-e30-m3/foto-1.jpg",
+    "provider": "local"
+  },
+  {
+    "sceneIndex": 1,
+    "kind": "image",
+    "path": "/workspace/project/jobs/ab9e1719be13481c841705b98b383fb2/assets/scene-02.jpg",
+    "source": "/workspace/project/assets/own/bmw-e30-m3/foto-2.jpg",
+    "provider": "local"
+  },
+  {
+    "sceneIndex": 2,
+    "kind": "image",
+    "path": "/workspace/project/jobs/ab9e1719be13481c841705b98b383fb2/assets/scene-03.jpg",
+    "source": "/workspace/project/assets/own/bmw-e30-m3/foto-3.jpg",
+    "provider": "local"
+  },
+  {
+    "sceneIndex": 3,
+    "kind": "image",
+    "path": "/workspace/project/jobs/ab9e1719be13481c841705b98b383fb2/assets/scene-04.jpg",
+    "source": "/workspace/project/assets/own/bmw-e30-m3/foto-4.jpg",
+    "provider": "local"
+  },
+  {
+    "sceneIndex": 4,
+    "kind": "image",
+    "path": "/workspace/project/jobs/ab9e1719be13481c841705b98b383fb2/assets/scene-05.jpg",
+    "source": "/workspace/project/assets/own/bmw-e30-m3/foto-5.jpg",
+    "provider": "local"
+  },
+  {
+    "sceneIndex": 5,
+    "kind": "image",
+    "path": "/workspace/project/jobs/ab9e1719be13481c841705b98b383fb2/assets/scene-06.jpg",
+    "source": "/workspace/project/assets/own/bmw-e30-m3/foto-6.jpg",
+    "provider": "local"
+  }
+]

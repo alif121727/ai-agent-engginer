@@ -1,0 +1,196 @@
+{
+  "loudnessLufs": -16,
+  "truePeakDbtp": -1,
+  "audioPlan": [
+    {
+      "sceneIndex": 0,
+      "sceneKey": "hook",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-jauh",
+      "eventDominan": "idle",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 4,
+        "firingPerRev": 2,
+        "rpm": 3960,
+        "redline": 7200
+      },
+      "sumber": "katalog:bmw-e30-m3"
+    },
+    {
+      "sceneIndex": 1,
+      "sceneKey": "exterior",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-dekat",
+      "eventDominan": "rev",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 4,
+        "firingPerRev": 2,
+        "rpm": 3960,
+        "redline": 7200
+      },
+      "sumber": "katalog:bmw-e30-m3"
+    },
+    {
+      "sceneIndex": 2,
+      "sceneKey": "features",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-dekat",
+      "eventDominan": "rev",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 4,
+        "firingPerRev": 2,
+        "rpm": 3960,
+        "redline": 7200
+      },
+      "sumber": "katalog:bmw-e30-m3"
+    },
+    {
+      "sceneIndex": 3,
+      "sceneKey": "interior",
+      "penggerak": "ICE",
+      "posisiKamera": "interior",
+      "eventDominan": "idle",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 4,
+        "firingPerRev": 2,
+        "rpm": 850,
+        "redline": 7200
+      },
+      "sumber": "katalog:bmw-e30-m3"
+    },
+    {
+      "sceneIndex": 4,
+      "sceneKey": "action",
+      "penggerak": "ICE",
+      "posisiKamera": "pass-by",
+      "eventDominan": "akselerasi",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 4,
+        "firingPerRev": 2,
+        "rpm": 3960,
+        "redline": 7200
+      },
+      "sumber": "katalog:bmw-e30-m3"
+    },
+    {
+      "sceneIndex": 5,
+      "sceneKey": "cta",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-jauh",
+      "eventDominan": "idle",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 4,
+        "firingPerRev": 2,
+        "rpm": 3960,
+        "redline": 7200
+      },
+      "sumber": "katalog:bmw-e30-m3"
+    }
+  ],
+  "music": {
+    "ducking": true,
+    "gain": -18
+  },
+  "engine": {
+    "profile": "I4 · 4 silinder · na · redline 7200 rpm",
+    "synthesizedLocally": true,
+    "externalPrompts": [
+      {
+        "id": "start",
+        "label": "Start & idle",
+        "scene": "Engine bay",
+        "prompt": "Car engine ignition start, starter motor cranking, naturally aspirated inline-four engine (S14) coming to life, settling into a warm classic analog idle at 850 rpm, close-up microphone, high quality, studio recording, realistic, no music, no voice, dry signal"
+      },
+      {
+        "id": "rev",
+        "label": "Rev & akselerasi",
+        "scene": "Driving",
+        "prompt": "High-performance naturally aspirated inline-four engine revving hard through the gears up to 7500 rpm, warm classic analog exhaust note, BMW M3, high quality, studio recording, realistic, no music, no voice, dry signal"
+      },
+      {
+        "id": "exhaust",
+        "label": "Knalpot dekat",
+        "scene": "Detail",
+        "prompt": "Close-mic exhaust recording of a naturally aspirated inline-four engine, warm classic analog tone, blipping the throttle, tailpipe resonance, high quality, studio recording, realistic, no music, no voice, dry signal"
+      },
+      {
+        "id": "passby",
+        "label": "Melintas (Doppler)",
+        "scene": "Action",
+        "prompt": "naturally aspirated inline-four car passing by at high speed, Doppler effect, warm classic analog exhaust note sweeping past, tyre noise on tarmac, realistic racing sound, high quality, studio recording, realistic, no music, no voice, dry signal"
+      },
+      {
+        "id": "idle",
+        "label": "Idle kabin",
+        "scene": "Interior",
+        "prompt": "Interior of a BMW M3, engine idling at 850 rpm, warm classic analog note muffled through the firewall, faint cabin ambience, high quality, studio recording, realistic, no music, no voice, dry signal"
+      }
+    ],
+    "negativePrompt": "music, melody, voice, speech, singing, robotic voice, clipping audio, background hiss, wind noise, distortion, cartoon sound, synthesized beeps, phone recording"
+  },
+  "sfx": [
+    {
+      "sceneIndex": 0,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 1,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 2,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 3,
+      "bed": "cabin-ambience",
+      "promptId": "idle"
+    },
+    {
+      "sceneIndex": 4,
+      "bed": "engine-rev",
+      "promptId": "passby"
+    },
+    {
+      "sceneIndex": 5,
+      "bed": "studio-room",
+      "promptId": "rev"
+    }
+  ],
+  "subtitles": [
+    {
+      "sceneIndex": 0,
+      "text": "BMW M3 E30."
+    },
+    {
+      "sceneIndex": 1,
+      "text": "Dari setiap sudut, BMW M3 E30 tidak ingin dilupakan."
+    },
+    {
+      "sceneIndex": 2,
+      "text": "Salah satu andalannya: front-engine, RWD."
+    },
+    {
+      "sceneIndex": 3,
+      "text": "Kabinnya dibangun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "text": "Di jalan, 195 PS terasa langsung."
+    },
+    {
+      "sceneIndex": 5,
+      "text": "BMW M3 E30."
+    }
+  ],
+  "ttsAvailable": true
+}

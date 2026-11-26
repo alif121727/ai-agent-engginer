@@ -1,0 +1,342 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "name": "berkas-video",
+      "ok": true,
+      "detail": "164.1 MB"
+    },
+    {
+      "name": "terbaca-ffprobe",
+      "ok": true,
+      "detail": "h264 1920x1080 180.0 dtk"
+    },
+    {
+      "name": "durasi-sesuai",
+      "ok": true,
+      "detail": "video 180.0 dtk vs rencana 180.0 dtk"
+    },
+    {
+      "name": "ada-audio",
+      "ok": true,
+      "detail": "codec aac"
+    },
+    {
+      "name": "resolusi",
+      "ok": true,
+      "detail": "1920x1080"
+    },
+    {
+      "name": "tanpa-fallback",
+      "ok": true,
+      "detail": "semua aset nyata"
+    },
+    {
+      "name": "audio-plan-lengkap",
+      "ok": true,
+      "detail": "20/20 scene punya rencana audio"
+    },
+    {
+      "name": "loudness-sesuai",
+      "ok": true,
+      "detail": "-16.4 LUFS vs target -16 (selisih 0.4 LU)"
+    },
+    {
+      "name": "true-peak-aman",
+      "ok": true,
+      "detail": "-1.5 dBTP (batas -1)"
+    },
+    {
+      "name": "penggerak-konsisten",
+      "ok": true,
+      "detail": "profil \"I6 · 6 silinder · turbo · redline 8500 rpm\" cocok dengan rencana"
+    },
+    {
+      "name": "frame-1",
+      "ok": true,
+      "detail": "ketajaman 20"
+    },
+    {
+      "name": "frame-2",
+      "ok": true,
+      "detail": "ketajaman 15"
+    },
+    {
+      "name": "frame-3",
+      "ok": true,
+      "detail": "ketajaman 15"
+    },
+    {
+      "name": "frame-4",
+      "ok": true,
+      "detail": "ketajaman 17"
+    },
+    {
+      "name": "frame-5",
+      "ok": true,
+      "detail": "ketajaman 15"
+    },
+    {
+      "name": "frame-6",
+      "ok": true,
+      "detail": "ketajaman 15"
+    },
+    {
+      "name": "tidak-kosong",
+      "ok": true,
+      "detail": "rata-rata ketajaman 16.2"
+    },
+    {
+      "name": "tidak-beku",
+      "ok": true,
+      "detail": "6 dari 6 frame berbeda"
+    },
+    {
+      "name": "gerakan-terukur",
+      "ok": true,
+      "detail": "skor 0.563 (min 0.2), global 0.507, lokal 0.23"
+    },
+    {
+      "name": "gerakan-scene-1",
+      "ok": true,
+      "detail": "hook: skor 0.531 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-2",
+      "ok": true,
+      "detail": "exterior: skor 0.592 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-3",
+      "ok": true,
+      "detail": "features: skor 0.714 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-4",
+      "ok": true,
+      "detail": "interior: skor 0.573 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-5",
+      "ok": true,
+      "detail": "action: skor 0.218 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-6",
+      "ok": true,
+      "detail": "detail_wheel: skor 0.76 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-7",
+      "ok": true,
+      "detail": "detail_engine: skor 0.437 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-8",
+      "ok": true,
+      "detail": "night: skor 0.626 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-9",
+      "ok": true,
+      "detail": "lifestyle: skor 0.529 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-10",
+      "ok": true,
+      "detail": "detail_wheel_2: skor 0.566 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-11",
+      "ok": true,
+      "detail": "detail_engine_2: skor 0.406 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-12",
+      "ok": true,
+      "detail": "night_2: skor 0.608 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-13",
+      "ok": true,
+      "detail": "lifestyle_2: skor 0.572 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-14",
+      "ok": true,
+      "detail": "detail_wheel_3: skor 0.544 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-15",
+      "ok": true,
+      "detail": "detail_engine_3: skor 0.572 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-16",
+      "ok": true,
+      "detail": "night_3: skor 0.582 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-17",
+      "ok": true,
+      "detail": "lifestyle_3: skor 0.575 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-18",
+      "ok": true,
+      "detail": "detail_wheel_4: skor 0.759 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-19",
+      "ok": true,
+      "detail": "detail_engine_4: skor 0.518 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-20",
+      "ok": true,
+      "detail": "cta: skor 0.627 (min 0.2)"
+    }
+  ],
+  "assets": {
+    "passed": true,
+    "issues": []
+  },
+  "motion": {
+    "score": 0.563,
+    "globalMotion": 0.507,
+    "localMotion": 0.23,
+    "localRatio": 0.454,
+    "frames": 1440,
+    "passed": true
+  },
+  "motionPerScene": [
+    {
+      "scene": 0,
+      "key": "hook",
+      "score": 0.531,
+      "passed": true
+    },
+    {
+      "scene": 1,
+      "key": "exterior",
+      "score": 0.592,
+      "passed": true
+    },
+    {
+      "scene": 2,
+      "key": "features",
+      "score": 0.714,
+      "passed": true
+    },
+    {
+      "scene": 3,
+      "key": "interior",
+      "score": 0.573,
+      "passed": true
+    },
+    {
+      "scene": 4,
+      "key": "action",
+      "score": 0.218,
+      "passed": true
+    },
+    {
+      "scene": 5,
+      "key": "detail_wheel",
+      "score": 0.76,
+      "passed": true
+    },
+    {
+      "scene": 6,
+      "key": "detail_engine",
+      "score": 0.437,
+      "passed": true
+    },
+    {
+      "scene": 7,
+      "key": "night",
+      "score": 0.626,
+      "passed": true
+    },
+    {
+      "scene": 8,
+      "key": "lifestyle",
+      "score": 0.529,
+      "passed": true
+    },
+    {
+      "scene": 9,
+      "key": "detail_wheel_2",
+      "score": 0.566,
+      "passed": true
+    },
+    {
+      "scene": 10,
+      "key": "detail_engine_2",
+      "score": 0.406,
+      "passed": true
+    },
+    {
+      "scene": 11,
+      "key": "night_2",
+      "score": 0.608,
+      "passed": true
+    },
+    {
+      "scene": 12,
+      "key": "lifestyle_2",
+      "score": 0.572,
+      "passed": true
+    },
+    {
+      "scene": 13,
+      "key": "detail_wheel_3",
+      "score": 0.544,
+      "passed": true
+    },
+    {
+      "scene": 14,
+      "key": "detail_engine_3",
+      "score": 0.572,
+      "passed": true
+    },
+    {
+      "scene": 15,
+      "key": "night_3",
+      "score": 0.582,
+      "passed": true
+    },
+    {
+      "scene": 16,
+      "key": "lifestyle_3",
+      "score": 0.575,
+      "passed": true
+    },
+    {
+      "scene": 17,
+      "key": "detail_wheel_4",
+      "score": 0.759,
+      "passed": true
+    },
+    {
+      "scene": 18,
+      "key": "detail_engine_4",
+      "score": 0.518,
+      "passed": true
+    },
+    {
+      "scene": 19,
+      "key": "cta",
+      "score": 0.627,
+      "passed": true
+    }
+  ],
+  "video": {
+    "file": "/workspace/project/jobs/32f8f68620a9456e9f781ba0bb5d4f1e/video.mp4",
+    "durationSec": 180,
+    "width": 1920,
+    "height": 1080,
+    "codec": "h264"
+  },
+  "checkedAt": "2026-11-23T16:41:01.248Z"
+}

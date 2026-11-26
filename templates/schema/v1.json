@@ -685,6 +685,22 @@
             "canard_z_offset_m",
             "head_inner_m",
             "head_outer_frac",
+            "hood_vent_count",
+            "hood_vent_d_m",
+            "hood_vent_spread_frac",
+            "hood_vent_w_m",
+            "hood_vent_z_frac",
+            "panel_gap_m",
+            "panel_line_w_m",
+            "panel_rear_frac",
+            "panel_y0_frac",
+            "panel_y1_frac",
+            "rim_lip_frac",
+            "rim_lip_offset_m",
+            "rim_recess_frac",
+            "rim_recess_offset_frac",
+            "spoke_gap_frac",
+            "spoke_gap_offset_frac",
             "intake_depth_full_m",
             "intake_depth_scoop_m",
             "intake_height_m",
@@ -724,35 +740,20 @@
             "y_rise_m"
           ],
           "properties": {
-            "roof_normal_threshold": {
-              "type": "number",
-              "minimum": 0.5,
-              "maximum": 0.95
+            "canard_dims_m": {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0.001,
+                "maximum": 1.0
+              },
+              "minItems": 3,
+              "maxItems": 3
             },
-            "underside_threshold": {
+            "canard_dy_m": {
               "type": "number",
-              "minimum": -0.95,
-              "maximum": -0.2
-            },
-            "wing_support_scale": {
-              "type": "number",
-              "minimum": 0.05,
-              "maximum": 1.0
-            },
-            "wing_rear_offset_frac": {
-              "type": "number",
-              "minimum": 0.1,
-              "maximum": 1.5
-            },
-            "splitter_width_frac": {
-              "type": "number",
-              "minimum": 0.5,
-              "maximum": 1.0
-            },
-            "splitter_thickness_m": {
-              "type": "number",
-              "minimum": 0.005,
-              "maximum": 0.1
+              "minimum": 0.01,
+              "maximum": 0.3
             },
             "canard_x_frac": {
               "type": "number",
@@ -764,25 +765,65 @@
               "minimum": 0.02,
               "maximum": 0.5
             },
-            "canard_dy_m": {
-              "type": "number",
-              "minimum": 0.01,
-              "maximum": 0.3
-            },
             "canard_z_offset_m": {
               "type": "number",
               "minimum": 0.05,
               "maximum": 0.8
             },
-            "canard_dims_m": {
-              "type": "array",
-              "items": {
-                "type": "number",
-                "minimum": 0.001,
-                "maximum": 1.0
-              },
-              "minItems": 3,
-              "maxItems": 3
+            "head_inner_m": {
+              "type": "number",
+              "minimum": 0.02,
+              "maximum": 0.6
+            },
+            "head_outer_frac": {
+              "type": "number",
+              "minimum": 0.5,
+              "maximum": 1.0
+            },
+            "hood_vent_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9
+            },
+            "hood_vent_d_m": {
+              "type": "number",
+              "minimum": 0.02,
+              "maximum": 0.5
+            },
+            "hood_vent_spread_frac": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 0.5
+            },
+            "hood_vent_w_m": {
+              "type": "number",
+              "minimum": 0.02,
+              "maximum": 0.4
+            },
+            "hood_vent_z_frac": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 0.3
+            },
+            "intake_depth_full_m": {
+              "type": "number",
+              "minimum": 0.3,
+              "maximum": 2.0
+            },
+            "intake_depth_scoop_m": {
+              "type": "number",
+              "minimum": 0.05,
+              "maximum": 0.8
+            },
+            "intake_height_m": {
+              "type": "number",
+              "minimum": 0.05,
+              "maximum": 0.6
+            },
+            "intake_thickness_m": {
+              "type": "number",
+              "minimum": 0.01,
+              "maximum": 0.2
             },
             "intake_x_frac": {
               "type": "number",
@@ -794,75 +835,20 @@
               "minimum": 0.05,
               "maximum": 0.7
             },
-            "intake_thickness_m": {
-              "type": "number",
-              "minimum": 0.01,
-              "maximum": 0.2
-            },
-            "intake_height_m": {
-              "type": "number",
-              "minimum": 0.05,
-              "maximum": 0.6
-            },
-            "intake_depth_scoop_m": {
-              "type": "number",
-              "minimum": 0.05,
-              "maximum": 0.8
-            },
-            "intake_depth_full_m": {
-              "type": "number",
-              "minimum": 0.3,
-              "maximum": 2.0
-            },
-            "sill_x_frac": {
-              "type": "number",
-              "minimum": 0.7,
-              "maximum": 1.05
-            },
-            "sill_y0_frac": {
-              "type": "number",
-              "minimum": 0.0,
-              "maximum": 0.3
-            },
-            "sill_thickness_m": {
-              "type": "number",
-              "minimum": 0.01,
-              "maximum": 0.2
-            },
-            "sill_height_m": {
+            "light_h_m": {
               "type": "number",
               "minimum": 0.02,
               "maximum": 0.3
             },
-            "sill_shrink_m": {
+            "light_y0_frac": {
               "type": "number",
-              "minimum": 0.0,
-              "maximum": 1.0
+              "minimum": 0.05,
+              "maximum": 0.6
             },
-            "mirror_x_frac": {
+            "livery_aspect": {
               "type": "number",
-              "minimum": 0.6,
-              "maximum": 1.0
-            },
-            "mirror_y0_frac": {
-              "type": "number",
-              "minimum": 0.2,
-              "maximum": 0.9
-            },
-            "mirror_z_offset_m": {
-              "type": "number",
-              "minimum": 0.1,
-              "maximum": 1.2
-            },
-            "mirror_teardrop_m": {
-              "type": "array",
-              "items": {
-                "type": "number",
-                "minimum": 0.001,
-                "maximum": 1.0
-              },
-              "minItems": 3,
-              "maxItems": 3
+              "minimum": 0.5,
+              "maximum": 4.0
             },
             "mirror_angular_m": {
               "type": "array",
@@ -884,40 +870,55 @@
               "minItems": 3,
               "maxItems": 3
             },
-            "light_y0_frac": {
-              "type": "number",
-              "minimum": 0.05,
-              "maximum": 0.6
+            "mirror_teardrop_m": {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": 0.001,
+                "maximum": 1.0
+              },
+              "minItems": 3,
+              "maxItems": 3
             },
-            "light_h_m": {
+            "mirror_x_frac": {
               "type": "number",
-              "minimum": 0.02,
-              "maximum": 0.3
-            },
-            "tail_y0_frac": {
-              "type": "number",
-              "minimum": 0.05,
-              "maximum": 0.6
-            },
-            "tail_h_m": {
-              "type": "number",
-              "minimum": 0.02,
-              "maximum": 0.3
-            },
-            "head_inner_m": {
-              "type": "number",
-              "minimum": 0.02,
-              "maximum": 0.6
-            },
-            "head_outer_frac": {
-              "type": "number",
-              "minimum": 0.5,
+              "minimum": 0.6,
               "maximum": 1.0
             },
-            "thin_h_m": {
+            "mirror_y0_frac": {
               "type": "number",
-              "minimum": 0.01,
-              "maximum": 0.15
+              "minimum": 0.2,
+              "maximum": 0.9
+            },
+            "mirror_z_offset_m": {
+              "type": "number",
+              "minimum": 0.1,
+              "maximum": 1.2
+            },
+            "panel_gap_m": {
+              "type": "number",
+              "minimum": 0.0005,
+              "maximum": 0.02
+            },
+            "panel_line_w_m": {
+              "type": "number",
+              "minimum": 0.002,
+              "maximum": 0.05
+            },
+            "panel_rear_frac": {
+              "type": "number",
+              "minimum": 0.1,
+              "maximum": 0.6
+            },
+            "panel_y0_frac": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 0.4
+            },
+            "panel_y1_frac": {
+              "type": "number",
+              "minimum": 0.4,
+              "maximum": 1.0
             },
             "quad_dx1_m": {
               "type": "number",
@@ -934,6 +935,86 @@
               "minimum": 0.02,
               "maximum": 0.25
             },
+            "rim_lip_frac": {
+              "type": "number",
+              "minimum": 1.0,
+              "maximum": 1.2
+            },
+            "rim_lip_offset_m": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 0.02
+            },
+            "rim_recess_frac": {
+              "type": "number",
+              "minimum": 0.5,
+              "maximum": 1.0
+            },
+            "rim_recess_offset_frac": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            "roof_normal_threshold": {
+              "type": "number",
+              "minimum": 0.5,
+              "maximum": 0.95
+            },
+            "sill_height_m": {
+              "type": "number",
+              "minimum": 0.02,
+              "maximum": 0.3
+            },
+            "sill_shrink_m": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            "sill_thickness_m": {
+              "type": "number",
+              "minimum": 0.01,
+              "maximum": 0.2
+            },
+            "sill_x_frac": {
+              "type": "number",
+              "minimum": 0.7,
+              "maximum": 1.05
+            },
+            "sill_y0_frac": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 0.3
+            },
+            "splitter_thickness_m": {
+              "type": "number",
+              "minimum": 0.005,
+              "maximum": 0.1
+            },
+            "splitter_width_frac": {
+              "type": "number",
+              "minimum": 0.5,
+              "maximum": 1.0
+            },
+            "spoke_gap_frac": {
+              "type": "number",
+              "minimum": 0.5,
+              "maximum": 1.0
+            },
+            "spoke_gap_offset_frac": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            "tail_gap_m": {
+              "type": "number",
+              "minimum": 0.01,
+              "maximum": 0.4
+            },
+            "tail_h_m": {
+              "type": "number",
+              "minimum": 0.02,
+              "maximum": 0.3
+            },
             "tail_inner_m": {
               "type": "number",
               "minimum": 0.01,
@@ -944,10 +1025,30 @@
               "minimum": 0.5,
               "maximum": 1.0
             },
-            "tail_gap_m": {
+            "tail_y0_frac": {
+              "type": "number",
+              "minimum": 0.05,
+              "maximum": 0.6
+            },
+            "thin_h_m": {
               "type": "number",
               "minimum": 0.01,
-              "maximum": 0.4
+              "maximum": 0.15
+            },
+            "underside_threshold": {
+              "type": "number",
+              "minimum": -0.95,
+              "maximum": -0.2
+            },
+            "wing_rear_offset_frac": {
+              "type": "number",
+              "minimum": 0.1,
+              "maximum": 1.5
+            },
+            "wing_support_scale": {
+              "type": "number",
+              "minimum": 0.05,
+              "maximum": 1.0
             },
             "y_drop_m": {
               "type": "number",
@@ -958,11 +1059,6 @@
               "type": "number",
               "minimum": 0.0,
               "maximum": 0.2
-            },
-            "livery_aspect": {
-              "type": "number",
-              "minimum": 0.5,
-              "maximum": 4.0
             }
           }
         },
@@ -976,12 +1072,60 @@
             "bias_carbon",
             "bias_lamp",
             "bias_rim",
+            "bias_rim_lip",
+            "bias_rim_recess",
             "bias_spoke",
+            "bias_spoke_gap",
             "bias_tire",
             "bias_tire_disc",
             "bias_trim"
           ],
           "properties": {
+            "bias_arch": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            "bias_brake": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            "bias_carbon": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            "bias_lamp": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            "bias_rim": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            "bias_rim_lip": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            "bias_rim_recess": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            "bias_spoke": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            "bias_spoke_gap": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
             "bias_tire": {
               "type": "number",
               "minimum": 0.0,
@@ -992,37 +1136,7 @@
               "minimum": 0.0,
               "maximum": 1.0
             },
-            "bias_rim": {
-              "type": "number",
-              "minimum": 0.0,
-              "maximum": 1.0
-            },
-            "bias_spoke": {
-              "type": "number",
-              "minimum": 0.0,
-              "maximum": 1.0
-            },
-            "bias_brake": {
-              "type": "number",
-              "minimum": 0.0,
-              "maximum": 1.0
-            },
-            "bias_arch": {
-              "type": "number",
-              "minimum": 0.0,
-              "maximum": 1.0
-            },
-            "bias_lamp": {
-              "type": "number",
-              "minimum": 0.0,
-              "maximum": 1.0
-            },
             "bias_trim": {
-              "type": "number",
-              "minimum": 0.0,
-              "maximum": 1.0
-            },
-            "bias_carbon": {
               "type": "number",
               "minimum": 0.0,
               "maximum": 1.0

@@ -1,0 +1,16 @@
+{
+  "model": "Koenigsegg Jesko",
+  "catalog": null,
+  "specs": [
+    {
+      "text": "Mesin 5.0L V8 twin-turbo",
+      "source": "brief"
+    },
+    {
+      "text": "1280 hp",
+      "source": "brief"
+    }
+  ],
+  "missing": [],
+  "note": "angka dari brief didahulukan; sisanya dari katalog yang bersumber Wikipedia"
+}

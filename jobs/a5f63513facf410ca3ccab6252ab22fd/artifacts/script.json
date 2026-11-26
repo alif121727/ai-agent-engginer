@@ -1,0 +1,38 @@
+{
+  "model": "Lamborghini Huracan STO",
+  "tagline": "",
+  "lines": [
+    {
+      "sceneIndex": 0,
+      "onScreenText": "Lamborghini Huracan STO",
+      "voiceover": "Lamborghini Huracan STO."
+    },
+    {
+      "sceneIndex": 1,
+      "onScreenText": "Lamborghini Huracan STO",
+      "voiceover": "Garis bodinya bukan kebetulan."
+    },
+    {
+      "sceneIndex": 2,
+      "onScreenText": "",
+      "voiceover": "Salah satu andalannya: 0–100 km/jam 3,0 dtk."
+    },
+    {
+      "sceneIndex": 3,
+      "onScreenText": "",
+      "voiceover": "Kabinnya dibangun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "onScreenText": "",
+      "voiceover": "Di jalan, 640 PS terasa langsung."
+    },
+    {
+      "sceneIndex": 5,
+      "onScreenText": "Lamborghini Huracan STO",
+      "voiceover": "Lamborghini Huracan STO."
+    }
+  ],
+  "sumber": "lokal",
+  "catatan": "saldo LLM habis (HTTP 402); dipakai naskah lokal"
+}

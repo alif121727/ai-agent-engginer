@@ -1,0 +1,41 @@
+{
+  "model": "McLaren 765LT",
+  "catalog": {
+    "merk": "McLaren",
+    "seri": "765LT (berbasis 720S)",
+    "tahun": "2020–2022",
+    "kategori": "balap",
+    "mesin": "V8 4.0L twin-turbo (M840T)",
+    "tenaga": "765 PS",
+    "torsi": "800 Nm",
+    "layout": "mid-engine, RWD",
+    "berat": "tidak disebut di sumber",
+    "nol100": "2,8 dtk",
+    "vmax": "330 km/jam",
+    "sumber": "https://en.wikipedia.org/wiki/McLaren_720S"
+  },
+  "specs": [
+    {
+      "text": "V8 4.0L twin-turbo (M840T) · 765 PS",
+      "source": "katalog"
+    },
+    {
+      "text": "Torsi 800 Nm · mid-engine, RWD",
+      "source": "katalog"
+    },
+    {
+      "text": "0–100 km/jam 2,8 dtk · top speed 330 km/jam",
+      "source": "katalog"
+    },
+    {
+      "text": "Produksi 2020–2022",
+      "source": "katalog"
+    },
+    {
+      "text": "Edisi 765 unit dari divisi MSO, 80 kg lebih ringan dari 720S.",
+      "source": "katalog"
+    }
+  ],
+  "missing": [],
+  "note": "angka dari brief didahulukan; sisanya dari katalog yang bersumber Wikipedia"
+}

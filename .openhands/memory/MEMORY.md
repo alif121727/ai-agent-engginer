@@ -136,3 +136,29 @@ Detail panjang ada di `archive/MEMORY-full-2026-11-20.md` dan log harian.
 - Uji visibilitas hero: warnai `body_base` merah terang lalu hitung piksel merah
   (15.5% frame, bbox rasio 2.53 = siluet mobil). Diff antar-model saja tidak
   membuktikan apa pun karena latar juga bergeser.
+
+## car-chase (pipeline render Python, di /workspace/car-chase)
+- Repo git terpisah, belum ada remote. Deps yang wajib: numpy, opencv-python-headless,
+  scipy; untuk test cartpl juga pytest, jsonschema, pillow.
+- **ffmpeg tidak terpasang di image ini.** `apt-get` gagal (bukan root). Pakai
+  `pip install imageio-ffmpeg` lalu symlink binernya ke `~/.local/bin/ffmpeg`
+  dan tambahkan dir itu ke PATH; render_all.py memanggil `ffmpeg` dari PATH.
+- `car_selected.json` adalah **snapshot spec**, bukan referensi hidup. Setelah
+  mengubah `project/cartpl/builder.py` atau `templates/`, WAJIB regenerasi:
+  `cd project && PYTHONPATH=. python3 -m cartpl select mid-engine-supercar \
+   --out /workspace/car-chase/car_selected.json --force`.
+  Kalau tidak, `render.py` menangkap exception lalu diam-diam kembali ke model
+  bawaan `cars.py` (muncul baris `[cartpl] dilewati: ...`).
+- `render.py` punya flag env: `SSAA=2` (2x2 supersampling langit+jalan, +0,65 s/frame),
+  `MB_CARS=3` (motion blur mobil lewat 3 sub-waktu).
+- **Jangan pernah memberi `ts` negatif ke `Wd.sun_dir`**: `sun_el` memakai
+  `(t/60)**1.15`, dan t negatif menghasilkan bilangan kompleks yang meledak
+  sebagai `TypeError: must be real number, not complex`. Klamp ke >= 0.
+- Angka geometri di `cartpl/builder.py` HARUS berasal dari spec: ada test
+  `test_no_magic_numbers_in_builder` yang menolak literal desimal baru.
+  Tambahkan ke `templates/cars/_base.json` DAN ke `templates/schema/v1.json`
+  (`required` maupun `properties`), lalu ke `cartpl/estimate.py` bila jumlah
+  quad berubah (test estimasi menuntut selisih < 5%).
+- Tidak bisa "melihat" gambar: verifikasi selalu kuantitatif lewat
+  `work/cmp.py` (region_stats) dan `work/zoom.py` (statistik crop).
+  Nama file `work/inspect.py` membayangi modul stdlib `inspect` — jangan.

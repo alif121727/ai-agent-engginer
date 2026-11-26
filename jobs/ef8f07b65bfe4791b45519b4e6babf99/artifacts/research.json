@@ -1,0 +1,41 @@
+{
+  "model": "Chevrolet Corvette C8 Z06",
+  "catalog": {
+    "merk": "Chevrolet",
+    "seri": "C8 Z06",
+    "tahun": "2023–sekarang",
+    "kategori": "balap",
+    "mesin": "V8 5.5L flat-plane naturally aspirated (LT6)",
+    "tenaga": "670 PS",
+    "torsi": "624 Nm",
+    "layout": "mid-engine, RWD",
+    "berat": "1.660 kg (dry)",
+    "nol100": "2,6 dtk",
+    "vmax": "314 km/jam",
+    "sumber": "https://en.wikipedia.org/wiki/Chevrolet_Corvette_(C8)"
+  },
+  "specs": [
+    {
+      "text": "V8 5.5L flat-plane naturally aspirated (LT6) · 670 PS",
+      "source": "katalog"
+    },
+    {
+      "text": "Torsi 624 Nm · mid-engine, RWD",
+      "source": "katalog"
+    },
+    {
+      "text": "0–100 km/jam 2,6 dtk · top speed 314 km/jam",
+      "source": "katalog"
+    },
+    {
+      "text": "Berat 1.660 kg (dry) · produksi 2023–sekarang",
+      "source": "katalog"
+    },
+    {
+      "text": "V8 flat-plane paling bertenaga yang pernah dibuat untuk mobil produksi Amerika.",
+      "source": "katalog"
+    }
+  ],
+  "missing": [],
+  "note": "angka dari brief didahulukan; sisanya dari katalog yang bersumber Wikipedia"
+}

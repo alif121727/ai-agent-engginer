@@ -1,0 +1,38 @@
+{
+  "model": "Koenigsegg Jesko",
+  "tagline": "Hipercar dari Swedia",
+  "lines": [
+    {
+      "sceneIndex": 0,
+      "onScreenText": "Hipercar dari Swedia",
+      "voiceover": "Koenigsegg Jesko. Hipercar dari Swedia."
+    },
+    {
+      "sceneIndex": 1,
+      "onScreenText": "Koenigsegg Jesko",
+      "voiceover": "Dari setiap sudut, Koenigsegg Jesko tidak ingin dilupakan."
+    },
+    {
+      "sceneIndex": 2,
+      "onScreenText": "Mesin 5.0L V8 twin-turbo",
+      "voiceover": "Salah satu andalannya: Mesin 5.0L V8 twin-turbo."
+    },
+    {
+      "sceneIndex": 3,
+      "onScreenText": "1280 hp",
+      "voiceover": "Kabinnya dibangun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "onScreenText": "",
+      "voiceover": "Di jalan, tenaganya terasa langsung."
+    },
+    {
+      "sceneIndex": 5,
+      "onScreenText": "Koenigsegg Jesko",
+      "voiceover": "Hipercar dari Swedia."
+    }
+  ],
+  "sumber": "lokal",
+  "catatan": "saldo LLM habis (HTTP 402); dipakai naskah lokal"
+}

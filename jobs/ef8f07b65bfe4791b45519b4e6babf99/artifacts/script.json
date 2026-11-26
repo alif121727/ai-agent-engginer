@@ -1,0 +1,43 @@
+{
+  "model": "Chevrolet Corvette C8 Z06",
+  "tagline": "",
+  "lines": [
+    {
+      "sceneIndex": 0,
+      "onScreenText": "Chevrolet Corvette C8 Z06",
+      "voiceover": "Chevrolet Corvette C8 Z06."
+    },
+    {
+      "sceneIndex": 1,
+      "onScreenText": "Chevrolet Corvette C8 Z06",
+      "voiceover": "Garis bodinya bukan kebetulan."
+    },
+    {
+      "sceneIndex": 2,
+      "onScreenText": "",
+      "voiceover": "Salah satu andalannya: 0–100 km/jam 2,6 dtk."
+    },
+    {
+      "sceneIndex": 3,
+      "onScreenText": "",
+      "voiceover": "Kabinnya dibangun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "onScreenText": "",
+      "voiceover": "Di jalan, 670 PS terasa langsung."
+    },
+    {
+      "sceneIndex": 5,
+      "onScreenText": "",
+      "voiceover": "V8 5.5L flat-plane."
+    },
+    {
+      "sceneIndex": 6,
+      "onScreenText": "Chevrolet Corvette C8 Z06",
+      "voiceover": "Chevrolet Corvette C8 Z06."
+    }
+  ],
+  "sumber": "lokal",
+  "catatan": "saldo LLM habis (HTTP 402); dipakai naskah lokal"
+}

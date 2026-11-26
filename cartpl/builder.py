@@ -165,6 +165,7 @@ def _loft(acc: _Acc, sections: list[dict], exponent: float, nsec: int, nring: in
 def _wheel(acc: _Acc, spec: dict, sx: int, wz: float, r: float, nspoke: int) -> None:
     geo, wh = spec["geometry"], spec["wheels"]
     sh = geo["shading"]
+    prop = geo["proportions"]
     bw = _interp_at(spec["sections"], "half_width", wz)
     x_out = sx * (bw - geo["wheel_out_inset_m"])
     x_in = sx * (bw - geo["wheel_out_inset_m"] - geo["wheel_depth_m"])
@@ -195,8 +196,25 @@ def _wheel(acc: _Acc, spec: dict, sx: int, wz: float, r: float, nspoke: int) -> 
                     np.array([n, n, n, n]))
 
     disc(x_out, r, KIND_TIRE, sh["bias_tire_disc"])
+    # Cekungan gelap antara hub dan bibir rim: tanpa ini bidang rim terlihat
+    # seperti cakram datar yang menempel, bukan roda berpalang (P1#3).
+    disc(x_out + sx * geo["rim_disc_offset_m"] * prop["rim_recess_offset_frac"],
+         r * geo["rim_disc_frac"] * prop["rim_recess_frac"],
+         KIND_ARCH, sh["bias_rim_recess"])
     disc(x_out + sx * geo["rim_disc_offset_m"], r * geo["rim_disc_frac"],
          KIND_RIM, sh["bias_rim"])
+    # bibir rim: cincin sempit sedikit lebih keluar supaya ada kilau tepi
+    disc(x_out + sx * (geo["rim_disc_offset_m"] + prop["rim_lip_offset_m"]),
+         r * geo["rim_disc_frac"] * prop["rim_lip_frac"],
+         KIND_RIM, sh["bias_rim_lip"])
+
+    # Wedge gelap antar spoke: di dunia nyata celah itu adalah rotor dan
+    # ruang kosong, bukan permukaan rim. Tanpa ini roda tampak seperti
+    # cakram penuh (P1#3).
+    if nspoke > 0:
+        disc(x_out + sx * geo["rim_disc_offset_m"] * prop["spoke_gap_offset_frac"],
+             r * geo["rim_disc_frac"] * prop["spoke_gap_frac"],
+             KIND_ARCH, sh["bias_spoke_gap"])
 
     if nspoke > 0:
         rr = r * geo["spoke_outer_frac"]
@@ -261,6 +279,59 @@ def _aero_front(acc: _Acc, spec: dict, front_z: float, floor_y: float) -> None:
             y = floor_y + prop["canard_y0_frac"] + i * prop["canard_dy_m"]
             acc.box((sx * hw * prop["canard_x_frac"], y, front_z - prop["canard_z_offset_m"]),
                     prop["canard_dims_m"], KIND_CARBON, sh["bias_carbon"])
+
+
+def _panel_lines(acc: _Acc, spec: dict, floor_y: float, wz_front: float,
+                 wz_rear: float) -> None:
+    """Garis panel (celah pintu) dan ventilasi kap.
+
+    Ditempatkan sedikit di luar permukaan bodi (offset 4 mm) supaya tidak
+    berkedip karena z-fighting dengan quad bodi, dan memakai material gelap
+    sehingga terbaca sebagai celah, bukan tonjolan.
+    """
+    geo, dims = spec["geometry"], spec["dimensions"]
+    prop, sh = geo["proportions"], geo["shading"]
+    sec = spec["sections"]
+    hw = dims["body_width_max"]
+    gap = prop["panel_gap_m"]
+    lw = prop["panel_line_w_m"]
+
+    def surf(z):
+        return (_interp_at(sec, "half_width", z), _interp_at(sec, "y_bottom", z),
+                _interp_at(sec, "y_top", z))
+
+    # --- celah pintu: garis vertikal di kedua sisi, dari bawah bodi ke
+    #     garis pinggang, pada z pintu depan-belakang.
+    z_door = (wz_front + wz_rear) / 2
+    w_door, yb, yt = surf(z_door)
+    y0 = yb + (yt - yb) * prop["panel_y0_frac"]
+    y1 = yb + (yt - yb) * prop["panel_y1_frac"]
+    for sx in (-1, 1):
+        x = sx * (w_door + gap)
+        acc.add([(x, y0, z_door - lw), (x, y0, z_door + lw),
+                 (x, y1, z_door + lw), (x, y1, z_door - lw)],
+                KIND_TRIM, sh["bias_trim"], np.array([[sx, 0, 0]] * 4))
+        # celah pintu belakang
+        z2 = z_door - (wz_front - wz_rear) * prop["panel_rear_frac"]
+        w2, yb2, yt2 = surf(z2)
+        ax = sx * (w2 + gap)
+        acc.add([(ax, y0, z2 - lw), (ax, y0, z2 + lw),
+                 (ax, yb2 + (yt2 - yb2) * prop["panel_y1_frac"], z2 + lw),
+                 (ax, yb2 + (yt2 - yb2) * prop["panel_y1_frac"], z2 - lw)],
+                KIND_TRIM, sh["bias_trim"], np.array([[sx, 0, 0]] * 4))
+
+    # --- ventilasi kap: tiga slot di atas kap depan.
+    z_hood = wz_front - (wz_front - wz_rear) * prop["hood_vent_z_frac"]
+    wh, ybh, yth = surf(z_hood)
+    hw_v = prop["hood_vent_w_m"] / 2
+    hd_v = prop["hood_vent_d_m"] / 2
+    for k in range(prop["hood_vent_count"]):
+        off = (k - (prop["hood_vent_count"] - 1) / 2) * wh * prop["hood_vent_spread_frac"]
+        x0, x1 = off - hw_v, off + hw_v
+        zz = z_hood + hd_v
+        acc.add([(x0, yth + gap, zz - hd_v), (x1, yth + gap, zz - hd_v),
+                 (x1, yth + gap, zz + hd_v), (x0, yth + gap, zz + hd_v)],
+                KIND_TRIM, sh["bias_trim"], np.array([[0, 1, 0]] * 4))
 
 
 def _side_details(acc: _Acc, spec: dict, floor_y: float,
@@ -385,6 +456,7 @@ def build_car(spec: dict, lod=None) -> Mesh:
           * geo["proportions"]["wing_rear_offset_frac"])
     _aero_front(acc, spec, front_z, floor_y)
     _side_details(acc, spec, floor_y, wz_front, wz_rear)
+    _panel_lines(acc, spec, floor_y, wz_front, wz_rear)
     lights = _lights(acc, spec, front_z, rear_z, floor_y)
 
     Q = np.array(acc.Q, np.float32)

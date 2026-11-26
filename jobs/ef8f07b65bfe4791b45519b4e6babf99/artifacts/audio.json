@@ -1,0 +1,220 @@
+{
+  "loudnessLufs": -16,
+  "truePeakDbtp": -1,
+  "audioPlan": [
+    {
+      "sceneIndex": 0,
+      "sceneKey": "hook",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-jauh",
+      "eventDominan": "idle",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 8,
+        "firingPerRev": 4,
+        "rpm": 4730,
+        "redline": 8600
+      },
+      "sumber": "katalog:chevrolet-corvette-c8-z06"
+    },
+    {
+      "sceneIndex": 1,
+      "sceneKey": "exterior",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-dekat",
+      "eventDominan": "rev",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 8,
+        "firingPerRev": 4,
+        "rpm": 4730,
+        "redline": 8600
+      },
+      "sumber": "katalog:chevrolet-corvette-c8-z06"
+    },
+    {
+      "sceneIndex": 2,
+      "sceneKey": "features",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-dekat",
+      "eventDominan": "rev",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 8,
+        "firingPerRev": 4,
+        "rpm": 4730,
+        "redline": 8600
+      },
+      "sumber": "katalog:chevrolet-corvette-c8-z06"
+    },
+    {
+      "sceneIndex": 3,
+      "sceneKey": "interior",
+      "penggerak": "ICE",
+      "posisiKamera": "interior",
+      "eventDominan": "idle",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 8,
+        "firingPerRev": 4,
+        "rpm": 1100,
+        "redline": 8600
+      },
+      "sumber": "katalog:chevrolet-corvette-c8-z06"
+    },
+    {
+      "sceneIndex": 4,
+      "sceneKey": "action",
+      "penggerak": "ICE",
+      "posisiKamera": "pass-by",
+      "eventDominan": "akselerasi",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 8,
+        "firingPerRev": 4,
+        "rpm": 4730,
+        "redline": 8600
+      },
+      "sumber": "katalog:chevrolet-corvette-c8-z06"
+    },
+    {
+      "sceneIndex": 5,
+      "sceneKey": "detail_wheel",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-dekat",
+      "eventDominan": "rev",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 8,
+        "firingPerRev": 4,
+        "rpm": 4730,
+        "redline": 8600
+      },
+      "sumber": "katalog:chevrolet-corvette-c8-z06"
+    },
+    {
+      "sceneIndex": 6,
+      "sceneKey": "cta",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-jauh",
+      "eventDominan": "idle",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 8,
+        "firingPerRev": 4,
+        "rpm": 4730,
+        "redline": 8600
+      },
+      "sumber": "katalog:chevrolet-corvette-c8-z06"
+    }
+  ],
+  "music": {
+    "ducking": true,
+    "gain": -18
+  },
+  "engine": {
+    "profile": "V8 · 8 silinder · na · redline 8600 rpm",
+    "synthesizedLocally": true,
+    "externalPrompts": [
+      {
+        "id": "start",
+        "label": "Start & idle",
+        "scene": "Engine bay",
+        "prompt": "Car engine ignition start, starter motor cranking, naturally aspirated V8 engine (LT6) coming to life, settling into a hard-edged race-spec idle at 1100 rpm, close-up microphone, high quality, studio recording, realistic, no music, no voice, dry signal"
+      },
+      {
+        "id": "rev",
+        "label": "Rev & akselerasi",
+        "scene": "Driving",
+        "prompt": "High-performance naturally aspirated V8 engine revving hard through the gears up to 8000 rpm, hard-edged race-spec exhaust note, exhaust crackle and pop on lift-off, backfire, Chevrolet Corvette C8 Z06, high quality, studio recording, realistic, no music, no voice, dry signal"
+      },
+      {
+        "id": "exhaust",
+        "label": "Knalpot dekat",
+        "scene": "Detail",
+        "prompt": "Close-mic exhaust recording of a naturally aspirated V8 engine, hard-edged race-spec tone, blipping the throttle, tailpipe resonance, high quality, studio recording, realistic, no music, no voice, dry signal"
+      },
+      {
+        "id": "passby",
+        "label": "Melintas (Doppler)",
+        "scene": "Action",
+        "prompt": "naturally aspirated V8 car passing by at high speed, Doppler effect, hard-edged race-spec exhaust note sweeping past, tyre noise on tarmac, realistic racing sound, high quality, studio recording, realistic, no music, no voice, dry signal"
+      },
+      {
+        "id": "idle",
+        "label": "Idle kabin",
+        "scene": "Interior",
+        "prompt": "Interior of a Chevrolet Corvette C8 Z06, engine idling at 1100 rpm, hard-edged race-spec note muffled through the firewall, faint cabin ambience, high quality, studio recording, realistic, no music, no voice, dry signal"
+      }
+    ],
+    "negativePrompt": "music, melody, voice, speech, singing, robotic voice, clipping audio, background hiss, wind noise, distortion, cartoon sound, synthesized beeps, phone recording"
+  },
+  "sfx": [
+    {
+      "sceneIndex": 0,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 1,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 2,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 3,
+      "bed": "cabin-ambience",
+      "promptId": "idle"
+    },
+    {
+      "sceneIndex": 4,
+      "bed": "engine-rev",
+      "promptId": "passby"
+    },
+    {
+      "sceneIndex": 5,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 6,
+      "bed": "studio-room",
+      "promptId": "rev"
+    }
+  ],
+  "subtitles": [
+    {
+      "sceneIndex": 0,
+      "text": "Chevrolet Corvette C8 Z06."
+    },
+    {
+      "sceneIndex": 1,
+      "text": "Garis bodinya bukan kebetulan."
+    },
+    {
+      "sceneIndex": 2,
+      "text": "Salah satu andalannya: 0–100 km/jam 2,6 dtk."
+    },
+    {
+      "sceneIndex": 3,
+      "text": "Kabinnya dibangun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "text": "Di jalan, 670 PS terasa langsung."
+    },
+    {
+      "sceneIndex": 5,
+      "text": "V8 5.5L flat-plane."
+    },
+    {
+      "sceneIndex": 6,
+      "text": "Chevrolet Corvette C8 Z06."
+    }
+  ],
+  "ttsAvailable": false
+}

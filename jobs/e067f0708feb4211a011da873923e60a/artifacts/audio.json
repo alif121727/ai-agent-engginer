@@ -1,0 +1,268 @@
+{
+  "loudnessLufs": -16,
+  "truePeakDbtp": -1,
+  "audioPlan": [
+    {
+      "sceneIndex": 0,
+      "sceneKey": "hook",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-jauh",
+      "eventDominan": "idle",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 8,
+        "firingPerRev": 4,
+        "rpm": 4400,
+        "redline": 8000
+      },
+      "sumber": "katalog:mclaren-765lt"
+    },
+    {
+      "sceneIndex": 1,
+      "sceneKey": "exterior",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-dekat",
+      "eventDominan": "rev",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 8,
+        "firingPerRev": 4,
+        "rpm": 4400,
+        "redline": 8000
+      },
+      "sumber": "katalog:mclaren-765lt"
+    },
+    {
+      "sceneIndex": 2,
+      "sceneKey": "features",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-dekat",
+      "eventDominan": "rev",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 8,
+        "firingPerRev": 4,
+        "rpm": 4400,
+        "redline": 8000
+      },
+      "sumber": "katalog:mclaren-765lt"
+    },
+    {
+      "sceneIndex": 3,
+      "sceneKey": "interior",
+      "penggerak": "ICE",
+      "posisiKamera": "interior",
+      "eventDominan": "idle",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 8,
+        "firingPerRev": 4,
+        "rpm": 1100,
+        "redline": 8000
+      },
+      "sumber": "katalog:mclaren-765lt"
+    },
+    {
+      "sceneIndex": 4,
+      "sceneKey": "action",
+      "penggerak": "ICE",
+      "posisiKamera": "pass-by",
+      "eventDominan": "akselerasi",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 8,
+        "firingPerRev": 4,
+        "rpm": 4400,
+        "redline": 8000
+      },
+      "sumber": "katalog:mclaren-765lt"
+    },
+    {
+      "sceneIndex": 5,
+      "sceneKey": "detail_wheel",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-dekat",
+      "eventDominan": "rev",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 8,
+        "firingPerRev": 4,
+        "rpm": 4400,
+        "redline": 8000
+      },
+      "sumber": "katalog:mclaren-765lt"
+    },
+    {
+      "sceneIndex": 6,
+      "sceneKey": "detail_engine",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-dekat",
+      "eventDominan": "rev",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 8,
+        "firingPerRev": 4,
+        "rpm": 4400,
+        "redline": 8000
+      },
+      "sumber": "katalog:mclaren-765lt"
+    },
+    {
+      "sceneIndex": 7,
+      "sceneKey": "night",
+      "penggerak": "ICE",
+      "posisiKamera": "pass-by",
+      "eventDominan": "akselerasi",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 8,
+        "firingPerRev": 4,
+        "rpm": 4400,
+        "redline": 8000
+      },
+      "sumber": "katalog:mclaren-765lt"
+    },
+    {
+      "sceneIndex": 8,
+      "sceneKey": "cta",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-jauh",
+      "eventDominan": "idle",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 8,
+        "firingPerRev": 4,
+        "rpm": 4400,
+        "redline": 8000
+      },
+      "sumber": "katalog:mclaren-765lt"
+    }
+  ],
+  "music": {
+    "ducking": true,
+    "gain": -18
+  },
+  "engine": {
+    "profile": "V8 · 8 silinder · turbo · redline 8000 rpm",
+    "synthesizedLocally": true,
+    "externalPrompts": [
+      {
+        "id": "start",
+        "label": "Start & idle",
+        "scene": "Engine bay",
+        "prompt": "Car engine ignition start, starter motor cranking, twin-turbocharged V8 engine (M840T) coming to life, settling into a hard-edged race-spec idle at 1100 rpm, close-up microphone, high quality, studio recording, realistic, no music, no voice, dry signal"
+      },
+      {
+        "id": "rev",
+        "label": "Rev & akselerasi",
+        "scene": "Driving",
+        "prompt": "High-performance twin-turbocharged V8 engine revving hard through the gears up to 8000 rpm, hard-edged race-spec exhaust note, turbo spool and blow-off flutter, turbo whistle, exhaust crackle and pop on lift-off, backfire, McLaren 765LT, high quality, studio recording, realistic, no music, no voice, dry signal"
+      },
+      {
+        "id": "exhaust",
+        "label": "Knalpot dekat",
+        "scene": "Detail",
+        "prompt": "Close-mic exhaust recording of a twin-turbocharged V8 engine, hard-edged race-spec tone, blipping the throttle, wastegate flutter, tailpipe resonance, high quality, studio recording, realistic, no music, no voice, dry signal"
+      },
+      {
+        "id": "passby",
+        "label": "Melintas (Doppler)",
+        "scene": "Action",
+        "prompt": "twin-turbocharged V8 car passing by at high speed, Doppler effect, hard-edged race-spec exhaust note sweeping past, turbo spool, tyre noise on tarmac, realistic racing sound, high quality, studio recording, realistic, no music, no voice, dry signal"
+      },
+      {
+        "id": "idle",
+        "label": "Idle kabin",
+        "scene": "Interior",
+        "prompt": "Interior of a McLaren 765LT, engine idling at 1100 rpm, hard-edged race-spec note muffled through the firewall, faint cabin ambience, high quality, studio recording, realistic, no music, no voice, dry signal"
+      }
+    ],
+    "negativePrompt": "music, melody, voice, speech, singing, robotic voice, clipping audio, background hiss, wind noise, distortion, cartoon sound, synthesized beeps, phone recording"
+  },
+  "sfx": [
+    {
+      "sceneIndex": 0,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 1,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 2,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 3,
+      "bed": "cabin-ambience",
+      "promptId": "idle"
+    },
+    {
+      "sceneIndex": 4,
+      "bed": "engine-rev",
+      "promptId": "passby"
+    },
+    {
+      "sceneIndex": 5,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 6,
+      "bed": "studio-room",
+      "promptId": "start"
+    },
+    {
+      "sceneIndex": 7,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 8,
+      "bed": "studio-room",
+      "promptId": "rev"
+    }
+  ],
+  "subtitles": [
+    {
+      "sceneIndex": 0,
+      "text": "McLaren 765LT. McLaren 765LT (berbasis 720S), 2020–2022."
+    },
+    {
+      "sceneIndex": 1,
+      "text": "Ini McLaren 765LT, 2020–2022. Mesin V8 4.0L twin-turbo (M840T)."
+    },
+    {
+      "sceneIndex": 2,
+      "text": "Salah satu andalannya: 0–100 km/jam 2,8 dtk · top speed 330 km/jam."
+    },
+    {
+      "sceneIndex": 3,
+      "text": "Kabin McLaren 765LT (berbasis 720S), semua tersusun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "text": "Di jalan, 765 PS, nol sampai seratus 2,8 dtk."
+    },
+    {
+      "sceneIndex": 5,
+      "text": "V8 4.0L twin-turbo (M840T) · 765 PS."
+    },
+    {
+      "sceneIndex": 6,
+      "text": "Jantungnya V8 4.0L twin-turbo (M840T), 765 PS."
+    },
+    {
+      "sceneIndex": 7,
+      "text": "0–100 km/jam 2,8 dtk · top speed 330 km/jam."
+    },
+    {
+      "sceneIndex": 8,
+      "text": "McLaren 765LT."
+    }
+  ],
+  "ttsAvailable": true
+}

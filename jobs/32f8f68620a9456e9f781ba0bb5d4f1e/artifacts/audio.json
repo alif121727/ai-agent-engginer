@@ -1,0 +1,532 @@
+{
+  "loudnessLufs": -16,
+  "truePeakDbtp": -1,
+  "audioPlan": [
+    {
+      "sceneIndex": 0,
+      "sceneKey": "hook",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-jauh",
+      "eventDominan": "idle",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 6,
+        "firingPerRev": 3,
+        "rpm": 4675,
+        "redline": 8500
+      },
+      "sumber": "katalog:bmw-m4-gt3"
+    },
+    {
+      "sceneIndex": 1,
+      "sceneKey": "exterior",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-dekat",
+      "eventDominan": "rev",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 6,
+        "firingPerRev": 3,
+        "rpm": 4675,
+        "redline": 8500
+      },
+      "sumber": "katalog:bmw-m4-gt3"
+    },
+    {
+      "sceneIndex": 2,
+      "sceneKey": "features",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-dekat",
+      "eventDominan": "rev",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 6,
+        "firingPerRev": 3,
+        "rpm": 4675,
+        "redline": 8500
+      },
+      "sumber": "katalog:bmw-m4-gt3"
+    },
+    {
+      "sceneIndex": 3,
+      "sceneKey": "interior",
+      "penggerak": "ICE",
+      "posisiKamera": "interior",
+      "eventDominan": "idle",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 6,
+        "firingPerRev": 3,
+        "rpm": 1100,
+        "redline": 8500
+      },
+      "sumber": "katalog:bmw-m4-gt3"
+    },
+    {
+      "sceneIndex": 4,
+      "sceneKey": "action",
+      "penggerak": "ICE",
+      "posisiKamera": "pass-by",
+      "eventDominan": "akselerasi",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 6,
+        "firingPerRev": 3,
+        "rpm": 4675,
+        "redline": 8500
+      },
+      "sumber": "katalog:bmw-m4-gt3"
+    },
+    {
+      "sceneIndex": 5,
+      "sceneKey": "detail_wheel",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-dekat",
+      "eventDominan": "rev",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 6,
+        "firingPerRev": 3,
+        "rpm": 4675,
+        "redline": 8500
+      },
+      "sumber": "katalog:bmw-m4-gt3"
+    },
+    {
+      "sceneIndex": 6,
+      "sceneKey": "detail_engine",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-dekat",
+      "eventDominan": "rev",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 6,
+        "firingPerRev": 3,
+        "rpm": 4675,
+        "redline": 8500
+      },
+      "sumber": "katalog:bmw-m4-gt3"
+    },
+    {
+      "sceneIndex": 7,
+      "sceneKey": "night",
+      "penggerak": "ICE",
+      "posisiKamera": "pass-by",
+      "eventDominan": "akselerasi",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 6,
+        "firingPerRev": 3,
+        "rpm": 4675,
+        "redline": 8500
+      },
+      "sumber": "katalog:bmw-m4-gt3"
+    },
+    {
+      "sceneIndex": 8,
+      "sceneKey": "lifestyle",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-jauh",
+      "eventDominan": "idle",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 6,
+        "firingPerRev": 3,
+        "rpm": 4675,
+        "redline": 8500
+      },
+      "sumber": "katalog:bmw-m4-gt3"
+    },
+    {
+      "sceneIndex": 9,
+      "sceneKey": "detail_wheel_2",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-jauh",
+      "eventDominan": "idle",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 6,
+        "firingPerRev": 3,
+        "rpm": 4675,
+        "redline": 8500
+      },
+      "sumber": "katalog:bmw-m4-gt3"
+    },
+    {
+      "sceneIndex": 10,
+      "sceneKey": "detail_engine_2",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-jauh",
+      "eventDominan": "idle",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 6,
+        "firingPerRev": 3,
+        "rpm": 4675,
+        "redline": 8500
+      },
+      "sumber": "katalog:bmw-m4-gt3"
+    },
+    {
+      "sceneIndex": 11,
+      "sceneKey": "night_2",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-jauh",
+      "eventDominan": "idle",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 6,
+        "firingPerRev": 3,
+        "rpm": 4675,
+        "redline": 8500
+      },
+      "sumber": "katalog:bmw-m4-gt3"
+    },
+    {
+      "sceneIndex": 12,
+      "sceneKey": "lifestyle_2",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-jauh",
+      "eventDominan": "idle",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 6,
+        "firingPerRev": 3,
+        "rpm": 4675,
+        "redline": 8500
+      },
+      "sumber": "katalog:bmw-m4-gt3"
+    },
+    {
+      "sceneIndex": 13,
+      "sceneKey": "detail_wheel_3",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-jauh",
+      "eventDominan": "idle",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 6,
+        "firingPerRev": 3,
+        "rpm": 4675,
+        "redline": 8500
+      },
+      "sumber": "katalog:bmw-m4-gt3"
+    },
+    {
+      "sceneIndex": 14,
+      "sceneKey": "detail_engine_3",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-jauh",
+      "eventDominan": "idle",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 6,
+        "firingPerRev": 3,
+        "rpm": 4675,
+        "redline": 8500
+      },
+      "sumber": "katalog:bmw-m4-gt3"
+    },
+    {
+      "sceneIndex": 15,
+      "sceneKey": "night_3",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-jauh",
+      "eventDominan": "idle",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 6,
+        "firingPerRev": 3,
+        "rpm": 4675,
+        "redline": 8500
+      },
+      "sumber": "katalog:bmw-m4-gt3"
+    },
+    {
+      "sceneIndex": 16,
+      "sceneKey": "lifestyle_3",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-jauh",
+      "eventDominan": "idle",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 6,
+        "firingPerRev": 3,
+        "rpm": 4675,
+        "redline": 8500
+      },
+      "sumber": "katalog:bmw-m4-gt3"
+    },
+    {
+      "sceneIndex": 17,
+      "sceneKey": "detail_wheel_4",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-jauh",
+      "eventDominan": "idle",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 6,
+        "firingPerRev": 3,
+        "rpm": 4675,
+        "redline": 8500
+      },
+      "sumber": "katalog:bmw-m4-gt3"
+    },
+    {
+      "sceneIndex": 18,
+      "sceneKey": "detail_engine_4",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-jauh",
+      "eventDominan": "idle",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 6,
+        "firingPerRev": 3,
+        "rpm": 4675,
+        "redline": 8500
+      },
+      "sumber": "katalog:bmw-m4-gt3"
+    },
+    {
+      "sceneIndex": 19,
+      "sceneKey": "cta",
+      "penggerak": "ICE",
+      "posisiKamera": "eksterior-jauh",
+      "eventDominan": "idle",
+      "permukaan": "aspal",
+      "mesin": {
+        "silinder": 6,
+        "firingPerRev": 3,
+        "rpm": 4675,
+        "redline": 8500
+      },
+      "sumber": "katalog:bmw-m4-gt3"
+    }
+  ],
+  "music": {
+    "ducking": true,
+    "gain": -18
+  },
+  "engine": {
+    "profile": "I6 · 6 silinder · turbo · redline 8500 rpm",
+    "synthesizedLocally": true,
+    "externalPrompts": [
+      {
+        "id": "start",
+        "label": "Start & idle",
+        "scene": "Engine bay",
+        "prompt": "Car engine ignition start, starter motor cranking, turbocharged inline-six engine (versi balap) coming to life, settling into a hard-edged race-spec idle at 1100 rpm, close-up microphone, high quality, studio recording, realistic, no music, no voice, dry signal"
+      },
+      {
+        "id": "rev",
+        "label": "Rev & akselerasi",
+        "scene": "Driving",
+        "prompt": "High-performance turbocharged inline-six engine revving hard through the gears up to 8500 rpm, hard-edged race-spec exhaust note, turbo spool and blow-off flutter, turbo whistle, exhaust crackle and pop on lift-off, backfire, BMW M4 GT3, high quality, studio recording, realistic, no music, no voice, dry signal"
+      },
+      {
+        "id": "exhaust",
+        "label": "Knalpot dekat",
+        "scene": "Detail",
+        "prompt": "Close-mic exhaust recording of a turbocharged inline-six engine, hard-edged race-spec tone, blipping the throttle, wastegate flutter, tailpipe resonance, high quality, studio recording, realistic, no music, no voice, dry signal"
+      },
+      {
+        "id": "passby",
+        "label": "Melintas (Doppler)",
+        "scene": "Action",
+        "prompt": "turbocharged inline-six car passing by at high speed, Doppler effect, hard-edged race-spec exhaust note sweeping past, turbo spool, tyre noise on tarmac, realistic racing sound, high quality, studio recording, realistic, no music, no voice, dry signal"
+      },
+      {
+        "id": "idle",
+        "label": "Idle kabin",
+        "scene": "Interior",
+        "prompt": "Interior of a BMW M4 GT3, engine idling at 1100 rpm, hard-edged race-spec note muffled through the firewall, faint cabin ambience, high quality, studio recording, realistic, no music, no voice, dry signal"
+      }
+    ],
+    "negativePrompt": "music, melody, voice, speech, singing, robotic voice, clipping audio, background hiss, wind noise, distortion, cartoon sound, synthesized beeps, phone recording"
+  },
+  "sfx": [
+    {
+      "sceneIndex": 0,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 1,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 2,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 3,
+      "bed": "cabin-ambience",
+      "promptId": "idle"
+    },
+    {
+      "sceneIndex": 4,
+      "bed": "engine-rev",
+      "promptId": "passby"
+    },
+    {
+      "sceneIndex": 5,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 6,
+      "bed": "studio-room",
+      "promptId": "start"
+    },
+    {
+      "sceneIndex": 7,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 8,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 9,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 10,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 11,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 12,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 13,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 14,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 15,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 16,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 17,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 18,
+      "bed": "studio-room",
+      "promptId": "rev"
+    },
+    {
+      "sceneIndex": 19,
+      "bed": "studio-room",
+      "promptId": "rev"
+    }
+  ],
+  "subtitles": [
+    {
+      "sceneIndex": 0,
+      "text": "BMW M4 GT3."
+    },
+    {
+      "sceneIndex": 1,
+      "text": "Dari setiap sudut, BMW M4 GT3 tidak ingin dilupakan."
+    },
+    {
+      "sceneIndex": 2,
+      "text": "BMW M4 GT3."
+    },
+    {
+      "sceneIndex": 3,
+      "text": "Kabinnya dibangun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "text": "Di jalan, tidak disebut di sumber terasa langsung."
+    },
+    {
+      "sceneIndex": 5,
+      "text": "Detail BMW M4 GT3."
+    },
+    {
+      "sceneIndex": 6,
+      "text": "Jantungnya Inline-six 3.0L turbo (versi balap)."
+    },
+    {
+      "sceneIndex": 7,
+      "text": "Produksi 2022–sekarang."
+    },
+    {
+      "sceneIndex": 8,
+      "text": "Detail BMW M4 GT3."
+    },
+    {
+      "sceneIndex": 9,
+      "text": "front-engine, RWD."
+    },
+    {
+      "sceneIndex": 10,
+      "text": "Produksi 2022–sekarang."
+    },
+    {
+      "sceneIndex": 11,
+      "text": "Detail BMW M4 GT3."
+    },
+    {
+      "sceneIndex": 12,
+      "text": "front-engine, RWD."
+    },
+    {
+      "sceneIndex": 13,
+      "text": "Produksi 2022–sekarang."
+    },
+    {
+      "sceneIndex": 14,
+      "text": "Detail BMW M4 GT3."
+    },
+    {
+      "sceneIndex": 15,
+      "text": "front-engine, RWD."
+    },
+    {
+      "sceneIndex": 16,
+      "text": "Produksi 2022–sekarang."
+    },
+    {
+      "sceneIndex": 17,
+      "text": "Detail BMW M4 GT3."
+    },
+    {
+      "sceneIndex": 18,
+      "text": "front-engine, RWD."
+    },
+    {
+      "sceneIndex": 19,
+      "text": "BMW M4 GT3."
+    }
+  ],
+  "ttsAvailable": true
+}

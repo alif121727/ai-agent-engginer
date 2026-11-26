@@ -21,13 +21,15 @@ def _loft_quads(n_sections: int, n_ring: int) -> int:
 
 def _wheel_quads(geo: dict, spokes: int) -> int:
     """Satu roda terdiri dari: tapak ban, cakram sisi luar ban, cakram rim,
-    spoke, kotak kaliber (6 sisi), dan cakram arch.
+    cakram cekungan gelap, bibir rim, spoke, kotak kaliber (6 sisi), dan
+    cakram arch.
 
     Cakram sisi luar ban mudah terlewat saat menghitung manual; tanpanya
-    estimasi kurang 20 quad per roda (80 per mobil).
+    estimasi kurang 20 quad per roda (80 per mobil). Cekungan + bibir rim
+    masing-masing menambah satu cakram penuh (m quad).
     """
     m = geo["tire_segments"]
-    return m + m + m + spokes + 6 + m
+    return m + m + m + spokes + 6 + m + 2 * m
 
 
 def _wing_quads(wing: dict) -> int:
@@ -47,6 +49,11 @@ def _aero_quads(spec: dict) -> int:
         n += 6
     n += 6 * aero.get("canards", 0) * 2       # kiri + kanan
     return n
+
+
+def _panel_quads() -> int:
+    """Garis panel: 2 celah pintu per sisi + 3 slot ventilasi kap."""
+    return 4 + 3
 
 
 def _side_quads(spec: dict) -> int:
@@ -87,6 +94,7 @@ def estimate_lod(spec: dict, lod: dict) -> dict:
         "aero_front": _aero_quads(spec),
         "side_details": _side_quads(spec),
         "lights": _light_quads(spec),
+        "panel_lines": _panel_quads(),
     }
     n_quads = sum(breakdown.values())
     return {

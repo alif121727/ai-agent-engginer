@@ -1,0 +1,199 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "name": "berkas-video",
+      "ok": true,
+      "detail": "38.6 MB"
+    },
+    {
+      "name": "terbaca-ffprobe",
+      "ok": true,
+      "detail": "h264 1920x1080 40.0 dtk"
+    },
+    {
+      "name": "durasi-sesuai",
+      "ok": true,
+      "detail": "video 40.0 dtk vs rencana 40.0 dtk"
+    },
+    {
+      "name": "ada-audio",
+      "ok": true,
+      "detail": "codec aac"
+    },
+    {
+      "name": "resolusi",
+      "ok": true,
+      "detail": "1920x1080"
+    },
+    {
+      "name": "tanpa-fallback",
+      "ok": true,
+      "detail": "semua aset nyata"
+    },
+    {
+      "name": "audio-plan-lengkap",
+      "ok": true,
+      "detail": "7/7 scene punya rencana audio"
+    },
+    {
+      "name": "loudness-sesuai",
+      "ok": true,
+      "detail": "-16.2 LUFS vs target -16 (selisih 0.2 LU)"
+    },
+    {
+      "name": "true-peak-aman",
+      "ok": true,
+      "detail": "-5.9 dBTP (batas -1)"
+    },
+    {
+      "name": "penggerak-konsisten",
+      "ok": true,
+      "detail": "profil \"V8 · 8 silinder · na · redline 8600 rpm\" cocok dengan rencana"
+    },
+    {
+      "name": "frame-1",
+      "ok": true,
+      "detail": "ketajaman 23"
+    },
+    {
+      "name": "frame-2",
+      "ok": true,
+      "detail": "ketajaman 24"
+    },
+    {
+      "name": "frame-3",
+      "ok": true,
+      "detail": "ketajaman 21"
+    },
+    {
+      "name": "frame-4",
+      "ok": true,
+      "detail": "ketajaman 12"
+    },
+    {
+      "name": "frame-5",
+      "ok": true,
+      "detail": "ketajaman 10"
+    },
+    {
+      "name": "frame-6",
+      "ok": true,
+      "detail": "ketajaman 17"
+    },
+    {
+      "name": "tidak-kosong",
+      "ok": true,
+      "detail": "rata-rata ketajaman 17.8"
+    },
+    {
+      "name": "tidak-beku",
+      "ok": true,
+      "detail": "6 dari 6 frame berbeda"
+    },
+    {
+      "name": "gerakan-terukur",
+      "ok": true,
+      "detail": "skor 0.761 (min 0.2), global 0.684, lokal 0.346"
+    },
+    {
+      "name": "gerakan-scene-1",
+      "ok": true,
+      "detail": "hook: skor 0.618 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-2",
+      "ok": true,
+      "detail": "exterior: skor 0.943 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-3",
+      "ok": true,
+      "detail": "features: skor 0.895 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-4",
+      "ok": true,
+      "detail": "interior: skor 0.846 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-5",
+      "ok": true,
+      "detail": "action: skor 0.294 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-6",
+      "ok": true,
+      "detail": "detail_wheel: skor 1 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-7",
+      "ok": true,
+      "detail": "cta: skor 0.56 (min 0.2)"
+    }
+  ],
+  "assets": {
+    "passed": true,
+    "issues": []
+  },
+  "motion": {
+    "score": 0.761,
+    "globalMotion": 0.684,
+    "localMotion": 0.346,
+    "localRatio": 0.505,
+    "frames": 320,
+    "passed": true
+  },
+  "motionPerScene": [
+    {
+      "scene": 0,
+      "key": "hook",
+      "score": 0.618,
+      "passed": true
+    },
+    {
+      "scene": 1,
+      "key": "exterior",
+      "score": 0.943,
+      "passed": true
+    },
+    {
+      "scene": 2,
+      "key": "features",
+      "score": 0.895,
+      "passed": true
+    },
+    {
+      "scene": 3,
+      "key": "interior",
+      "score": 0.846,
+      "passed": true
+    },
+    {
+      "scene": 4,
+      "key": "action",
+      "score": 0.294,
+      "passed": true
+    },
+    {
+      "scene": 5,
+      "key": "detail_wheel",
+      "score": 1,
+      "passed": true
+    },
+    {
+      "scene": 6,
+      "key": "cta",
+      "score": 0.56,
+      "passed": true
+    }
+  ],
+  "video": {
+    "file": "/workspace/project/jobs/ef8f07b65bfe4791b45519b4e6babf99/video.mp4",
+    "durationSec": 40,
+    "width": 1920,
+    "height": 1080,
+    "codec": "h264"
+  },
+  "checkedAt": "2026-11-24T12:05:16.224Z"
+}

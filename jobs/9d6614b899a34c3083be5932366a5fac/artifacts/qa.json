@@ -1,0 +1,193 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "name": "berkas-video",
+      "ok": true,
+      "detail": "31.3 MB"
+    },
+    {
+      "name": "terbaca-ffprobe",
+      "ok": true,
+      "detail": "h264 1920x1080 30.0 dtk"
+    },
+    {
+      "name": "durasi-sesuai",
+      "ok": true,
+      "detail": "video 30.0 dtk vs rencana 30.0 dtk"
+    },
+    {
+      "name": "ada-audio",
+      "ok": true,
+      "detail": "codec aac"
+    },
+    {
+      "name": "resolusi",
+      "ok": true,
+      "detail": "1920x1080"
+    },
+    {
+      "name": "tanpa-fallback",
+      "ok": true,
+      "detail": "semua aset nyata"
+    },
+    {
+      "name": "audio-plan-lengkap",
+      "ok": true,
+      "detail": "6/6 scene punya rencana audio"
+    },
+    {
+      "name": "loudness-sesuai",
+      "ok": true,
+      "detail": "-16.1 LUFS vs target -16 (selisih 0.1 LU)"
+    },
+    {
+      "name": "true-peak-aman",
+      "ok": true,
+      "detail": "-1.8 dBTP (batas -1)"
+    },
+    {
+      "name": "narasi-ada",
+      "ok": true,
+      "detail": "trek narasi ada (6 scene bersuara)"
+    },
+    {
+      "name": "penggerak-konsisten",
+      "ok": true,
+      "detail": "profil \"V8 · 8 silinder · na · redline 8600 rpm\" cocok dengan rencana"
+    },
+    {
+      "name": "frame-1",
+      "ok": true,
+      "detail": "ketajaman 23"
+    },
+    {
+      "name": "frame-2",
+      "ok": true,
+      "detail": "ketajaman 25"
+    },
+    {
+      "name": "frame-3",
+      "ok": true,
+      "detail": "ketajaman 22"
+    },
+    {
+      "name": "frame-4",
+      "ok": true,
+      "detail": "ketajaman 14"
+    },
+    {
+      "name": "frame-5",
+      "ok": true,
+      "detail": "ketajaman 11"
+    },
+    {
+      "name": "frame-6",
+      "ok": true,
+      "detail": "ketajaman 14"
+    },
+    {
+      "name": "tidak-kosong",
+      "ok": true,
+      "detail": "rata-rata ketajaman 18.2"
+    },
+    {
+      "name": "tidak-beku",
+      "ok": true,
+      "detail": "6 dari 6 frame berbeda"
+    },
+    {
+      "name": "gerakan-terukur",
+      "ok": true,
+      "detail": "skor 0.856 (min 0.2), global 0.771, lokal 0.373"
+    },
+    {
+      "name": "gerakan-scene-1",
+      "ok": true,
+      "detail": "hook: skor 0.616 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-2",
+      "ok": true,
+      "detail": "exterior: skor 0.919 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-3",
+      "ok": true,
+      "detail": "features: skor 0.986 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-4",
+      "ok": true,
+      "detail": "interior: skor 0.937 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-5",
+      "ok": true,
+      "detail": "action: skor 0.422 (min 0.2)"
+    },
+    {
+      "name": "gerakan-scene-6",
+      "ok": true,
+      "detail": "cta: skor 0.701 (min 0.2)"
+    }
+  ],
+  "assets": {
+    "passed": true,
+    "issues": []
+  },
+  "motion": {
+    "score": 0.856,
+    "globalMotion": 0.771,
+    "localMotion": 0.373,
+    "localRatio": 0.484,
+    "frames": 240,
+    "passed": true
+  },
+  "motionPerScene": [
+    {
+      "scene": 0,
+      "key": "hook",
+      "score": 0.616,
+      "passed": true
+    },
+    {
+      "scene": 1,
+      "key": "exterior",
+      "score": 0.919,
+      "passed": true
+    },
+    {
+      "scene": 2,
+      "key": "features",
+      "score": 0.986,
+      "passed": true
+    },
+    {
+      "scene": 3,
+      "key": "interior",
+      "score": 0.937,
+      "passed": true
+    },
+    {
+      "scene": 4,
+      "key": "action",
+      "score": 0.422,
+      "passed": true
+    },
+    {
+      "scene": 5,
+      "key": "cta",
+      "score": 0.701,
+      "passed": true
+    }
+  ],
+  "video": {
+    "file": "/workspace/project/jobs/9d6614b899a34c3083be5932366a5fac/video.mp4",
+    "durationSec": 30,
+    "width": 1920,
+    "height": 1080,
+    "codec": "h264"
+  },
+  "checkedAt": "2026-11-24T13:32:14.007Z"
+}

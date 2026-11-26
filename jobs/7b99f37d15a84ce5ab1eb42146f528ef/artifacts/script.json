@@ -1,0 +1,53 @@
+{
+  "model": "Ford GT",
+  "tagline": "",
+  "lines": [
+    {
+      "sceneIndex": 0,
+      "onScreenText": "Ford GT",
+      "voiceover": "Ford GT."
+    },
+    {
+      "sceneIndex": 1,
+      "onScreenText": "Ford GT",
+      "voiceover": "Dari setiap sudut, Ford GT tidak ingin dilupakan."
+    },
+    {
+      "sceneIndex": 2,
+      "onScreenText": "",
+      "voiceover": "Salah satu andalannya: 0–100 km/jam 2,9 dtk."
+    },
+    {
+      "sceneIndex": 3,
+      "onScreenText": "",
+      "voiceover": "Kabinnya dibangun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "onScreenText": "",
+      "voiceover": "Di jalan, 647 PS terasa langsung."
+    },
+    {
+      "sceneIndex": 5,
+      "onScreenText": "",
+      "voiceover": "V6 3.5L twin-turbo EcoBoost."
+    },
+    {
+      "sceneIndex": 6,
+      "onScreenText": "",
+      "voiceover": "Jantungnya V6 3.5L twin-turbo EcoBoost."
+    },
+    {
+      "sceneIndex": 7,
+      "onScreenText": "",
+      "voiceover": "0–100 km/jam 2,9 dtk."
+    },
+    {
+      "sceneIndex": 8,
+      "onScreenText": "Ford GT",
+      "voiceover": "Ford GT."
+    }
+  ],
+  "sumber": "lokal",
+  "catatan": "saldo LLM habis (HTTP 402); dipakai naskah lokal"
+}

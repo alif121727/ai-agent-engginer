@@ -1,0 +1,32 @@
+{
+  "durationSec": 180,
+  "bumped": false,
+  "originalDuration": 180,
+  "themeId": "porsche",
+  "aspect": "16:9",
+  "sceneCount": 20,
+  "sceneKeys": [
+    "hook",
+    "exterior",
+    "features",
+    "interior",
+    "action",
+    "detail_wheel",
+    "detail_engine",
+    "night",
+    "lifestyle",
+    "detail_wheel_2",
+    "detail_engine_2",
+    "night_2",
+    "lifestyle_2",
+    "detail_wheel_3",
+    "detail_engine_3",
+    "night_3",
+    "lifestyle_3",
+    "detail_wheel_4",
+    "detail_engine_4",
+    "cta"
+  ],
+  "costEstimate": 1.34,
+  "createdAt": "2026-11-23T16:20:03.308Z"
+}

@@ -55,13 +55,14 @@ jobs:
       - name: Tipe TypeScript studio
         run: npm run typecheck:studio
 
+      # Build harus SEBELUM tes: `build:studio` menyalin berkas PWA (sw.js,
+      # manifest.json) ke `public/`, dan tes memeriksa keberadaannya. Tanpa
+      # urutan ini tes gagal di checkout bersih padahal kode benar.
+      - name: Build studio
+        run: npm run build:studio
+
       - name: Test Node
         run: npm test
 
       - name: Test Python
         run: python3 -m pytest tests/ -q
-
-      # Build dijalankan setelah tes supaya kegagalan build juga terlihat di PR,
-      # bukan baru saat deploy.
-      - name: Build studio
-        run: npm run build:studio

@@ -24,9 +24,10 @@ step() {
 source scripts/ensure-tools.sh >/dev/null 2>&1 || bash scripts/ensure-tools.sh
 
 step "Tipe TypeScript studio" npm run --silent typecheck:studio
+# Build dulu: menyalin sw.js/manifest.json ke public/, yang diperiksa npm test.
+step "Build studio" npm run --silent build:studio
 step "Test Node (npm test)" npm run --silent test
 step "Test Python (cartpl)" bash -c 'python3 -m pytest tests/ -q'
-step "Build studio" npm run --silent build:studio
 
 printf '\n'
 if [ "$fail" -eq 0 ]; then

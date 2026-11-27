@@ -525,37 +525,107 @@ function sizeFor(aspect: string): [number, number] {
   }
 }
 
+/**
+ * Pexels: klip jalanan NYATA (bukan foto yang digerakkan). Ini satu-satunya
+ * sumber gratis yang memberi mobil benar-benar melaju di jalan.
+ *
+ * Nama model hampir selalu tidak punya klip ("Toyota GR Supra" -> 0 hasil),
+ * jadi pencarian model hanya percobaan pertama dan selalu ada cadangan
+ * generik. Tanpa cadangan, adapter ini "berhasil" tapi mengembalikan nol
+ * video, lalu pipeline jatuh ke foto diam.
+ */
+const STOK_QUERY_CADANGAN = [
+  'car driving highway cinematic',
+  'sports car driving road',
+  'car overtaking highway',
+  'car driving city night',
+];
+
+function stokQueries(model: string): string[] {
+  const bersih = (model ?? '').replace(/\s+/g, ' ').trim();
+  return bersih ? [`${bersih} driving`, ...STOK_QUERY_CADANGAN] : [...STOK_QUERY_CADANGAN];
+}
+
+interface PexelsVideoFile {
+  link: string;
+  width: number;
+  height: number;
+  quality?: string;
+  file_type?: string;
+}
+
+interface PexelsVideo {
+  id: number;
+  duration: number;
+  user?: { name?: string };
+  video_files?: PexelsVideoFile[];
+}
+
+/** Berkas terbaik yang tidak membuat unduhan membengkak (1080p, mp4). */
+function fileTerbaik(v: PexelsVideo): PexelsVideoFile | undefined {
+  const mp4 = (v.video_files ?? []).filter((f) => (f.file_type ?? '').includes('mp4'));
+  const pas = mp4.filter((f) => f.width >= 1280 && f.width <= 1920 && f.height >= 720);
+  return pas.sort((a, b) => b.width - a.width)[0] ?? mp4.sort((a, b) => b.width - a.width)[0];
+}
+
 export function stockAdapter(def: VisualAdapterDef): VisualAdapter {
   const apiKey = def.envKey ? process.env[def.envKey] : undefined;
+  /** Klip yang sudah dipakai per job, supaya scene berurutan tidak kembar. */
+  const dipakai = new Map<string, Set<number>>();
   return {
     id: def.id,
     def,
     available: () => Boolean(def.enabled && apiKey),
     async generate(req: GenerateRequest): Promise<GenerateResult> {
       if (!apiKey) throw new Error('stock API belum dikonfigurasi');
-      const query = encodeURIComponent(`${req.model} car cinematic`);
-      const res = await fetch(`https://api.pexels.com/videos/search?query=${query}&per_page=15`, {
-        headers: { authorization: apiKey },
-      });
-      if (!res.ok) throw new Error(`stock API gagal: HTTP ${res.status}`);
-      const json = (await res.json()) as {
-        videos?: { user?: { name?: string }; video_files?: { link: string; quality: string }[] }[];
-      };
-      const pick = json.videos?.[req.scene.index % (json.videos.length || 1)];
-      const file = pick?.video_files?.find((v) => v.quality === 'hd') ?? pick?.video_files?.[0];
-      if (!file) throw new Error('stock API tidak mengembalikan klip');
-      const clip = await fetch(file.link);
-      if (!clip.ok) throw new Error('gagal mengunduh klip stok');
-      const out = fileFor(req.outDir, req.scene.index, 'mp4');
-      fs.writeFileSync(out, Buffer.from(await clip.arrayBuffer()));
-      return {
-        path: out,
-        kind: 'video',
-        provider: 'pexels',
-        source: 'stock-api',
-        credit: pick?.user?.name,
-        cost: 0,
-      };
+      const butuhDetik = Math.max(3, Math.ceil(req.scene.duration));
+      const orientasi = req.aspect === '9:16' ? 'portrait' : 'landscape';
+      const sudah = dipakai.get(req.outDir) ?? new Set<number>();
+      dipakai.set(req.outDir, sudah);
+      let gagal = '';
+      for (const query of stokQueries(req.model)) {
+        const url =
+          'https://api.pexels.com/videos/search?query=' +
+          encodeURIComponent(query) +
+          `&per_page=15&orientation=${orientasi}&size=medium`;
+        const res = await fetch(url, { headers: { authorization: apiKey } });
+        if (res.status === 401 || res.status === 403) {
+          throw new Error('kunci API Pexels ditolak (401/403) — periksa STOCK_API_KEY');
+        }
+        if (!res.ok) {
+          gagal = `HTTP ${res.status}`;
+          continue;
+        }
+        const json = (await res.json()) as { videos?: PexelsVideo[] };
+        const kandidat = (json.videos ?? []).filter((v) => v.duration >= butuhDetik && !sudah.has(v.id));
+        if (!kandidat.length) {
+          gagal = `"${query}" tidak punya klip >= ${butuhDetik} dtk`;
+          continue;
+        }
+        const pilih = kandidat[req.scene.index % kandidat.length];
+        const file = fileTerbaik(pilih);
+        if (!file) {
+          gagal = `klip ${pilih.id} tanpa berkas mp4`;
+          continue;
+        }
+        const clip = await fetch(file.link);
+        if (!clip.ok) {
+          gagal = `unduh klip HTTP ${clip.status}`;
+          continue;
+        }
+        const out = fileFor(req.outDir, req.scene.index, 'mp4');
+        fs.writeFileSync(out, Buffer.from(await clip.arrayBuffer()));
+        sudah.add(pilih.id);
+        return {
+          path: out,
+          kind: 'video',
+          provider: 'pexels',
+          source: 'stock-api',
+          credit: pilih.user?.name,
+          cost: 0,
+        };
+      }
+      throw new Error(`stock API tidak menemukan klip jalanan (${gagal || 'hasil kosong'})`);
     },
   };
 }

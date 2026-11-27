@@ -293,8 +293,11 @@ async function generateAssets(ctx: AgentContext, wantVideo: boolean): Promise<As
   }
 
   const isVendor = (id: string) => Boolean(adapters.adapters[id]?.provider);
-  const stills = visuals.order.filter((id) => id !== 'stock-api' && !isVendor(id));
-  const baseOrder = (wantVideo || useVendor ? stills.concat('stock-api') : visuals.order.filter((id) => !isVendor(id)));
+  // Urutan mengikuti config (`config/visuals.json`), bukan ditebak di sini:
+  // klip stok NYATA harus dicoba sebelum gambar hasil generate, karena
+  // pengguna minta mobil yang benar-benar melaju di jalan. Adapter yang
+  // kuncinya kosong sudah melewati dirinya sendiri lewat `available()`.
+  const baseOrder = visuals.order.filter((id) => !isVendor(id));
   // The chosen model goes first: the user asked for it explicitly. Local photos
   // stay right behind it so a provider outage degrades instead of failing.
   const order = useVendor ? [vendorId, ...baseOrder] : baseOrder;

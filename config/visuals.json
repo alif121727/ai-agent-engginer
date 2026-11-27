@@ -2,9 +2,9 @@
   "order": [
     "local",
     "video-gen",
+    "stock-api",
     "image-gen",
-    "image-gen-free",
-    "stock-api"
+    "image-gen-free"
   ],
   "fallback": {
     "local": [

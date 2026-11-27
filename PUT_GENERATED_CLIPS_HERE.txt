@@ -1,0 +1,1 @@
+Simpan enam klip hasil generasi di folder ini.

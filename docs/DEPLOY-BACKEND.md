@@ -105,17 +105,61 @@ lokal yang dipakai. `LLM_BASE_URL`/`LLM_API_KEY`/`LLM_MODEL` untuk naskah LLM
    → Variables) supaya alamat ikut dibekukan saat build Pages berikutnya.
 3. Uji dari UI: login → **Buat Video** → tunggu status `done` → putar videonya.
 
-## Fly.io
+## Fly.io — langkah yang benar
+
+Deploy lewat dashboard saja **tidak cukup**: Fly perlu volume dan secret yang
+hanya bisa dibuat dari CLI. Tanpa volume, akun + video hilang setiap deploy;
+tanpa `SESSION_SECRET`, pembuatan URL media gagal.
 
 ```bash
-fly launch --no-deploy --copy-config      # memakai fly.toml
+# 0. Sekali saja
+fly auth login
+
+# 1. Buat app (nama unik global; ganti kalau ditolak)
+fly apps create studio-ai-otomotif
+
+# 2. Volume HARUS di region yang sama dengan primary_region (sin)
 fly volumes create studio_data --size 10 --region sin
+
+# 3. Secret wajib
 fly secrets set SESSION_SECRET=$(openssl rand -hex 32)
-fly deploy
-fly open /api/health
+fly secrets set APP_URL=https://studio-ai-otomotif.fly.dev
+
+# 4. Deploy satu mesin saja (SQLite tidak boleh dibagi dua mesin)
+fly deploy --ha=false
+
+# 5. Periksa
+fly logs
+curl -s https://studio-ai-otomotif.fly.dev/api/health
 ```
 
-`fly.toml` memakai satu volume di `/data` dan `WORKER_IN_PROCESS=1`.
+`fly.toml` yang dipakai:
+
+| Bagian | Isi | Alasan |
+| --- | --- | --- |
+| `[[vm]]` | `shared-cpu-2x`, `2gb` | ffmpeg 1080p OOM di 256 MB (default `fly launch`) |
+| `[[mounts]]` | `studio_data` → `/data` | DB + `jobs/` persisten |
+| `STUDIO_DATA_DIR` | `/data` | Semua data pengguna di volume |
+| `min_machines_running` | `1` | Worker render mati kalau mesin di-suspend saat tidak ada trafik |
+| `kill_timeout` | `60` | Deploy tidak memutus ffmpeg di detik pertama |
+
+### Kalau gagal
+
+| Gejala | Penyebab |
+| --- | --- |
+| `Error: app name is already taken` | Nama app unik global — ganti `app` di `fly.toml` lalu ulangi |
+| `no volumes found in region sin` | Volume dibuat di region lain; buat di `sin` atau ubah `primary_region` |
+| Health check gagal, log `Cannot find module` | Build dari commit lama — `fly deploy --no-cache` |
+| Log `SESSION_SECRET belum diisi` | Secret belum di-set (langkah 3) |
+| Render putus di tengah jalan | Mesin di-suspend: pastikan `min_machines_running = 1` |
+| `OOMKilled` saat render | Naikkan `memory` di `[[vm]]` ke `4gb` |
+| Login berhasil, video 401 | URL media butuh `?token=` sesi; pastikan memakai UI, bukan URL mentah |
+
+### Setelah hidup
+
+Buka `https://alif121727.github.io/ai-agent-engginer/?backend=https://<app>.fly.dev`
+sekali, atau isi variabel repo `STUDIO_URL` supaya ikut dibekukan saat build
+Pages berikutnya. Lalu daftar akun admin pertama di `https://<app>.fly.dev/`.
 
 ## Railway
 

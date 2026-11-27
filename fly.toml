@@ -1,13 +1,26 @@
 # Fly.io: satu mesin, satu volume untuk SQLite + hasil render.
-# Ganti `app` kalau namanya sudah dipakai, lalu:
+# Ganti `app` kalau namanya sudah dipakai (nama app unik global), lalu:
+#   fly apps create <app>
 #   fly volumes create studio_data --size 10 --region sin
 #   fly secrets set SESSION_SECRET=$(openssl rand -hex 32)
-#   fly deploy
+#   fly secrets set APP_URL=https://<app>.fly.dev
+#   fly deploy --ha=false
 app = "studio-ai-otomotif"
 primary_region = "sin"
 
+# Deploy menunggu ffmpeg yang sedang jalan selesai dulu, bukan memutusnya di
+# detik pertama. Kunci root harus berada sebelum tabel pertama.
+kill_signal = "SIGTERM"
+kill_timeout = 60
+
 [build]
   dockerfile = "Dockerfile"
+
+# ffmpeg 1080p + Piper butuh lebih dari 256 MB (default `fly launch`).
+# shared-cpu-2x / 2 GB adalah ukuran terkecil yang tidak OOM saat render.
+[[vm]]
+  size = "shared-cpu-2x"
+  memory = "2gb"
 
 [env]
   PORT = "8080"
@@ -28,9 +41,12 @@ primary_region = "sin"
 [http_service]
   internal_port = 8080
   force_https = true
-  auto_stop_machines = "suspend"
+  # Mesin harus tetap hidup: worker render berjalan di proses yang sama, dan
+  # Fly mematikan mesin yang tidak menerima permintaan HTTP — job yang sedang
+  # dirender akan terputus. min_machines_running = 1 menahannya tetap nyala.
+  auto_stop_machines = "stop"
   auto_start_machines = true
-  min_machines_running = 0
+  min_machines_running = 1
 
   [[http_service.checks]]
     grace_period = "30s"

@@ -1,0 +1,7 @@
+﻿scene,start,end,duration_seconds,reference_image,prompt_file,camera,audio
+01,00:00,00:06,6,city_establishing.png,SCENE_01_CITY_ESTABLISHING.txt,Aerial descending wide,"City ambience, intro music"
+02,00:06,00:12,6,car_front.png,SCENE_02_SUPRA_APPEARS.txt,Low-angle front tracking,Engine introduction
+03,00:12,00:19,7,car_side.png,SCENE_03_TRAFFIC_SEQUENCE.txt,Parallel side tracking,Engine and traffic ambience
+04,00:19,00:26,7,car_interior.png,SCENE_04_INTERIOR_COCKPIT.txt,Passenger-side slow push-in,Interior engine ambience
+05,00:26,00:33,7,car_rear.png,SCENE_05_NEON_REFLECTIONS.txt,Rear three-quarter tracking,Music build-up
+06,00:33,00:40,7,car_front.png,SCENE_06_FINAL_HERO_SHOT.txt,Slow cinematic camera arc,Final music impact

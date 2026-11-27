@@ -271,3 +271,14 @@ Detail panjang ada di `archive/MEMORY-full-2026-11-20.md` dan log harian.
 - Diuji dengan env persis Render (PORT=10000, /var/data): health OK, preflight
   CORS 204, setup 200 lalu 409, login, render 30 dtk, media 200 27,8 MB.
 - Disk persisten hanya di paket berbayar; free tier menghapus DB + video.
+## Fly.io (user memilih Fly, 2026-11-27)
+- `fly.toml`: `[[vm]] size="shared-cpu-2x" memory="2gb"` (default fly launch
+  256 MB → ffmpeg 1080p OOM), `[[mounts]] studio_data -> /data`,
+  `STUDIO_DATA_DIR=/data`, `DB_PATH=/data/data/studio.db`,
+  `min_machines_running=1` (worker in-process mati kalau mesin di-suspend),
+  `kill_signal`/`kill_timeout` = kunci ROOT, wajib SEBELUM tabel pertama
+  (kalau ditaruh setelah `[[vm]]` ia jadi milik tabel itu — pernah salah).
+- Deploy: `fly apps create`, `fly volumes create studio_data --size 10 --region sin`,
+  `fly secrets set SESSION_SECRET=... APP_URL=https://<app>.fly.dev`,
+  `fly deploy --ha=false` (SQLite tidak boleh dua mesin).
+- Dashboard-only tidak cukup: volume & secret hanya bisa dibuat dari CLI.

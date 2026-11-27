@@ -49,16 +49,61 @@ Opsional: `TTS_API_KEY` (ElevenLabs) kalau ingin suara cloud; tanpa itu Piper
 lokal yang dipakai. `LLM_BASE_URL`/`LLM_API_KEY`/`LLM_MODEL` untuk naskah LLM
 (tanpa itu naskah disusun lokal dan dicatat di `script.json`).
 
-## Render (paling sederhana)
+## Render — langkah klik (pilihan A)
 
-1. Render Dashboard → **New → Blueprint** → pilih repo ini.
-   `render.yaml` sudah berisi service, disk 10 GB di `/var/data`, dan env.
-2. Set `APP_URL` ke URL service setelah dibuat (mis. `https://studio-ai-otomotif.onrender.com`).
-3. Tunggu build (~10 menit pertama), lalu buka `/api/health`.
-4. Akun pertama: buka UI → **Daftar** (setup hanya terbuka saat belum ada akun).
+### Sebelum mulai
 
-Catatan biaya: disk persisten hanya ada di paket berbayar. Free tier akan
-menghapus akun + video setiap restart.
+- Repo harus publik atau akun Render sudah diberi akses ke repo privat.
+- Paket minimal **1 CPU / 2 GB (`1c-2g`)**. Disk persisten tidak tersedia di
+  free tier; dengan free tier akun dan video hilang setiap restart.
+- Perkiraan biaya: `1c-2g` ± USD 25/bulan + disk 10 GB ± USD 2,5/bulan.
+
+### Langkah
+
+1. Buka <https://dashboard.render.com/blueprints> → **New Blueprint Instance**.
+2. Hubungkan akun GitHub, pilih repo `alif121727/ai-agent-engginer`, branch `main`.
+3. Render membaca `render.yaml` dan menampilkan satu service `studio-ai-otomotif`
+   (runtime Docker, disk `studio-data` 10 GB di `/var/data`). Klik **Apply**.
+4. Tunggu build pertama ± 8–12 menit (npm install, Piper, unduh model TTS 61 MB,
+   bundel studio). Log berakhir dengan `studio dibangun: ...` lalu `API + UI berjalan`.
+5. Buka tab **Environment** → isi `APP_URL` dengan URL service, mis.
+   `https://studio-ai-otomotif.onrender.com` (https, tanpa garis miring di akhir).
+   `SESSION_SECRET` sudah dibuat otomatis oleh blueprint.
+6. Buka `https://<service>.onrender.com/api/health` → harus
+   `{"ok":true,"connection":"ONLINE","db":"sqlite","ffmpeg":true}`.
+7. Buka `https://<service>.onrender.com/` → layar **Daftar** (setup hanya terbuka
+   selama belum ada akun). Buat akun admin pertama.
+8. Sambungkan situs Pages ke backend baru (lihat bagian berikut).
+
+### Yang sudah diatur `render.yaml`
+
+| Env | Nilai | Alasan |
+| --- | --- | --- |
+| `WORKER_IN_PROCESS` | `1` | Worker render ikut proses API |
+| `SESSION_SECRET` | dibuat otomatis | Tanda tangan sesi + URL media; tanpa ini video tidak bisa diputar |
+| `APP_URL` | diisi manual | Cookie `Secure` + tautan media absolut |
+| `CORS_ORIGINS` | Pages + Netlify | UI statis boleh memanggil API |
+| `STUDIO_DATA_DIR` | `/var/data` | DB + `jobs/` di disk persisten |
+| `DB_PATH` | `/var/data/db/studio.db` | Lokasi DB eksplisit |
+
+### Kalau build atau health gagal
+
+| Gejala | Penyebab yang pernah terjadi |
+| --- | --- |
+| Build gagal di `npm ci` | `package-lock.json` tidak sinkron — jalankan `npm install` lalu commit |
+| Build gagal di `build:studio` | Berkas media di `netlify-site/` tidak lengkap; build Docker memakai `MEDIA_OPTIONAL=1`, jadi pastikan env itu tidak dihapus dari `Dockerfile` |
+| Health 502, log `Cannot find module` | Image dibangun dari commit lama; klik **Manual Deploy → Clear build cache & deploy** |
+| Video tidak bisa diputar (401) | `SESSION_SECRET` kosong atau berubah setiap deploy |
+| UI bilang "Backend tidak terjangkau" | `CORS_ORIGINS` tidak memuat origin situs yang dibuka |
+| Render lambat/`OOM` saat render 1080p | Paket terlalu kecil; naikkan ke `2c-4g` |
+
+### Setelah backend hidup
+
+1. Buka Pages dengan `https://alif121727.github.io/ai-agent-engginer/?backend=https://<service>.onrender.com`
+   sekali — alamat tersimpan di peramban.
+2. Atau isi variabel repo `STUDIO_URL` (Settings → Secrets and variables → Actions
+   → Variables) supaya alamat ikut dibekukan saat build Pages berikutnya.
+3. Uji dari UI: login → **Buat Video** → tunggu status `done` → putar videonya.
 
 ## Fly.io
 

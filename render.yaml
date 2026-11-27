@@ -18,6 +18,17 @@ services:
         value: production
       - key: WORKER_IN_PROCESS
         value: "1"
+      # Tanpa ini `media-sign.ts` melempar error saat membuat URL media publik,
+      # jadi video hasil render tidak bisa diputar/diunduh dari UI.
+      - key: SESSION_SECRET
+        generateValue: true
+      # Cookie sesi hanya ditandai Secure kalau APP_URL https. Isi dengan URL
+      # service setelah Render selesai membuatnya.
+      - key: APP_URL
+        sync: false
+      # UI statis (GitHub Pages + Netlify) harus diizinkan memanggil API ini.
+      - key: CORS_ORIGINS
+        value: https://alif121727.github.io,https://agent-studio-ai.netlify.app
       # SQLite dan hasil render harus berada di disk, bukan filesystem container
       # yang hilang setiap deploy. STUDIO_DATA_DIR mengarahkan jobs/ dan data/
       # ke disk; DB_PATH ditulis eksplisit supaya tidak bergantung pada default.

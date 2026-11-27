@@ -50,16 +50,6 @@ kill_timeout = 60
   auto_stop_machines = "off"
   auto_start_machines = true
   min_machines_running = 1
-
-  # Check TCP, bukan HTTP: saat ffmpeg memakai seluruh CPU (shared CPU Fly
-  # diturunkan ke baseline setelah burst habis), event loop Node bisa tertahan
-  # >10 dtk, sehingga check HTTP gagal terus dan Fly menghentikan mesin di
-  # tengah render (requested_stop=true, job "macet" di 87%). Check TCP cukup
-  # memastikan port 8080 menerima koneksi, yang tetap benar walau event loop
-  # sedang sibuk.
-  [[http_service.checks]]
-    type = "tcp"
-    port = 8080
-    grace_period = "30s"
-    interval = "30s"
-    timeout = "10s"
+  # Tanpa health check: mesin trial Fly sudah dihentikan paksa tiap 5 menit,
+  # dan check HTTP yang gagal saat ffmpeg menyita CPU hanya memperpendek
+  # jendela render. Ketersediaan dipantau lewat /api/health manual.

@@ -1,5 +1,6 @@
 import '../core/env.ts';
 import { spawn, type ChildProcess } from 'node:child_process';
+import os from 'node:os';
 import { createApp } from './server.ts';
 import { logger } from '../core/log.ts';
 import { Worker } from '../worker/worker.ts';
@@ -35,6 +36,13 @@ function jalankanWorker(): void {
     stdio: 'inherit',
     env: process.env,
   });
+  // Render memakai CPU penuh selama menit-menitan. Tanpa prioritas lebih
+  // rendah, health check bisa melewati batas waktu dan Fly menghentikan mesin.
+  try {
+    if (workerChild.pid) os.setPriority(workerChild.pid, os.constants.priority.PRIORITY_BELOW_NORMAL);
+  } catch {
+    // Sebagian host tidak mengizinkan penurunan prioritas; abaikan.
+  }
   workerChild.on('exit', (code, signal) => {
     workerChild = null;
     if (berhenti) return;

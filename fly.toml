@@ -17,10 +17,12 @@ kill_timeout = 60
   dockerfile = "Dockerfile"
 
 # ffmpeg 1080p + Piper butuh lebih dari 256 MB (default `fly launch`).
-# shared-cpu-2x / 2 GB adalah ukuran terkecil yang tidak OOM saat render.
+# 4 vCPU dipilih setelah mengukur: dengan 2 vCPU, encode 30 dtk menyita CPU
+# sampai /api/health butuh 8 dtk, health check (timeout 5 dtk) gagal terus, dan
+# Fly menghentikan mesin di tengah render — job "macet" di 87%.
 [[vm]]
-  size = "shared-cpu-2x"
-  memory = "2gb"
+  size = "shared-cpu-4x"
+  memory = "4gb"
 
 [env]
   PORT = "8080"
@@ -41,9 +43,10 @@ kill_timeout = 60
 [http_service]
   internal_port = 8080
   force_https = true
-  # Mesin harus tetap hidup: worker render berjalan di proses yang sama, dan
-  # Fly mematikan mesin yang tidak menerima permintaan HTTP — job yang sedang
-  # dirender akan terputus. min_machines_running = 1 menahannya tetap nyala.
+  # Mesin harus tetap hidup: worker render memakai CPU bermenit-menit, dan Fly
+  # mematikan mesin yang dianggap idle. `off` (bukan "stop") mematikan autostop
+  # sepenuhnya; dengan "stop" mesin berhenti 5 menit setelah trafik terakhir
+  # walau min_machines_running = 1, dan render terputus di tengah jalan.
   auto_stop_machines = "off"
   auto_start_machines = true
   min_machines_running = 1
@@ -53,4 +56,7 @@ kill_timeout = 60
     interval = "30s"
     method = "GET"
     path = "/api/health"
-    timeout = "5s"
+    # 10 dtk, bukan 5: saat ffmpeg memakai seluruh vCPU, API bisa butuh
+    # beberapa detik untuk menjawab. Timeout 5 dtk membuat check gagal terus
+    # selama render dan Fly menghentikan mesin (requested_stop=true).
+    timeout = "10s"

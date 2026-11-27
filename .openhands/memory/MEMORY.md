@@ -210,3 +210,7 @@ Detail panjang ada di `archive/MEMORY-full-2026-11-20.md` dan log harian.
 - `scripts/serve.sh` default `APP_URL` masih menunjuk sandbox lama
   (`work-1-lxpwikokempxmoli`). Sudah diganti ke host sekarang
   (`work-1-dqfkjmazfavmzfjk`); kalau host berubah lagi, ubah baris itu.
+- Uji asap pasca-restore (2026-11-27): job `1fd6d407b5d641dbad9342417ffe06a7`
+  (Mazda RX-7 FD3S, 30 dtk, mode final) selesai `done`, QA 26/26 tanpa gagal,
+  video 1920x1080 h264 + AAC stereo, 27,6 MB, RMS -18,1 dB (narasi Piper ada).
+  Artinya jalur penuh API -> worker -> render -> QA hidup setelah reset.

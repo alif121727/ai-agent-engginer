@@ -221,3 +221,13 @@ Detail panjang ada di `archive/MEMORY-full-2026-11-20.md` dan log harian.
   gitignored. Contoh: job 753b0220 (Porsche 911 GT3 RS, 30 dtk, QA 26/26).
 - Baris proyek TIDAK bisa dipulihkan dari artefak secara otomatis; DB harus
   dibuat ulang. Artefak lama tetap berguna sebagai sumber brief/naskah.
+## Kantor Agen (studio/src/pages/AgentOffice.tsx)
+- Halaman `#/kantor` meniru contoh `Kantor Agent IG.html` (mockup 3 ruang,
+  pixel-art canvas, jam, hex 9 agen) tetapi **diisi data nyata**: status tahap
+  dari `/api/jobs`, `script.json`, `qa.json`, `render-result.json`, dan log dari
+  `/api/jobs/:id/events`.
+- Metrik penonton TIDAK ditampilkan (tidak ada akun platform) — jangan tambah
+  angka karangan seperti di mockup.
+- Butuh dua metode baru di `StudioApi`: `getEvents()` dan `getArtifact()`.
+  Mode demo mengembalikan kosong/null supaya UI tidak mengaku punya artefak.
+- Tombol "Setujui video" memanggil `api.publish()` (dry-run) — bukan unggah asli.

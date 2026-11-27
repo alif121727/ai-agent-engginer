@@ -6,6 +6,7 @@ export type Route =
   | { name: 'dashboard' }
   | { name: 'baru'; car?: string }
   | { name: 'agen' }
+  | { name: 'kantor' }
   | { name: 'proyek' }
   | { name: 'semua-proyek' }
   | { name: 'proyek-detail'; id: string; autoRun?: boolean }
@@ -22,6 +23,7 @@ export function useHashRoute(): [Route, (r: Route) => void] {
     switch (seg) {
       case 'baru': return { name: 'baru', car: id };
       case 'agen': return { name: 'agen' };
+      case 'kantor': return { name: 'kantor' };
       case 'proyek': return id ? { name: 'proyek-detail', id, autoRun: h.split('/')[2] === 'jalankan' } : { name: 'proyek' };
       case 'semua-proyek': return { name: 'semua-proyek' };
       case 'feed': return { name: 'feed' };
@@ -54,6 +56,7 @@ const NAV: Array<{ key: Route['name']; label: string; icon: React.ReactNode }> =
   { key: 'dashboard', label: 'Dashboard', icon: <Icon.Dashboard size={16} /> },
   { key: 'baru', label: 'Buat Video', icon: <Icon.Plus size={16} /> },
   { key: 'agen', label: 'Agen Otonom', icon: <Icon.Bolt size={16} /> },
+  { key: 'kantor', label: 'Kantor Agen', icon: <Icon.Spark size={16} /> },
   { key: 'proyek', label: 'Proyek Saya', icon: <Icon.Folder size={16} /> },
   { key: 'semua-proyek', label: 'Semua Proyek', icon: <Icon.Film size={16} /> },
   { key: 'feed', label: 'Feed', icon: <Icon.Film size={16} /> },

@@ -12,12 +12,14 @@ import { Feed } from './pages/Feed';
 import { Models, Settings } from './pages/Models';
 import { Auth } from './pages/Auth';
 import { Agent } from './pages/Agent';
+import { AgentOffice } from './pages/AgentOffice';
 import './studio.css';
 
 const TITLES: Record<Route['name'], { t: string; c?: string }> = {
   dashboard: { t: 'Dashboard' },
   baru: { t: 'Buat Video', c: 'Brief → storyboard → parameter → generate' },
   agen: { t: 'Agen Otonom', c: 'Sembilan tahap berjalan sendiri + metadata otomatis' },
+  kantor: { t: 'Kantor Agen', c: 'Tiga ruang kerja yang menyala mengikuti tahap nyata' },
   proyek: { t: 'Proyek Saya' },
   'semua-proyek': { t: 'Semua Proyek', c: 'Seluruh proyek yang pernah dikerjakan + hasil videonya' },
   'proyek-detail': { t: 'Detail Proyek', c: 'Pipeline sembilan tahap' },
@@ -64,6 +66,7 @@ function Router() {
         {route.name === 'dashboard' && <Dashboard go={go} />}
         {route.name === 'baru' && <NewVideo go={go} preselect={route.car} />}
         {route.name === 'agen' && <Agent go={go} />}
+        {route.name === 'kantor' && <AgentOffice go={go} />}
         {route.name === 'proyek' && <Projects go={go} />}
         {route.name === 'semua-proyek' && <AllProjects go={go} />}
         {route.name === 'proyek-detail' && <ProjectDetail id={route.id} go={go} autoRun={route.autoRun} />}

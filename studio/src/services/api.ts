@@ -168,6 +168,15 @@ export type PublishOutcome = {
   note?: string;
 };
 
+/** Satu baris log job dari server (`/api/jobs/:id/events`). */
+export type JobEvent = {
+  level: string;
+  scope: string;
+  agent_id?: string | null;
+  message: string;
+  created_at: string;
+};
+
 export type StudioApi = {
   kind: 'http' | 'demo';
   createProject(input: Partial<Project> & { carSlug: string }): Promise<Project>;
@@ -192,6 +201,10 @@ export type StudioApi = {
    * `null`: tidak ada backend, jadi tidak ada yang bisa dijanjikan.
    */
   modelReadiness(): Promise<Readiness | null>;
+  /** Jejak peristiwa job (log agen). Mode demo tidak punya worker: kosong. */
+  getEvents(jobId: string, limit?: number): Promise<JobEvent[]>;
+  /** Artefak JSON hasil satu tahap (`script.json`, `qa.json`, ...). */
+  getArtifact<T = unknown>(jobId: string, name: string): Promise<T | null>;
 };
 
 /** Kesiapan satu vendor: `ready` false berarti render akan ditolak vendor. */
@@ -491,6 +504,12 @@ export class DemoStudioApi implements StudioApi {
     return null;
   }
   // Mode demo tidak punya kredensial maupun backend, jadi tidak pernah mengunggah.
+  async getEvents(): Promise<JobEvent[]> {
+    return [];
+  }
+  async getArtifact<T>(): Promise<T | null> {
+    return null;
+  }
   async publish(): Promise<PublishOutcome> {
     return {
       status: 'failed',
@@ -716,6 +735,18 @@ export class HttpStudioApi implements StudioApi {
       if (!r.ok) return null;
       const d = (await r.json()) as Partial<Readiness>;
       return { providers: d.providers ?? {}, local: d.local !== false };
+    } catch {
+      return null;
+    }
+  }
+  async getEvents(jobId: string, limit = 200): Promise<JobEvent[]> {
+    const d = await this.j<{ events: JobEvent[] }>(`/api/jobs/${jobId}/events?limit=${limit}`);
+    return d.events ?? [];
+  }
+  async getArtifact<T>(jobId: string, name: string): Promise<T | null> {
+    try {
+      const d = await this.j<{ value: T }>(`/api/jobs/${jobId}/artifact/${encodeURIComponent(name)}`);
+      return d.value ?? null;
     } catch {
       return null;
     }

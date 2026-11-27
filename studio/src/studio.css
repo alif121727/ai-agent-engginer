@@ -905,3 +905,66 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
   .feed__actions { right: 6px; bottom: 16px; }
   .feed__slide { padding: 0 8px; }
 }
+
+/* ------------------------------------------------------------ kantor agen */
+.kantor { display: flex; flex-direction: column; gap: var(--sp-4); }
+.kantor__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-4); }
+.kantor__legend { display: flex; align-items: center; gap: 10px; font-size: 0.78rem; flex-wrap: wrap; }
+.kantor__head h2 { margin: 0 0 4px; font-size: 1.25rem; display: flex; align-items: center; gap: 8px; }
+.kantor__clock { text-align: center; }
+.kantor__clock b { font-size: 2rem; letter-spacing: 2px; color: var(--accent); display: block; }
+.kantor__clock b i { font-style: normal; animation: kantor-blink 1s steps(2) infinite; }
+.kantor__clock b small { font-size: 1rem; color: var(--text-2); }
+.kantor__clock > small { color: var(--text-3); font-size: 0.7rem; }
+@keyframes kantor-blink { 50% { opacity: 0.2; } }
+.kantor__hex { display: flex; gap: 6px; }
+.kantor__hx {
+  width: 30px; height: 34px; display: grid; place-items: center;
+  font-size: 0.85rem; color: var(--text-3);
+  background: var(--surface-2); border: 1px solid var(--border);
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  transition: 0.25s var(--ease);
+}
+.kantor__hx.ok { color: var(--accent); background: #0e2630; }
+.kantor__hx.on { color: var(--on-accent); background: var(--accent); box-shadow: 0 0 12px var(--accent-glow); }
+.kantor__hx.bad { color: var(--err); background: #2b131c; }
+.kantor__bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); }
+.kantor__pick {
+  background: var(--surface-2); color: var(--text); border: 1px solid var(--border);
+  border-radius: var(--r-sm); padding: 6px 10px; font: inherit; font-size: 0.82rem; max-width: 320px;
+}
+.kantor__chips { margin-left: auto; display: flex; gap: 6px; }
+.kantor__rooms { display: grid; gap: var(--sp-3); grid-template-columns: 1fr; }
+@media (min-width: 900px) { .kantor__rooms { grid-template-columns: repeat(3, 1fr); } }
+.kantor__card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden; transition: 0.3s var(--ease); }
+.kantor__card.is-on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.kantor__tb { display: flex; justify-content: space-between; padding: 6px 12px; border-bottom: 1px solid var(--border); color: var(--text-3); font-size: 0.7rem; }
+.kantor__stage { position: relative; }
+.kantor__stage canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+.kantor__bub {
+  position: absolute; left: 50%; top: 6%; transform: translateX(-50%);
+  background: var(--text); color: var(--bg); border: 2px solid var(--bg);
+  padding: 2px 8px; font-size: 0.7rem; font-weight: 700; white-space: nowrap;
+}
+.kantor__st { padding: 8px 12px; border-top: 1px solid var(--border); font-size: 0.75rem; color: var(--text-2); }
+.kantor__pb { height: 5px; background: var(--border); border-radius: 4px; margin-top: 6px; overflow: hidden; }
+.kantor__pb i { display: block; height: 100%; background: var(--accent); transition: width 0.6s var(--ease); }
+.kantor__two { display: grid; gap: var(--sp-3); grid-template-columns: 1fr; }
+@media (min-width: 900px) { .kantor__two { grid-template-columns: 1fr 1fr; } }
+.kantor__panel { position: relative; }
+.kantor__hook { font-size: 1.05rem; font-weight: 700; margin: 6px 0 10px; min-height: 1.4em; }
+.kantor__pt { list-style: none; margin: 0; padding: 0; font-size: 0.82rem; color: var(--text-2); }
+.kantor__pt li { margin: 4px 0; }
+.kantor__pt li span { color: var(--accent); font-family: var(--mono); margin-right: 8px; }
+.kantor__stamp {
+  position: absolute; right: 12px; top: 12px; transform: rotate(-6deg);
+  border: 2px solid var(--ok); color: var(--ok); font-weight: 800; font-size: 0.7rem;
+  padding: 2px 8px; border-radius: 6px;
+}
+.kantor__stamp.is-fail { border-color: var(--err); color: var(--err); }
+.kantor__row { display: grid; grid-template-columns: 1fr auto; gap: 8px; font-size: 0.8rem; padding: 3px 0; border-bottom: 1px dashed var(--border); color: var(--text-2); }
+.kantor__row em { font-style: normal; color: var(--text); }
+.kantor__pola { margin-top: 10px; font-size: 0.78rem; color: var(--accent); }
+.kantor__note { font-size: 0.72rem; margin: 8px 0 0; }
+.kantor__log { font-size: 0.75rem; color: var(--text-2); max-height: 190px; overflow: auto; }
+.kantor__logline { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 1px 0; }

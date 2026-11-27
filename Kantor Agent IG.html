@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kantor Agent IG</title>
+<style>
+:root{--bg:#0b0d12;--panel:#12151c;--line:#2a3140;--fg:#f2f4f8;--dim:#8b93a5;--acc:#d4f53c;--on:#0b0d12;--accfg:#d4f53c;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#f3f5ec;--panel:#fff;--line:#d3d9c3;--fg:#14161c;--dim:#5a6275;--acc:#c4e51f;--accfg:#4d6300}}
+:root[data-theme="dark"]{--bg:#0b0d12;--panel:#12151c;--line:#2a3140;--fg:#f2f4f8;--dim:#8b93a5;--acc:#d4f53c;--accfg:#d4f53c}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;padding:16px}
+.mono{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+.wrap{max-width:1100px;margin:0 auto}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:16px;justify-content:space-between;margin-bottom:16px}
+h1{font-size:20px;margin:0}
+.demo{font-size:11px;border:1px solid var(--accfg);color:var(--accfg);padding:2px 8px;border-radius:99px;margin-left:8px;vertical-align:middle}
+.clock{text-align:center}
+.clock b{font-size:38px;letter-spacing:2px;color:var(--accfg)}
+.clock b i{font-style:normal;animation:bl 1s steps(2) infinite}
+@keyframes bl{50%{opacity:.2}}
+.clock small{display:block;color:var(--dim);font-size:12px}
+.hexes{display:flex;gap:8px}
+.hexes svg{width:38px;height:38px;color:var(--dim);transition:.3s}
+.hexes svg.on{color:var(--accfg);filter:drop-shadow(0 0 6px var(--acc))}
+.bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;align-items:center}
+button{font:inherit;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px 14px;cursor:pointer}
+button.p{background:var(--acc);color:var(--on);border-color:var(--acc);font-weight:600}
+button:disabled{opacity:.4;cursor:default}
+.chips{margin-left:auto;display:flex;gap:6px;align-items:center;color:var(--dim);font-size:13px}
+.chip{border:1px solid var(--line);border-radius:99px;padding:2px 10px}
+.rooms{display:grid;gap:12px;grid-template-columns:1fr}
+@media(min-width:900px){.rooms{grid-template-columns:repeat(3,1fr)}.two{grid-template-columns:1fr 1fr!important}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;transition:.3s}
+.card.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
+.tb{padding:6px 12px;border-bottom:1px solid var(--line);color:var(--dim);font-size:12px;display:flex;justify-content:space-between}
+.stage{position:relative}
+canvas{display:block;width:100%;height:auto;image-rendering:pixelated}
+.bub{position:absolute;left:50%;top:6%;transform:translateX(-50%);background:#fff;color:#14161c;border:2px solid #14161c;padding:3px 8px;font-size:12px;font-weight:600;white-space:nowrap;opacity:0;transition:.2s}
+.bub.s{opacity:1}
+.st{padding:8px 12px;font-size:13px;min-height:38px;border-top:1px solid var(--line)}
+.st .pb{height:5px;background:var(--line);border-radius:4px;margin-top:6px;overflow:hidden}
+.st .pb i{display:block;height:100%;width:0;background:var(--acc)}
+.sub{margin-top:6px;font-weight:700}
+.sub u{text-decoration:none;background:var(--acc);color:var(--on);padding:0 3px;border-radius:3px}
+.two{display:grid;gap:12px;grid-template-columns:1fr;margin-top:12px}
+.pad{padding:12px}
+.tag{display:inline-block;background:var(--acc);color:var(--on);font-size:11px;font-weight:700;padding:1px 7px;border-radius:5px}
+.hook{font-size:18px;font-weight:700;margin:6px 0 10px;min-height:27px}
+.vs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.v{border:1px solid var(--line);border-radius:8px;padding:8px;font-size:12px;opacity:.55;transition:.3s}
+.v.win{opacity:1;border-color:var(--acc)}
+.v .sk{height:5px;background:var(--line);border-radius:4px;margin-top:8px;overflow:hidden}
+.v .sk i{display:block;height:100%;width:0;background:var(--acc);transition:width .8s}
+.pt{margin:4px 0;padding-left:0;list-style:none}
+.pt li{margin:3px 0}
+.pt li span{color:var(--accfg);font-family:ui-monospace,Menlo,monospace;margin-right:8px}
+.stamp{display:none;float:right;border:2px solid var(--accfg);color:var(--accfg);font-weight:800;padding:2px 10px;transform:rotate(-6deg);border-radius:6px}
+.stamp.s{display:block}
+.row{display:grid;grid-template-columns:1fr 90px 60px;gap:8px;align-items:center;font-size:12px;margin:6px 0;opacity:.7}
+.row.vir{opacity:1}
+.row .b{height:6px;background:var(--line);border-radius:4px;overflow:hidden}
+.row .b i{display:block;height:100%;width:0;background:var(--dim);transition:width 1s}
+.row.vir .b i{background:var(--acc)}
+.row em{font-style:normal;text-align:right}
+.pola{margin-top:10px;font-size:13px;color:var(--accfg)}
+.log{margin-top:12px;color:var(--dim);font-size:12px;padding:10px 12px;min-height:74px}
+.log div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Kantor Agent IG <span class="demo mono">MODE DEMO</span></h1>
+  <div class="clock"><b class="mono">24<i>:</i>00</b><small>jam nonstop</small></div>
+  <div class="hexes">
+    <svg id="h0" viewBox="0 0 40 40"><path d="M20 3l15 8.5v17L20 37 5 28.5v-17z" fill="none" stroke="currentColor" stroke-width="1.6"/><text x="20" y="25" text-anchor="middle" font-size="15" fill="currentColor">✎</text></svg>
+    <svg id="h1" viewBox="0 0 40 40"><path d="M20 3l15 8.5v17L20 37 5 28.5v-17z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M16 13l11 7-11 7z" fill="currentColor"/></svg>
+    <svg id="h2" viewBox="0 0 40 40"><path d="M20 3l15 8.5v17L20 37 5 28.5v-17z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 26l7-7 4 4 7-8" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+  </div>
+</header>
+
+<div class="bar">
+  <button class="p" id="run">Jeda</button>
+  <button id="ok" disabled>Setujui video</button>
+  <div class="chips mono"><span>gaya-bahasa.md</span>
+    <button class="chip" id="gl">gua · lu</button>
+    <span class="chip">santai</span></div>
+</div>
+
+<div class="rooms">
+  <div class="card" id="c0"><div class="tb mono"><span>01 /script-lab</span><span>SCRIPT LAB</span></div>
+    <div class="stage"><canvas id="k0" width="160" height="110"></canvas><div class="bub" id="b0"></div></div>
+    <div class="st" id="s0">Jeki · menunggu bahan</div></div>
+  <div class="card" id="c1"><div class="tb mono"><span>02 /editor</span><span>EDIT STUDIO</span></div>
+    <div class="stage"><canvas id="k1" width="160" height="110"></canvas><div class="bub" id="b1"></div></div>
+    <div class="st" id="s1">Roki · menunggu naskah</div></div>
+  <div class="card" id="c2"><div class="tb mono"><span>03 /analis</span><span>VIEWERS ANALISIS</span></div>
+    <div class="stage"><canvas id="k2" width="160" height="110"></canvas><div class="bub" id="b2"></div></div>
+    <div class="st" id="s2">Tina · menunggu data</div></div>
+</div>
+
+<div class="two">
+  <div class="card pad">
+    <span class="stamp mono" id="stamp">TERBUKTI ✓</span>
+    <div class="mono" style="color:var(--dim);font-size:12px" id="nh">naskah.md</div>
+    <span class="tag mono">HOOK</span>
+    <div class="hook" id="hook"></div>
+    <div class="vs" id="vs"></div>
+    <ul class="pt" id="pt"></ul>
+  </div>
+  <div class="card pad">
+    <div class="mono" style="color:var(--dim);font-size:12px;margin-bottom:8px">/analis · performa Reels 7 hari</div>
+    <div id="rows"></div>
+    <div class="pola mono" id="pola"></div>
+  </div>
+</div>
+<div class="card log mono" id="log"></div>
+</div>
+
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+var paused=false,gua=true,cycle=0,approved=false,waitOk=false,T=0;
+var DATA=[["Kenapa Reels lu sepi?",1240000,"1,24 jt"],["Rutinitas pagi gua",48000,"48 rb"],["3 angka bikin orang berhenti",912000,"912 rb"],["Review alat edit",24000,"24 rb"],["Behind the scene",61000,"61 rb"],["Q&A follower",16000,"16 rb"]];
+var SETS={
+ bahan:{gua:[["Lu masih nulis naskah sendiri?",71],["3 detik pertama nentuin views lu.",64],["Gua dulu juga gini tiap malam...",53]],aku:[["Kamu masih nulis naskah sendiri?",71],["3 detik pertama menentukan views kamu.",64],["Aku dulu juga begini tiap malam...",53]],
+  pt:{gua:["Gua punya tim AI yang nulis duluan.","Lu tinggal rekam, postin."],aku:["Aku punya tim AI yang menulis duluan.","Kamu tinggal rekam, lalu posting."]}},
+ pola:{gua:[["Kenapa Reels lu cuma 200 views?",88],["Lu salah di 3 angka ini.",79],["Gua bongkar 3 angka Reels lu.",68]],aku:[["Kenapa Reels kamu cuma 200 views?",88],["Kamu salah di 3 angka ini.",79],["Aku bongkar 3 angka Reels kamu.",68]],
+  pt:{gua:["3 angka yang bikin lu berhenti scroll.","Angka kedua paling sering dilupain."],aku:["3 angka yang bikin kamu berhenti scroll.","Angka kedua paling sering terlupakan."]}}
+};
+function sleep(ms){return new Promise(function(r){setTimeout(r,ms)})}
+async function wait(ms){var t=0;while(t<ms){await sleep(50);if(!paused)t+=50}}
+function say(i,t){var b=$("b"+i);b.textContent=t;b.className="bub s";return wait(1800).then(function(){b.className="bub"})}
+function on(i){for(var k=0;k<3;k++){$("c"+k).classList.toggle("on",k===i);$("h"+k).classList.toggle("on",k===i)}}
+function log(ag,msg){var d=document.createElement("div");var n=new Date();d.textContent=n.toTimeString().slice(0,8)+"  "+ag+"  "+msg;var l=$("log");l.insertBefore(d,l.firstChild);while(l.children.length>4)l.removeChild(l.lastChild)}
+
+/* pixel art */
+var ctx=[0,1,2].map(function(i){return $("k"+i).getContext("2d")});
+function R(c,x,y,w,h,col){c.fillStyle=col;c.fillRect(x,y,w,h)}
+function person(c,x,y,body,hair,act){var b=act?((T>>2)&1):0;R(c,x+2,y+b,6,6,"#f0c9a0");R(c,x+2,y+b,6,2,hair);R(c,x+1,y+6+b,8,8,body);R(c,x+2,y+14,2,3,"#222");R(c,x+6,y+14,2,3,"#222")}
+function room0(c,act){R(c,0,0,160,110,"#232a3a");R(c,0,0,160,30,"#151a26");R(c,14,6,34,18,"#33507a");R(c,112,6,34,18,"#33507a");
+ for(var i=0;i<160;i+=16)R(c,i,30,1,80,"#2a3248");
+ person(c,64,50,"#e86a8a","#3a2a22",act);R(c,40,68,80,12,"#7a5a3a");R(c,40,80,80,3,"#5a4128");
+ R(c,62,50,36,16,"#0b0d12");R(c,64,52,32,12,act?((T>>3)&1?"#d4f53c":"#9fbf20"):"#1f2a1f");
+ R(c,16,76,12,14,"#3a8a4a");R(c,19,88,6,8,"#7a4a2a");R(c,128,60,18,26,"#12151c");R(c,131,64,12,3,"#d4f53c")}
+function room1(c,act,pr){R(c,0,0,160,110,"#8c82d8");R(c,0,0,160,28,"#5b52a8");R(c,10,6,40,16,"#1d1b3a");R(c,110,6,40,16,"#1d1b3a");
+ R(c,24,64,50,10,"#4a3f8f");R(c,90,64,50,10,"#4a3f8f");R(c,34,48,30,16,"#0b0d12");R(c,36,50,Math.round(26*pr),12,"#d4f53c");R(c,100,48,30,16,"#0b0d12");R(c,102,50,26,12,"#33507a");
+ person(c,44,46,"#3b8de0","#222",act);R(c,24,64,50,10,"#4a3f8f");R(c,24,74,50,3,"#372f70");R(c,100,90,18,14,"#2b2660")}
+function room2(c,act){R(c,0,0,160,110,"#aeb3bd");R(c,0,0,160,32,"#2c3440");R(c,12,6,30,20,"#0b0d12");R(c,12+((T>>2)%26),22,2,3,"#d4f53c");R(c,50,6,30,20,"#0b0d12");R(c,54,12,22,3,"#d4f53c");R(c,54,18,12,3,"#d4f53c");
+ for(var k=0;k<3;k++){R(c,12+k*18,76,14,30,"#1b2029");for(var j=0;j<4;j++)R(c,15+k*18,80+j*6,3,2,((T>>2)+j+k)%3?"#d4f53c":"#e04a4a")}
+ person(c,70,52+((T>>4)&1)*0,"#e0b030","#4a2a1a",act);
+ c.strokeStyle="#0b0d12";c.lineWidth=1;c.beginPath();c.arc(130,86,18,0,6.3);c.stroke();c.strokeStyle="#d4f53c";c.beginPath();c.moveTo(130,86);c.lineTo(130+17*Math.cos(T/8),86+17*Math.sin(T/8));c.stroke()}
+var act=[false,false,false],prog=0;
+function draw(){T++;room0(ctx[0],act[0]);room1(ctx[1],act[1],prog);room2(ctx[2],act[2])}
+setInterval(function(){if(!paused)draw()},90);draw();
+
+/* siklus kerja */
+async function typeHook(s){var h=$("hook");h.textContent="";for(var i=0;i<s.length;i++){h.textContent+=s[i];await wait(28)}}
+async function penulis(){
+ var key=cycle?"pola":"bahan",v=gua?"gua":"aku",S=SETS[key],n=13+cycle;
+ on(0);act[0]=true;$("stamp").className="stamp mono";
+ $("nh").textContent="naskah #"+n+" · "+(cycle?"dari pola viral":"dari masuk/ide-hari-ini.txt");
+ $("s0").textContent="Jeki · menulis 3 versi hook…";$("pt").innerHTML="";$("hook").textContent="";
+ var vs=$("vs");vs.innerHTML="";
+ ["A","B","C"].forEach(function(l,i){var d=document.createElement("div");d.className="v";d.innerHTML="<b class=mono>VERSI "+l+"</b><br>"+S[v][i][0]+"<div class=sk><i></i></div>";vs.appendChild(d)});
+ log("penulis","membaca gaya-bahasa.md"+(cycle?" dan pola.md":""));
+ await wait(900);
+ var cs=vs.children;for(var i=0;i<3;i++){cs[i].firstChild;cs[i].querySelector("i").style.width=S[v][i][1]+"%";await wait(500)}
+ cs[0].classList.add("win");log("penulis","versi A terpilih, skor "+S[v][0][1]);
+ await typeHook(S[v][0][0]);
+ var ul=$("pt");S.pt[v].forEach(function(t,i){var li=document.createElement("li");li.innerHTML="<span>"+(i+1)+"</span>"+t;ul.appendChild(li)});
+ if(cycle)$("stamp").className="stamp mono s";
+ await say(0,"Hook baru siap");act[0]=false;log("penulis","naskah-"+n+".md disimpan");
+}
+async function editor(){
+ on(1);act[1]=true;prog=0;approved=false;
+ await say(1,"Script baru, Rok!");
+ var st=$("s1"),words=$("hook").textContent.split(" ");
+ for(var p=0;p<=100;p+=4){prog=p/100;
+  var hi=Math.min(words.length-1,Math.floor(p/100*words.length));
+  st.innerHTML="Roki · merender "+p+"%<div class=pb><i style='width:"+p+"%'></i></div><div class=sub>"+words.map(function(w,i){return i===hi?"<u>"+w+"</u>":w}).join(" ")+"</div>";
+  await wait(110)}
+ prog=1;act[1]=false;st.innerHTML="Roki · video-"+(13+cycle)+".mp4 siap (suara + subtitle)<div class=sub style='color:var(--dim);font-weight:400'>menunggu persetujuan…</div>";
+ log("editor","keluar/video-"+(13+cycle)+".mp4 selesai");
+ waitOk=true;$("ok").disabled=false;await wait(6000);waitOk=false;$("ok").disabled=true;
+ var msg=approved?"diposting (simulasi, belum ada akun tersambung)":"ditahan di keluar/, tidak diposting";
+ st.firstChild.textContent="Roki · video-"+(13+cycle)+".mp4 "+msg;
+ log("editor",msg);
+}
+async function analis(){
+ on(2);act[2]=true;$("s2").textContent="Tina · membaca performa 7 hari…";
+ var rows=$("rows");rows.innerHTML="";
+ DATA.forEach(function(d){var r=document.createElement("div");r.className="row";r.innerHTML="<span>"+d[0]+"</span><div class=b><i></i></div><em class=mono>"+d[2]+"</em>";rows.appendChild(r)});
+ await wait(500);
+ var mx=1240000;DATA.forEach(function(d,i){rows.children[i].querySelector("i").style.width=Math.max(2,d[1]/mx*100)+"%"});
+ await wait(1300);
+ var med=[16000,24000,48000,61000,912000,1240000][2]; /* median demo */
+ DATA.forEach(function(d,i){if(d[1]>2*med){rows.children[i].classList.add("vir");rows.children[i].querySelector("em").innerHTML="<span class=tag>VIRAL</span> "+d[2]}});
+ await say(2,"A kurang, B viral");
+ $("pola").textContent="pola: hook pertanyaan + angka (bukti: Reels #12, #10)";
+ $("s2").textContent="Tina · pola.md diperbarui";log("analis","pola.md: hook pertanyaan + angka");act[2]=false;
+}
+async function loop(){while(true){await penulis();await editor();await analis();cycle++;await wait(1200)}}
+$("run").onclick=function(){paused=!paused;this.textContent=paused?"Lanjut":"Jeda";log("sistem",paused?"dijeda":"dilanjutkan")};
+$("ok").onclick=function(){if(waitOk){approved=true;this.disabled=true;log("kamu","video disetujui")}};
+$("gl").onclick=function(){gua=!gua;this.textContent=gua?"gua · lu":"aku · kamu";log("sistem","sapaan berubah, berlaku di naskah berikutnya")};
+log("sistem","kantor dibuka, mode demo");
+loop();
+})();
+</script>
+</body>
+</html>

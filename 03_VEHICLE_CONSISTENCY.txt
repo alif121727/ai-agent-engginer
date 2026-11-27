@@ -1,9 +1,0 @@
-VEHICLE CONSISTENCY:
-The main vehicle is the same black metallic Toyota GR Supra MK5 in every shot.
-Keep body shape, proportions, front grille, bumper, headlights, rear LED design, wheel design, tire proportions, spoiler, side mirrors, window shape, and paint finish consistent.
-Do not morph, deform, change model, change color, or add body parts.
-Maintain realistic wheel rotation, tire contact with the road, natural reflections, stable geometry, and consistent lighting.
-Surrounding traffic remains visually separate from the main car.
-
-CGI TRAFFIC SAFETY:
-This is a fictional, controlled CGI automotive sequence. Keep vehicle trajectories smooth and predictable, preserve generous separation between vehicles, avoid collisions and dangerous close calls, and do not depict instructions for real-world high-speed driving.

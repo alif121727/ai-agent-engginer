@@ -11,6 +11,8 @@
     "local",
     "video-gen",
     "stock-api",
+    "pixabay",
+    "wikimedia",
     "image-gen",
     "image-gen-free"
   ],

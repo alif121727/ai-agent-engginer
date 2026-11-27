@@ -3,6 +3,8 @@
     "local",
     "video-gen",
     "stock-api",
+    "pixabay",
+    "wikimedia",
     "image-gen",
     "image-gen-free"
   ],
@@ -149,6 +151,25 @@
       "maxRetries": 0,
       "minBytes": 100000,
       "description": "Teks-ke-video dan gambar-ke-video lewat API publik Seedance. Butuh SEEDANCE_API_KEY; setiap klip memotong kredit pemilik kunci, jadi hanya dipanggil bila model ini dipilih di UI."
+    },
+    "wikimedia": {
+      "id": "wikimedia",
+      "label": "Wikimedia Commons (tanpa kunci)",
+      "kind": "stock-api",
+      "enabled": true,
+      "requiresKey": false,
+      "model": "wikimedia",
+      "description": "Klip video berlisensi CC. Nama pembuat + lisensi disimpan di kredit aset."
+    },
+    "pixabay": {
+      "id": "pixabay",
+      "label": "Pixabay (kunci gratis)",
+      "kind": "stock-api",
+      "enabled": true,
+      "requiresKey": true,
+      "envKey": "PIXABAY_API_KEY",
+      "model": "pixabay",
+      "description": "Klip video stok gratis dari Pixabay. Kunci API gratis, tanpa kartu kredit."
     }
   }
 }

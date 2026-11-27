@@ -715,7 +715,7 @@ export function createApp(opts: AppOptions = {}) {
   // catalog slug, so a naive slug of the display name ("mazda-rx-7") would
   // write uploads where the pipeline never looks.
   const ownDir = (model: string) => path.join(paths.assets, 'own', assetFolderSlug(model));
-  const ASSET_EXT = /\.(jpe?g|png|webp|mp4|mov)$/i;
+  const ASSET_EXT = /\.(jpe?g|png|webp|mp4|mov|webm)$/i;
 
   /**
    * Random stock photos look sharp to the QA stage, so they pass and render a
@@ -825,7 +825,7 @@ export function createApp(opts: AppOptions = {}) {
     async (req, res) => {
       const name = path.basename(String(req.query.name ?? ''));
       if (!name || !ASSET_EXT.test(name)) {
-        res.status(400).json({ error: 'nama berkas harus jpg, jpeg, png, webp, mp4, atau mov' });
+        res.status(400).json({ error: 'nama berkas harus jpg, jpeg, png, webp, mp4, mov, atau webm' });
         return;
       }
       if (!Buffer.isBuffer(req.body) || req.body.length === 0) {

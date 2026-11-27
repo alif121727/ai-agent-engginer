@@ -42,8 +42,8 @@ export function localAdapter(def: VisualAdapterDef): VisualAdapter {
       if (!candidates.length) throw new Error('tidak ada aset lokal untuk model ini');
       const chosen = candidates[req.scene.index % candidates.length];
       const ext = path.extname(chosen).toLowerCase();
-      const isVideo = ['.mp4', '.mov'].includes(ext);
-      const out = fileFor(req.outDir, req.scene.index, isVideo ? 'mp4' : ext.replace('.', '') || 'jpg');
+      const isVideo = ['.mp4', '.mov', '.webm'].includes(ext);
+      const out = fileFor(req.outDir, req.scene.index, isVideo ? (ext === '.webm' ? 'webm' : 'mp4') : ext.replace('.', '') || 'jpg');
       fs.copyFileSync(chosen, out);
       return { path: out, kind: isVideo ? 'video' : 'image', provider: 'local', source: chosen, cost: 0 };
     },
@@ -626,6 +626,219 @@ export function stockAdapter(def: VisualAdapterDef): VisualAdapter {
         };
       }
       throw new Error(`stock API tidak menemukan klip jalanan (${gagal || 'hasil kosong'})`);
+    },
+  };
+}
+
+/**
+ * Wikimedia Commons: sumber klip NYATA yang tidak butuh akun sama sekali.
+ * Dipakai sebagai jaring terakhir sebelum pipeline jatuh ke foto diam.
+ *
+ * Berkas aslinya bisa 100 MB–2 GB, jadi yang diunduh adalah versi transkode
+ * 1080p/480p dari `videoinfo.derivatives`, bukan `url` aslinya.
+ * Lisensi: CC BY / CC BY-SA — nama pembuat dan lisensi WAJIB ikut di `credit`.
+ */
+/** Wikimedia memblokir (429) permintaan tanpa UA yang memuat kontak. */
+const WIKI_UA = 'ai-agent-engginer/1.0 (https://github.com/alif121727/ai-agent-engginer)';
+
+const WIKI_QUERY = [
+  'car driving highway',
+  'sports car driving',
+  'car driving road 4k',
+  'cars driving street',
+];
+
+/** Judul yang jelas bukan mobil melaju (komedi, kejar-kejaran, dsb.). */
+const WIKI_TOLAK =
+  /bumper|autoscooter|police|crash|accident|chase|flee|arrest|toy|lego|animation|logo|test drive|repair|parking/i;
+
+/** Judul yang menyebut berkendara di jalan lebih dulu daripada yang sekadar "car". */
+function skorJudul(judul: string): number {
+  const t = judul.toLowerCase();
+  let skor = 0;
+  if (/driving|drive|drives/.test(t)) skor += 3;
+  if (/highway|motorway|freeway|road|street/.test(t)) skor += 2;
+  if (/car|auto|vehicle/.test(t)) skor += 1;
+  if (/night|rain|sunset|aerial|pov|dashcam/.test(t)) skor += 1;
+  return skor;
+}
+
+interface WikiDerivative {
+  src?: string;
+  width?: number;
+  height?: number;
+  transcodekey?: string;
+}
+
+interface WikiPage {
+  title?: string;
+  videoinfo?: {
+    url?: string;
+    mime?: string;
+    duration?: number;
+    derivatives?: WikiDerivative[];
+    extmetadata?: Record<string, { value?: string }>;
+  }[];
+}
+
+function bersihkanHtml(teks: string): string {
+  return teks.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+}
+
+function transkodeTerbaik(v: NonNullable<WikiPage['videoinfo']>[number]): WikiDerivative | undefined {
+  const der = v.derivatives ?? [];
+  const ambil = (kunci: string) => der.find((d) => (d.transcodekey ?? '').startsWith(kunci));
+  // Klip panjang di 1080p bisa puluhan MB padahal yang dipakai hanya beberapa
+  // detik; 480p sudah cukup setelah di-crop dan di-grade ke 1080p.
+  const panjang = (v.duration ?? 0) > 45;
+  return panjang
+    ? ambil('480p.vp9') ?? ambil('720p.vp9') ?? ambil('360p.mpeg4')
+    : ambil('1080p.vp9') ?? ambil('720p.vp9') ?? ambil('480p.vp9') ?? ambil('360p.mpeg4');
+}
+
+export function wikimediaAdapter(def: VisualAdapterDef): VisualAdapter {
+  const dipakai = new Map<string, Set<string>>();
+  return {
+    id: def.id,
+    def,
+    available: () => Boolean(def.enabled),
+    async generate(req: GenerateRequest): Promise<GenerateResult> {
+      const butuhDetik = Math.max(3, Math.ceil(req.scene.duration));
+      const sudah = dipakai.get(req.outDir) ?? new Set<string>();
+      dipakai.set(req.outDir, sudah);
+      let gagal = '';
+      for (const q of WIKI_QUERY) {
+        const url =
+          'https://commons.wikimedia.org/w/api.php?action=query&format=json&generator=search' +
+          `&gsrsearch=${encodeURIComponent(`filetype:video ${q}`)}` +
+          '&gsrnamespace=6&gsrlimit=20&prop=videoinfo&viprop=url|size|mime|derivatives|extmetadata';
+        const res = await fetch(url, { headers: { 'user-agent': WIKI_UA } });
+        if (!res.ok) {
+          gagal = `HTTP ${res.status}`;
+          continue;
+        }
+        const json = (await res.json()) as { query?: { pages?: Record<string, WikiPage> } };
+        const kandidat = Object.values(json.query?.pages ?? {})
+          .map((p) => ({ judul: p.title ?? '', v: p.videoinfo?.[0] }))
+          .filter((c) => {
+            const v = c.v;
+            if (!v || !/^video\//.test(v.mime ?? '')) return false;
+            if (WIKI_TOLAK.test(c.judul)) return false;
+            const dur = v.duration ?? 0;
+            // Batas atas mencegah unduhan raksasa; klip 1 jam tidak berguna.
+            if (dur < butuhDetik || dur > 240) return false;
+            const kode = transkodeTerbaik(v);
+            return Boolean(kode?.src) && !sudah.has(kode!.src!);
+          });
+        if (!kandidat.length) {
+          gagal = `"${q}" tidak punya klip ${butuhDetik}-240 dtk`;
+          continue;
+        }
+        kandidat.sort((a, b) => skorJudul(b.judul) - skorJudul(a.judul));
+        // Server unggah Wikimedia membalas 429 bila diminta terlalu cepat atau
+        // tanpa User-Agent, jadi beberapa kandidat dicoba bergantian.
+        for (let n = 0; n < Math.min(3, kandidat.length); n++) {
+          const pilih = kandidat[(req.scene.index + n) % kandidat.length];
+          const v = pilih.v!;
+          const kode = transkodeTerbaik(v)!;
+          const klip = await fetch(kode.src!, {
+            headers: { 'user-agent': WIKI_UA },
+          });
+          if (!klip.ok) {
+            gagal = `unduh klip HTTP ${klip.status}`;
+            continue;
+          }
+          const ext = (kode.src!.match(/\.(webm|ogv|mp4|mov)$/i)?.[1] ?? 'webm').toLowerCase();
+          const out = fileFor(req.outDir, req.scene.index, ext);
+          fs.writeFileSync(out, Buffer.from(await klip.arrayBuffer()));
+          sudah.add(kode.src!);
+          const penulis = bersihkanHtml(v.extmetadata?.Artist?.value ?? 'tanpa nama');
+          const lisensi = bersihkanHtml(v.extmetadata?.LicenseShortName?.value ?? 'CC');
+          return {
+            path: out,
+            kind: 'video',
+            provider: 'wikimedia',
+            source: 'stock-api',
+            credit: `${penulis} — ${lisensi} (Wikimedia Commons: ${pilih.judul.replace(/^File:/, '')})`,
+            cost: 0,
+          };
+        }
+      }
+      throw new Error(`Wikimedia tidak menemukan klip (${gagal || 'hasil kosong'})`);
+    },
+  };
+}
+
+/**
+ * Pixabay: klip stok nyata dengan kunci API gratis (tanpa kartu kredit),
+ * kualitasnya sebanding Pexels. Dipakai sebagai sumber kedua supaya pengguna
+ * punya pilihan: cukup salah satu kunci yang diisi.
+ */
+export function pixabayAdapter(def: VisualAdapterDef): VisualAdapter {
+  const apiKey = def.envKey ? process.env[def.envKey] : undefined;
+  const dipakai = new Map<string, Set<number>>();
+  return {
+    id: def.id,
+    def,
+    available: () => Boolean(def.enabled && apiKey),
+    async generate(req: GenerateRequest): Promise<GenerateResult> {
+      if (!apiKey) throw new Error('kunci Pixabay belum diisi');
+      const butuhDetik = Math.max(3, Math.ceil(req.scene.duration));
+      const orientasi = req.aspect === '9:16' ? 'vertical' : 'horizontal';
+      const sudah = dipakai.get(req.outDir) ?? new Set<number>();
+      dipakai.set(req.outDir, sudah);
+      let gagal = '';
+      for (const q of stokQueries(req.model)) {
+        const url =
+          'https://pixabay.com/api/videos/?key=' +
+          encodeURIComponent(apiKey) +
+          `&q=${encodeURIComponent(q)}&per_page=20&video_type=film&orientation=${orientasi}&safesearch=true`;
+        const res = await fetch(url);
+        if (res.status === 400 || res.status === 401) {
+          throw new Error('kunci API Pixabay ditolak — periksa PIXABAY_API_KEY');
+        }
+        if (!res.ok) {
+          gagal = `HTTP ${res.status}`;
+          continue;
+        }
+        const json = (await res.json()) as {
+          hits?: {
+            id: number;
+            duration: number;
+            user?: string;
+            videos?: Record<string, { url: string; width: number; height: number }>;
+          }[];
+        };
+        const kandidat = (json.hits ?? []).filter((h) => h.duration >= butuhDetik && !sudah.has(h.id));
+        if (!kandidat.length) {
+          gagal = `"${q}" tidak punya klip >= ${butuhDetik} dtk`;
+          continue;
+        }
+        const pilih = kandidat[req.scene.index % kandidat.length];
+        const berkas =
+          pilih.videos?.large ?? pilih.videos?.medium ?? pilih.videos?.small ?? pilih.videos?.tiny;
+        if (!berkas?.url) {
+          gagal = `klip ${pilih.id} tanpa berkas mp4`;
+          continue;
+        }
+        const klip = await fetch(berkas.url);
+        if (!klip.ok) {
+          gagal = `unduh klip HTTP ${klip.status}`;
+          continue;
+        }
+        const out = fileFor(req.outDir, req.scene.index, 'mp4');
+        fs.writeFileSync(out, Buffer.from(await klip.arrayBuffer()));
+        sudah.add(pilih.id);
+        return {
+          path: out,
+          kind: 'video',
+          provider: 'pixabay',
+          source: 'stock-api',
+          credit: pilih.user ? `${pilih.user} (Pixabay)` : 'Pixabay',
+          cost: 0,
+        };
+      }
+      throw new Error(`Pixabay tidak menemukan klip (${gagal || 'hasil kosong'})`);
     },
   };
 }

@@ -7,6 +7,8 @@ import {
   klingVideoAdapter,
   seedanceVideoAdapter,
   stockAdapter,
+  wikimediaAdapter,
+  pixabayAdapter,
   pollinationsAdapter,
 } from './adapters.ts';
 import type { VisualAdapterDef } from '../core/config.ts';
@@ -23,6 +25,8 @@ export function buildAdapter(def: VisualAdapterDef): VisualAdapter | null {
       if (def.provider === 'seedance') return seedanceVideoAdapter(def);
       return videoGenAdapter(def);
     case 'stock-api':
+      if (def.model === 'wikimedia') return wikimediaAdapter(def);
+      if (def.model === 'pixabay') return pixabayAdapter(def);
       return stockAdapter(def);
     default:
       return null;

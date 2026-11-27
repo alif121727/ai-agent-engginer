@@ -33,6 +33,8 @@ class SqliteDb implements Db {
     ensureDir(path.dirname(file));
     this.#db = new DatabaseSync(file);
     this.#db.exec('PRAGMA journal_mode = WAL;');
+    // API dan worker adalah dua proses yang menulis ke berkas yang sama.
+    this.#db.exec('PRAGMA busy_timeout = 5000;');
     this.#db.exec('PRAGMA foreign_keys = ON;');
     this.#db.exec(SCHEMA_SQLITE);
     const columns = this.#db.prepare('PRAGMA table_info(users)').all() as { name: string }[];

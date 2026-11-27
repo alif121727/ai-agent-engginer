@@ -360,33 +360,30 @@ export function AgentOffice({ go }: { go: (r: Route) => void }) {
           const states = r.stages.map(stateOf);
           const active = states.includes('berjalan');
           const done = states.filter((s) => s === 'selesai' || s === 'dilewati').length;
-          const failed = states.includes('gagal');
           const defs = r.stages.map((sid) => STAGES.find((s) => s.id === sid));
           const cur = defs.find((s) => s && stateOf(s.id) === 'berjalan');
           const bad = defs.find((s) => s && stateOf(s.id) === 'gagal');
           const all = done === r.stages.length;
-          const bubble = cur ? cur.label : bad ? 'gagal' : all ? 'selesai' : 'menunggu';
-          const status = cur
-            ? `${cur.label} · berjalan`
-            : bad
-              ? `${bad.label} · gagal`
-              : all
-                ? `${WHO[r.kind]} · selesai`
-                : `${WHO[r.kind]} · menunggu`;
-          return (
-            <Room
-              key={r.kind}
-              kind={r.kind}
-              active={active}
-              done={done}
-              total={r.stages.length}
-              progress={r.stages.length ? done / r.stages.length : 0}
-              paused={paused}
-              bubble={bubble}
-              status={status}
-            />
-          );
-        })}
+          return {
+            kind: r.kind,
+            active,
+            done,
+            total: r.stages.length,
+            progress: r.stages.length ? done / r.stages.length : 0,
+            bubble: cur ? cur.label : bad ? 'gagal' : all ? 'selesai' : 'menunggu',
+            status: cur
+              ? `${cur.label} · berjalan`
+              : bad
+                ? `${bad.label} · gagal`
+                : all
+                  ? `${WHO[r.kind]} · selesai`
+                  : `${WHO[r.kind]} · menunggu`,
+          };
+        }).map((p) => (
+          <div key={p.kind} className="kantor__room">
+            <Room kind={p.kind} active={p.active} done={p.done} total={p.total} progress={p.progress} paused={paused} bubble={p.bubble} status={p.status} />
+          </div>
+        ))}
       </div>
 
       <div className="kantor__two">

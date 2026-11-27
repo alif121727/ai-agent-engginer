@@ -936,6 +936,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
 .kantor__chips { margin-left: auto; display: flex; gap: 6px; }
 .kantor__rooms { display: grid; gap: var(--sp-3); grid-template-columns: 1fr; }
 @media (min-width: 900px) { .kantor__rooms { grid-template-columns: repeat(3, 1fr); } }
+.kantor__room { display: contents; }
 .kantor__card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden; transition: 0.3s var(--ease); }
 .kantor__card.is-on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 .kantor__tb { display: flex; justify-content: space-between; padding: 6px 12px; border-bottom: 1px solid var(--border); color: var(--text-3); font-size: 0.7rem; }

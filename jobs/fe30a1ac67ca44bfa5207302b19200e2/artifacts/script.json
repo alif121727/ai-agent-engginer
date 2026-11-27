@@ -1,0 +1,52 @@
+{
+  "model": "Toyota AE86",
+  "tagline": "",
+  "lines": [
+    {
+      "sceneIndex": 0,
+      "onScreenText": "Toyota AE86",
+      "voiceover": "Toyota AE86."
+    },
+    {
+      "sceneIndex": 1,
+      "onScreenText": "Toyota AE86",
+      "voiceover": "Dari setiap sudut, Toyota AE86 tidak ingin dilupakan."
+    },
+    {
+      "sceneIndex": 2,
+      "onScreenText": "",
+      "voiceover": "Salah satu andalannya: 0–100 km/jam ±8,5 dtk."
+    },
+    {
+      "sceneIndex": 3,
+      "onScreenText": "",
+      "voiceover": "Kabinnya dibangun untuk pengemudi."
+    },
+    {
+      "sceneIndex": 4,
+      "onScreenText": "",
+      "voiceover": "Di jalan, 130 PS terasa langsung."
+    },
+    {
+      "sceneIndex": 5,
+      "onScreenText": "",
+      "voiceover": "I4 1.6L DOHC."
+    },
+    {
+      "sceneIndex": 6,
+      "onScreenText": "",
+      "voiceover": "Jantungnya I4 1.6L DOHC (4A-GE)."
+    },
+    {
+      "sceneIndex": 7,
+      "onScreenText": "",
+      "voiceover": "0–100 km/jam ±8,5 dtk."
+    },
+    {
+      "sceneIndex": 8,
+      "onScreenText": "Toyota AE86",
+      "voiceover": "Toyota AE86."
+    }
+  ],
+  "sumber": "lokal"
+}

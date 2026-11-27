@@ -1,0 +1,50 @@
+{
+  "passed": false,
+  "issues": [
+    {
+      "sceneIndex": 2,
+      "code": "too-small",
+      "reason": "resolusi 750x509 di bawah minimum"
+    },
+    {
+      "sceneIndex": 7,
+      "code": "too-small",
+      "reason": "resolusi 750x509 di bawah minimum"
+    }
+  ],
+  "hashes": {
+    "0": "fef0727e3981c1e1",
+    "1": "7f777321010387cf",
+    "2": "00d0e2fef08081ff",
+    "3": "0000307f6ffc3307",
+    "4": "0c080808081f7cff",
+    "5": "fef0727e3981c1e1",
+    "6": "7f777321010387cf",
+    "7": "00d0e2fef08081ff",
+    "8": "0000307f6ffc3307"
+  },
+  "sharpness": {
+    "0": 12,
+    "1": 15,
+    "2": 42,
+    "3": 21,
+    "4": 23,
+    "5": 12,
+    "6": 15,
+    "7": 42,
+    "8": 21
+  },
+  "checkedAt": "2026-11-27T13:28:15.325Z",
+  "preview": "/workspace/project/jobs/fe30a1ac67ca44bfa5207302b19200e2/preview.jpg",
+  "video": {
+    "ok": true,
+    "width": 1920,
+    "height": 1080,
+    "durationSec": 60,
+    "codec": "h264",
+    "hasAudio": true,
+    "audioCodec": "aac",
+    "fps": 30,
+    "expectedDurationSec": 60
+  }
+}

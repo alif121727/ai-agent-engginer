@@ -246,3 +246,18 @@ Detail panjang ada di `archive/MEMORY-full-2026-11-20.md` dan log harian.
   di src/api/server.ts); tanpa itu Pages tidak bisa memanggil API sama sekali.
 - Verifikasi: `curl -H "Origin: https://alif121727.github.io" .../api/health`
   harus memuat `Access-Control-Allow-Origin`.
+## Backend container (diuji 2026-11-27)
+- `docker build -t ai-studio-otomotif .` berhasil (1,89 GB). Jalankan dengan
+  `-v <host>:/var/data -e STUDIO_DATA_DIR=/var/data -e DB_PATH=/var/data/db/studio.db
+   -e WORKER_IN_PROCESS=1 -e SESSION_SECRET=...`.
+- Di dalam container: ffmpeg `/usr/bin/ffmpeg`, piper `/usr/local/bin/piper`,
+  model TTS ikut ter-bake. Render 30 dtk: 9/9 tahap, QA 26/26, h264 1920×1080 +
+  AAC, 28,7 MB, narasi RMS −19,2 dB.
+- `STUDIO_DATA_DIR` (src/core/fsx.ts) memindahkan `jobs/` + `data/`; wajib
+  dipasang ke volume, kalau tidak akun & video hilang saat restart.
+- Berkas deploy: `render.yaml` (disk /var/data), `fly.toml` (/data),
+  `railway.toml`, `.github/workflows/image.yml` (GHCR manual/tag),
+  panduan lengkap `docs/DEPLOY-BACKEND.md`.
+- Docker daemon sandbox TIDAK jalan otomatis: `sudo dockerd > /tmp/dockerd.log &`.
+- Token GitHub di sesi ini tidak boleh menulis Actions variables (403), jadi
+  `STUDIO_URL` harus diisi manual atau pakai `?backend=`.

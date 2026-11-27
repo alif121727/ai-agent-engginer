@@ -1,0 +1,40 @@
+# Fly.io: satu mesin, satu volume untuk SQLite + hasil render.
+# Ganti `app` kalau namanya sudah dipakai, lalu:
+#   fly volumes create studio_data --size 10 --region sin
+#   fly secrets set SESSION_SECRET=$(openssl rand -hex 32)
+#   fly deploy
+app = "studio-ai-otomotif"
+primary_region = "sin"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8080"
+  NODE_ENV = "production"
+  # Worker berjalan di proses API: host satu-mesin tidak punya service worker
+  # terpisah yang berbagi volume.
+  WORKER_IN_PROCESS = "1"
+  DB_KIND = "sqlite"
+  # Semua data pengguna (akun + jobs/) diarahkan ke volume.
+  STUDIO_DATA_DIR = "/data"
+  DB_PATH = "/data/data/studio.db"
+  CORS_ORIGINS = "https://alif121727.github.io,https://agent-studio-ai.netlify.app"
+
+[[mounts]]
+  source = "studio_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "suspend"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    grace_period = "30s"
+    interval = "30s"
+    method = "GET"
+    path = "/api/health"
+    timeout = "5s"

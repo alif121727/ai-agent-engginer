@@ -76,17 +76,25 @@ disimpan di repo.
 4. `npm test` — tes akan menolak spesifikasi yang tidak ada di katalog, video
    yang berkasnya hilang, dan durasi di bawah 30 detik.
 
-## Mode demo vs backend
+## Backend (render sungguhan)
 
-Situs statis tidak punya server, jadi UI otomatis memakai `DemoStudioApi`:
-login tidak diverifikasi dan proyek disimpan di `localStorage` per akun.
-Saat pertama dibuka, daftar proyek diisi dari job nyata (lihat
-`seedProjects()` di `studio/src/services/api.ts`), sehingga studio tidak
-terlihat kosong. Menghapus proyek bersifat lokal dan tidak kembali setelah
-muat ulang.
+Situs statis tidak bisa merender video. Backend ada di image Docker repo ini
+(`Dockerfile`) dan sudah diuji: health OK, ffmpeg + Piper terpasang, render
+30 dtk 9/9 tahap selesai, QA 26/26 lulus, narasi RMS −19,2 dB.
 
-Kalau studio dijalankan bersama API repo (`npm run api`), `pickApi()` mendeteksi
-`/api/health` dan memakai backend sungguhan.
+Langkah deploy per host (Render, Fly.io, Railway, VPS), tabel variabel
+lingkungan, dan cara menyambungkan Pages ke backend baru ada di
+**[docs/DEPLOY-BACKEND.md](docs/DEPLOY-BACKEND.md)**.
+
+Ringkas:
+
+- `render.yaml` — blueprint Render dengan disk 10 GB di `/var/data`.
+- `fly.toml` — satu mesin + volume `/data`.
+- `railway.toml` — build dari Dockerfile, healthcheck `/api/health`.
+- `.github/workflows/image.yml` — publikasi image ke GHCR (manual / tag `v*`).
+
+UI tidak pernah lagi berpindah ke data simulasi: kalau backend tidak menjawab,
+muncul bilah merah berisi alamat backend dan tombol coba lagi.
 
 ## Kalau situs 404
 

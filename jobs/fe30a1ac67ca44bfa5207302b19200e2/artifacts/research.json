@@ -1,0 +1,41 @@
+{
+  "model": "Toyota AE86",
+  "catalog": {
+    "merk": "Toyota",
+    "seri": "Corolla Levin / Sprinter Trueno",
+    "tahun": "1983–1987",
+    "kategori": "klasik",
+    "mesin": "I4 1.6L DOHC (4A-GE)",
+    "tenaga": "130 PS",
+    "torsi": "149 Nm",
+    "layout": "front-engine, RWD",
+    "berat": "998–1.043 kg",
+    "nol100": "±8,5 dtk",
+    "vmax": "tidak disebut di sumber",
+    "sumber": "https://en.wikipedia.org/wiki/Toyota_AE86"
+  },
+  "specs": [
+    {
+      "text": "I4 1.6L DOHC (4A-GE) · 130 PS",
+      "source": "katalog"
+    },
+    {
+      "text": "Torsi 149 Nm · front-engine, RWD",
+      "source": "katalog"
+    },
+    {
+      "text": "0–100 km/jam ±8,5 dtk",
+      "source": "katalog"
+    },
+    {
+      "text": "Berat 998–1.043 kg · produksi 1983–1987",
+      "source": "katalog"
+    },
+    {
+      "text": "Hatchback tiga pintu yang mengajarkan seluruh generasi cara masuk tikungan.",
+      "source": "katalog"
+    }
+  ],
+  "missing": [],
+  "note": "angka dari brief didahulukan; sisanya dari katalog yang bersumber Wikipedia"
+}

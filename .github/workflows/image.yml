@@ -1,9 +1,9 @@
 # Image backend ke GHCR.
-
-Dipakai kalau host (Render/Railway/Fly) lebih suka menarik image siap pakai
-daripada membangun sendiri, atau untuk menyimpan image yang sudah terbukti
-lolos uji. Dijalankan manual atau saat tag `v*` dibuat — bukan setiap push,
-supaya menit CI tidak habis untuk build image 1,9 GB.
+#
+# Dipakai kalau host (Render/Railway/Fly) lebih suka menarik image siap pakai
+# daripada membangun sendiri, atau untuk menyimpan image yang sudah terbukti
+# lolos uji. Dijalankan manual atau saat tag `v*` dibuat — bukan setiap push,
+# supaya menit CI tidak habis untuk build image 1,9 GB.
 
 name: Image backend
 

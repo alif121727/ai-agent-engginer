@@ -31,7 +31,8 @@ COPY . .
 RUN mkdir -p /app/assets/tts \
  && for ext in onnx onnx.json; do \
       [ -f "/app/assets/tts/id_ID-news_tts-medium.$ext" ] && continue; \
-      curl -fsSL --retry 3 -o "/app/assets/tts/id_ID-news_tts-medium.$ext" \
+      curl -fsSL --retry 3 --retry-delay 2 --connect-timeout 15 --max-time 420 \
+        -o "/app/assets/tts/id_ID-news_tts-medium.$ext" \
         "https://huggingface.co/rhasspy/piper-voices/resolve/main/id/id_ID/news_tts/medium/id_ID-news_tts-medium.$ext" \
       || echo "PERINGATAN: model TTS $ext gagal diunduh, narasi akan dilewati"; \
     done

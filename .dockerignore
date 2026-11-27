@@ -12,3 +12,7 @@ netlify-site
 .openhands
 *.log
 tests
+# Model TTS diunduh di dalam image, bukan dikirim sebagai konteks (61 MB).
+assets/tts
+# Video car-chase hanya untuk pratinjau lokal, tidak dipakai server (23 MB).
+assets/car-chase

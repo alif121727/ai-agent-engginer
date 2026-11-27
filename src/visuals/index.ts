@@ -1,6 +1,7 @@
 import type { VisualAdapter, GenerateRequest, GenerateResult } from './types.ts';
 import {
   localAdapter,
+  catalogAdapter,
   imageGenAdapter,
   videoGenAdapter,
   runwayVideoAdapter,
@@ -16,7 +17,7 @@ import type { VisualAdapterDef } from '../core/config.ts';
 export function buildAdapter(def: VisualAdapterDef): VisualAdapter | null {
   switch (def.kind) {
     case 'local':
-      return localAdapter(def);
+      return def.model === 'katalog' ? catalogAdapter(def) : localAdapter(def);
     case 'image-gen':
       return def.requiresKey ? imageGenAdapter(def) : pollinationsAdapter(def);
     case 'video-gen':

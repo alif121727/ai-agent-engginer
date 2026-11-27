@@ -5,6 +5,7 @@
     "stock-api",
     "pixabay",
     "wikimedia",
+    "katalog",
     "image-gen",
     "image-gen-free"
   ],
@@ -170,6 +171,15 @@
       "envKey": "PIXABAY_API_KEY",
       "model": "pixabay",
       "description": "Klip video stok gratis dari Pixabay. Kunci API gratis, tanpa kartu kredit."
+    },
+    "katalog": {
+      "id": "katalog",
+      "label": "Foto contoh bawaan",
+      "kind": "local",
+      "enabled": true,
+      "requiresKey": false,
+      "model": "katalog",
+      "description": "Foto statis yang ikut di image; dipakai hanya bila tidak ada klip nyata."
     }
   }
 }

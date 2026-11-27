@@ -23,9 +23,15 @@ export function localCandidateOrder(
   return [...ref, ...own];
 }
 
+/** Hanya unggahan pengguna: berkas inilah yang paling dipercaya. */
 function localCandidates(req: GenerateRequest): string[] {
-  const own = userAssetsFor(req.model, path.join(paths.assets, 'own'));
+  const own = userAssetsFor(req.model, paths.uploads);
   return localCandidateOrder(own, req.referenceImage);
+}
+
+/** Foto contoh yang ikut di image. Statis, jadi selalu dicoba paling akhir. */
+function bundledCandidates(req: GenerateRequest): string[] {
+  return userAssetsFor(req.model, path.join(paths.assets, 'own'));
 }
 
 /** Highest priority: the user's own photos/videos for this model. */
@@ -46,6 +52,29 @@ export function localAdapter(def: VisualAdapterDef): VisualAdapter {
       const out = fileFor(req.outDir, req.scene.index, isVideo ? (ext === '.webm' ? 'webm' : 'mp4') : ext.replace('.', '') || 'jpg');
       fs.copyFileSync(chosen, out);
       return { path: out, kind: isVideo ? 'video' : 'image', provider: 'local', source: chosen, cost: 0 };
+    },
+  };
+}
+
+/**
+ * Foto contoh bawaan untuk sebuah model. Sebelum ini adapter `local` ikut
+ * menyajikan foto bawaan, sehingga selalu menang atas klip video dan semua
+ * video keluar sebagai foto yang digerakkan. Sekarang foto bawaan punya
+ * adapter sendiri yang ditaruh setelah sumber klip.
+ */
+export function catalogAdapter(def: VisualAdapterDef): VisualAdapter {
+  return {
+    id: def.id,
+    def,
+    available: (req?: GenerateRequest) => !req || bundledCandidates(req).length > 0,
+    async generate(req: GenerateRequest): Promise<GenerateResult> {
+      const candidates = bundledCandidates(req);
+      if (!candidates.length) throw new Error('tidak ada foto contoh untuk model ini');
+      const chosen = candidates[req.scene.index % candidates.length];
+      const ext = path.extname(chosen).toLowerCase();
+      const out = fileFor(req.outDir, req.scene.index, ext.replace('.', '') || 'jpg');
+      fs.copyFileSync(chosen, out);
+      return { path: out, kind: 'image', provider: 'katalog', source: chosen, cost: 0 };
     },
   };
 }

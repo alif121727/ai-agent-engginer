@@ -629,7 +629,10 @@ await check('unggahan aset model katalog masuk ke folder yang dibaca pipeline', 
     body: JSON.stringify({ email: 'uji@studio.id', password: 'rahasia123' }),
   });
   const cookie = (login.headers.get('set-cookie') ?? '').split(';')[0];
-  const dir = path.join(process.cwd(), 'assets', 'own', assetFolderSlug(model));
+  // Unggahan pengguna disimpan di paths.uploads (di luar folder aplikasi) supaya
+  // tidak hilang saat deploy; foto contoh bawaan tetap di assets/own.
+  const { paths } = await import('../src/core/fsx.ts');
+  const dir = path.join(paths.uploads, assetFolderSlug(model));
   try {
     const upload = await fetch(`${base}/api/assets/${encodeURIComponent(model)}?name=${name}`, {
       method: 'POST',
@@ -638,7 +641,7 @@ await check('unggahan aset model katalog masuk ke folder yang dibaca pipeline', 
     });
     assert(upload.status === 201, `unggah harus 201, dapat ${upload.status}`);
     assert(fs.existsSync(path.join(dir, name)), `berkas harus mendarat di ${dir}`);
-    const seen = userAssetsFor(model, path.join(process.cwd(), 'assets', 'own')).map((f) => path.basename(f));
+    const seen = userAssetsFor(model, paths.uploads).map((f) => path.basename(f));
     assert(seen.includes(name), `pipeline harus melihat berkas yang baru diunggah (${seen.join(', ')})`);
   } finally {
     await fetch(`${base}/api/assets/${encodeURIComponent(model)}/${encodeURIComponent(name)}`, {

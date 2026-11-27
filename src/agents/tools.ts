@@ -309,7 +309,10 @@ async function generateAssets(ctx: AgentContext, wantVideo: boolean): Promise<As
     ctx.assertOnline();
     await ctx.setStageMessage(`scene ${scene.index + 1}/${scenes.length}`);
     // Image-to-video needs a still to animate; reuse the model's own photos.
-    const own = userAssetsFor(brief.model, path.join(paths.assets, 'own')).filter((f) => !/\.(mp4|mov)$/i.test(f));
+    const own = [
+      ...userAssetsFor(brief.model, paths.uploads),
+      ...userAssetsFor(brief.model, path.join(paths.assets, 'own')),
+    ].filter((f) => !/\.(mp4|mov|webm)$/i.test(f));
     const { result, attempts } = await resolveSceneAsset({
       order,
       defs,

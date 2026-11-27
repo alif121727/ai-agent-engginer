@@ -24,6 +24,8 @@ export const paths = {
   cache: path.join(ROOT, 'cache'),
   assets: path.join(ROOT, 'assets'),
   data: path.join(dataRoot, 'data'),
+  /** Unggahan pengguna: harus selamat dari deploy, jadi di luar folder aplikasi. */
+  uploads: path.join(dataRoot, 'uploads'),
   publicDir: path.join(ROOT, 'public'),
   docsUi: path.join(ROOT, 'docs', 'ui'),
 };

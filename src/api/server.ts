@@ -207,7 +207,19 @@ export function createApp(opts: AppOptions = {}) {
     const adapters = loadAdapters();
     type Provider = { keyed: boolean; credits?: number; ready: boolean; note?: string };
     const providers: Record<string, Provider> = {};
+    const stok: Record<string, { keyed: boolean; ready: boolean; note?: string }> = {};
     for (const a of Object.values(adapters.adapters)) {
+      if (a.kind === 'stock-api') {
+        // Sumber klip nyata gratis: UI perlu tahu mana yang siap supaya tidak
+        // menjanjikan footage asli padahal tidak ada kuncinya.
+        const keyed = Boolean(a.envKey && process.env[a.envKey]);
+        stok[a.id] = {
+          keyed,
+          ready: Boolean(a.enabled) && (!a.requiresKey || keyed),
+          ...(a.requiresKey && !keyed ? { note: 'kunci API belum diisi' } : {}),
+        };
+        continue;
+      }
       if (a.kind !== 'video-gen') continue;
       const provider = a.provider ?? 'generic';
       const keyed = Boolean(a.envKey && process.env[a.envKey]);
@@ -244,7 +256,7 @@ export function createApp(opts: AppOptions = {}) {
         providers[provider] = { keyed, ready: true };
       }
     }
-    res.json({ ok: true, providers, local: true });
+    res.json({ ok: true, providers, stok, local: true });
   });
 
   app.get('/api/bootstrap', async (_req, res) => {
@@ -714,7 +726,21 @@ export function createApp(opts: AppOptions = {}) {
   // Must resolve through the catalog: folders are named by hand after the
   // catalog slug, so a naive slug of the display name ("mazda-rx-7") would
   // write uploads where the pipeline never looks.
-  const ownDir = (model: string) => path.join(paths.assets, 'own', assetFolderSlug(model));
+  const ownDir = (model: string) => path.join(paths.uploads, assetFolderSlug(model));
+  /** Foto bawaan yang ikut di image: statis, jadi dipakai paling akhir. */
+  const bundledDir = (model: string) => path.join(paths.assets, 'own', assetFolderSlug(model));
+  const listAssets = (model: string) => {
+    const hasil: { name: string; sumber: 'unggahan' | 'bawaan'; path: string }[] = [];
+    const lihat = (dir: string, sumber: 'unggahan' | 'bawaan') => {
+      if (!fs.existsSync(dir)) return;
+      for (const f of fs.readdirSync(dir).filter((n) => ASSET_EXT.test(n)).sort()) {
+        hasil.push({ name: f, sumber, path: path.join(dir, f) });
+      }
+    };
+    lihat(ownDir(model), 'unggahan');
+    lihat(bundledDir(model), 'bawaan');
+    return hasil;
+  };
   const ASSET_EXT = /\.(jpe?g|png|webp|mp4|mov|webm)$/i;
 
   /**
@@ -786,14 +812,19 @@ export function createApp(opts: AppOptions = {}) {
   });
 
   app.get('/api/assets/:model', async (req, res) => {
-    const dir = ownDir(req.params.model);
-    const files = fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => ASSET_EXT.test(f)) : [];
+    const daftar = listAssets(req.params.model);
     const warnings: Record<string, string> = {};
-    for (const file of files) {
-      const flag = assetFlag(path.join(dir, file));
-      if (flag) warnings[file] = flag;
+    for (const item of daftar) {
+      const flag = assetFlag(item.path);
+      if (flag) warnings[item.name] = flag;
     }
-    res.json({ model: req.params.model, folder: path.relative(paths.root, dir), files, warnings });
+    res.json({
+      model: req.params.model,
+      folder: path.relative(paths.root, ownDir(req.params.model)),
+      files: daftar.map((d) => d.name),
+      sumber: Object.fromEntries(daftar.map((d) => [d.name, d.sumber])),
+      warnings,
+    });
   });
 
   /**
@@ -803,20 +834,14 @@ export function createApp(opts: AppOptions = {}) {
    * supaya hasilnya stabil antar-permintaan (foto-1 selalu yang pertama).
    */
   app.get('/api/assets/:model/cover', async (req, res) => {
-    const dir = ownDir(req.params.model);
-    if (!fs.existsSync(dir)) {
-      res.status(404).json({ error: 'folder aset tidak ada' });
-      return;
-    }
-    const foto = fs
-      .readdirSync(dir)
-      .filter((f) => /\.(jpe?g|png|webp)$/i.test(f))
-      .sort((a, b) => a.localeCompare(b, 'id', { numeric: true }));
+    const foto = listAssets(req.params.model)
+      .filter((d) => /\.(jpe?g|png|webp)$/i.test(d.name))
+      .sort((a, b) => a.name.localeCompare(b.name, 'id', { numeric: true }));
     if (!foto.length) {
       res.status(404).json({ error: 'belum ada foto untuk model ini' });
       return;
     }
-    res.sendFile(path.join(dir, foto[0]));
+    res.sendFile(foto[0].path);
   });
 
   app.post(
@@ -845,8 +870,10 @@ export function createApp(opts: AppOptions = {}) {
       res.status(400).json({ error: 'tipe berkas tidak didukung' });
       return;
     }
-    const file = path.join(ownDir(req.params.model), name);
-    if (!fs.existsSync(file)) {
+    const file = [path.join(ownDir(req.params.model), name), path.join(bundledDir(req.params.model), name)].find(
+      (f) => fs.existsSync(f),
+    );
+    if (!file) {
       res.status(404).json({ error: 'berkas tidak ada' });
       return;
     }

@@ -261,3 +261,13 @@ Detail panjang ada di `archive/MEMORY-full-2026-11-20.md` dan log harian.
 - Docker daemon sandbox TIDAK jalan otomatis: `sudo dockerd > /tmp/dockerd.log &`.
 - Token GitHub di sesi ini tidak boleh menulis Actions variables (403), jadi
   `STUDIO_URL` harus diisi manual atau pakai `?backend=`.
+## Render (pilihan A user, 2026-11-27)
+- `render.yaml`: plan `1c-2g` (ID plan Render valid), region singapore, disk
+  10 GB di `/var/data`, `STUDIO_DATA_DIR=/var/data`, `DB_PATH=/var/data/db/studio.db`,
+  `WORKER_IN_PROCESS=1`, `SESSION_SECRET` generateValue, `APP_URL` sync:false,
+  `CORS_ORIGINS` = Pages + Netlify.
+- `SESSION_SECRET` WAJIB: `src/visuals/media-sign.ts` melempar error tanpa itu.
+  Playback UI sendiri memakai `?token=<sesi>` (401 tanpa token), bukan secret.
+- Diuji dengan env persis Render (PORT=10000, /var/data): health OK, preflight
+  CORS 204, setup 200 lalu 409, login, render 30 dtk, media 200 27,8 MB.
+- Disk persisten hanya di paket berbayar; free tier menghapus DB + video.

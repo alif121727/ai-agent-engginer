@@ -78,8 +78,12 @@ export class Worker {
     this.#monitor.start();
     // Job yang tertinggal `running` oleh worker yang mati tidak akan pernah
     // diambil lagi (claimNextJob hanya membaca `queued`), jadi dipulihkan dulu
-    // sebelum loop berjalan.
-    const dipulihkan = await requeueStaleRunning();
+    // sebelum loop berjalan. Batas waktunya 0, bukan 15 menit: tepat setelah
+    // proses ini lahir tidak ada tahap yang sedang berjalan, jadi setiap job
+    // `running` di database pasti yatim. Ambang 15 menit pernah menahan job
+    // yang mati saat mesin host restart — statusnya `running` selamanya
+    // padahal tidak ada ffmpeg yang bekerja.
+    const dipulihkan = await requeueStaleRunning(0);
     if (dipulihkan.length) {
       logger('worker').warn(`memulihkan ${dipulihkan.length} job basi`, { jobs: dipulihkan });
     }

@@ -945,6 +945,34 @@ await check('job running yang worker-nya mati dipulihkan, bukan tertahan selaman
   assert(diambil?.id === job.id, 'job yang dipulihkan tidak bisa diklaim lagi');
 });
 
+await check('worker baru memulihkan job yatim seketika, tanpa menunggu 15 menit', async () => {
+  const { createJob, claimNextJob, requeueStaleRunning, getJob } = await import('../src/db/repo.ts');
+  while (await claimNextJob()) {
+    /* kosongkan antrean */
+  }
+  const job = await createJob({
+    briefSlug: 'uji-yatim',
+    title: 'Uji Yatim',
+    model: 'Uji Yatim',
+    themeId: 'generic',
+    mode: 'draft',
+    durationSec: 30,
+    aspect: '16:9',
+    preset: '9-orang',
+    brief: { model: 'Uji Yatim', durasi: 30, rasio: '16:9', keunggulan: [] } as never,
+    costEstimate: 0,
+  });
+  await claimNextJob();
+  assert((await getJob(job.id))?.status === 'running', 'job seharusnya running setelah diklaim');
+
+  // Proses baru tidak mungkin punya tahap berjalan, jadi ambang 0 dipakai
+  // saat start: mesin host yang restart di tengah render tidak boleh
+  // meninggalkan job berstatus running selamanya.
+  const pulih = await requeueStaleRunning(0);
+  assert(pulih.includes(job.id), 'job yatim tidak dipulihkan saat worker start');
+  assert((await getJob(job.id))?.status === 'queued', 'job yatim tetap running');
+});
+
 // ------------------------------------------------ pencarian model otomatis
 
 await check('pencarian model menerima nama panggilan, bukan hanya nama persis', async () => {

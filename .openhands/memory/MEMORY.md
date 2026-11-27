@@ -186,3 +186,27 @@ Detail panjang ada di `archive/MEMORY-full-2026-11-20.md` dan log harian.
   `~/.local/bin`.
 - `./scripts/check.sh` = gerbang lokal satu perintah (typecheck, npm test,
   pytest, build). Jalankan sebelum commit.
+
+## Restore setelah sandbox hilang (2026-11-27, teruji)
+- Workspace kosong total (hanya `.openhands/memory`). Repo dipulihkan dari GitHub:
+  `git clone --depth 30 https://$GITHUB_TOKEN@github.com/alif121727/ai-agent-engginer.git`
+  lalu pindahkan `.git` + isi ke `/workspace/project` (rsync tidak ada; pakai tar).
+- `npm ci` cukup (86 paket). `npm run build:studio` -> v hash baru; `npm test`
+  **187 lulus** dengan ffmpeg 9.0.2 (imageio) + ffprobe 4.0.2 (ffprobe-static).
+- Biner hilang setelah reset. Resep yang berhasil:
+  `pip install imageio-ffmpeg` -> salin `imageio_ffmpeg.get_ffmpeg_exe()` ke
+  `/workspace/tools/bin/ffmpeg`; `npm i --prefix /tmp/ffp ffprobe-static` ->
+  salin `bin/linux/x64/ffprobe` ke folder yang sama. `src/core/env.ts` mencari
+  `/workspace/tools/bin`, jadi tidak perlu ubah PATH global.
+- `pip install piper-tts` lalu `./scripts/fetch-tts-model.sh` (model onnx 63 MB
+  gitignored, harus diunduh ulang tiap reset). `~/.local/bin/piper` sudah ada di
+  daftar `toolDirs` env.ts.
+- `data/studio.db` **tidak** di-commit -> `users` kosong, dashboard 0 proyek.
+  Buat akun admin sekali: `POST /api/setup {email,password,username}` (hanya
+  boleh saat userCount=0). Dipakai: admin@studio.id / admin123, username `admin`.
+- `jobs/` ikut repo (artefak), tetapi `jobs/*/video.mp4` gitignored -> tidak ada
+  video hasil render lama. Video galeri tetap ada di `netlify-site/video/` dan
+  disajikan `/video/*` oleh server.
+- `scripts/serve.sh` default `APP_URL` masih menunjuk sandbox lama
+  (`work-1-lxpwikokempxmoli`). Sudah diganti ke host sekarang
+  (`work-1-dqfkjmazfavmzfjk`); kalau host berubah lagi, ubah baris itu.

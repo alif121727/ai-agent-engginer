@@ -5,7 +5,7 @@ set -u
 PORT="${1:-12000}"
 cd "$(dirname "$0")/.."
 export PORT
-export APP_URL="${APP_URL:-https://work-1-lxpwikokempxmoli.prod-runtime.all-hands.dev}"
+export APP_URL="${APP_URL:-https://work-1-dqfkjmazfavmzfjk.prod-runtime.all-hands.dev}"
 
 # Sandbox bisa me-reset PATH dan paket apt saat container restart, sehingga
 # ffmpeg hilang padahal biner lokal masih ada. Tanpa ffmpeg render jatuh ke

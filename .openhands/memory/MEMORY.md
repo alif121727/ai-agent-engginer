@@ -282,3 +282,28 @@ Detail panjang ada di `archive/MEMORY-full-2026-11-20.md` dan log harian.
   `fly secrets set SESSION_SECRET=... APP_URL=https://<app>.fly.dev`,
   `fly deploy --ha=false` (SQLite tidak boleh dua mesin).
 - Dashboard-only tidak cukup: volume & secret hanya bisa dibuat dari CLI.
+
+## Deploy produksi: Fly.io (app `ai-agent-engginer`, region sin)
+- **Bangun image di GitHub, jangan di Fly.** Workflow `Image backend` membuat
+  `ghcr.io/alif121727/ai-agent-engginer:latest` (~2,5 menit, paket publik).
+  Deploy: `flyctl deploy --image ghcr.io/alif121727/ai-agent-engginer:latest
+  --ha=false -a ai-agent-engginer`. Build di builder Fly menggantung lama.
+- Workflow itu pernah **mati total** karena baris komentar pembuka tanpa `#`
+  (YAML tidak sah) → run gagal 0 dtk dan image tidak pernah ada. Cek
+  `gh run list --workflow=image.yml` bila GHCR "image not found".
+- Akun trial: **maks 2 vCPU per mesin** (`shared-cpu-4x` ditolak). Shared CPU
+  diturunkan ke baseline setelah burst habis → render 30 dtk 1080p butuh
+  **12–15 menit**. Pass gabung (rantai xfade) wajib `-preset veryfast`.
+- **Health check harus TCP**, bukan HTTP: saat CPU jenuh event loop Node
+  tertahan >10 dtk, check HTTP gagal terus, lalu Fly menghentikan mesin
+  (`requested_stop=true`) tiap 5 menit di tengah render.
+- `auto_stop_machines = "off"` wajib; `min_machines_running = 1` tidak
+  menahan mesin tunggal tetap hidup.
+- **Worker wajib proses anak** (`src/api/main.ts` spawn
+  `src/worker/main.ts`, prioritas below-normal). Render memakai `spawnSync`
+  sehingga worker in-process membekukan API.
+- `requeueStaleRunning(0)` saat worker start: ambang 15 menit meninggalkan job
+  `running` selamanya setelah mesin restart.
+- Akun produksi: `admin@studio.id` / user `admin123` / sandi `alif121727`.
+- `.dockerignore` mengeluarkan `assets/tts` (62 MB, diunduh di image) dan
+  `assets/car-chase` (23 MB).

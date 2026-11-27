@@ -243,7 +243,7 @@ export function Settings() {
         <div className="row row--between">
           <h2>Koneksi backend</h2>
           <span className={`chip ${api.kind === 'http' ? 'chip--ok' : 'chip--warn'}`}>
-            {api.kind === 'http' ? 'tersambung' : 'mode demo'}
+            {api.kind === 'http' ? 'tersambung' : 'tidak tersambung'}
           </span>
         </div>
         <p className="small muted" style={{ margin: 0 }}>
@@ -297,7 +297,7 @@ export function Settings() {
           <div>
             <div className="small" style={{ fontWeight: 600 }}>Agent Studio AI Otomotif</div>
             <div className="dim tiny">
-              Rilis {APP_VERSION} · {api.kind === 'http' ? 'backend aktif' : 'mode demo statis'}
+              Rilis {APP_VERSION} · {api.kind === 'http' ? 'backend aktif' : 'backend tidak tersambung'}
             </div>
           </div>
           <span className="chip chip--accent">v{APP_VERSION}</span>

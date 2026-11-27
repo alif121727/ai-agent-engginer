@@ -213,7 +213,7 @@ function pad(n: number): string {
 }
 
 export function AgentOffice({ go }: { go: (r: Route) => void }) {
-  const { api, projects, refresh, toast } = useStudio();
+  const { api, projects, refresh, toast, backend } = useStudio();
   const [id, setId] = React.useState('');
   const [paused, setPaused] = React.useState(false);
   const [script, setScript] = React.useState<ScriptArtifact | null>(null);
@@ -294,8 +294,8 @@ export function AgentOffice({ go }: { go: (r: Route) => void }) {
     <div className="kantor">
       <div className="kantor__head">
         <div className="kantor__legend">
-          <span className={`chip ${api.kind === 'http' ? 'chip--ok' : 'chip--info'}`}>
-            {api.kind === 'http' ? 'MODE NYATA' : 'MODE DEMO'}
+          <span className={`chip ${backend?.ok === false ? 'chip--err' : 'chip--ok'}`}>
+            {backend?.ok === false ? 'BACKEND MATI' : 'MODE NYATA'}
           </span>
           <span className="dim">
             3 ruang · 9 agen · proyek {project ? project.title : 'belum dipilih'}

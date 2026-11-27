@@ -32,7 +32,11 @@ jobs:
           node-version: 22
       # --include=dev: npm menghormati NODE_ENV, dan build butuh esbuild.
       - run: npm install --include=dev --no-audit --no-fund
+      # STUDIO_URL (variabel repo) membekukan alamat backend ke bundel Pages.
+      # Tanpa itu dipakai default di studio/src/links.ts.
       - run: npm run build:studio
+        env:
+          STUDIO_URL: ${{ vars.STUDIO_URL }}
 
       - name: Push hasil build ke gh-pages
         run: |

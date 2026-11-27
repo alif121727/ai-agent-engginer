@@ -86,6 +86,9 @@ function honestStatus<T extends { id: string; status: string }>(job: T): T {
   return { ...job, status: 'failed' };
 }
 
+/** Origin UI publik repo ini; boleh ditimpa lewat env `CORS_ORIGINS`. */
+const DEFAULT_CORS_ORIGINS = 'https://alif121727.github.io,https://agent-studio-ai.netlify.app';
+
 export function createApp(opts: AppOptions = {}) {
   wireBus();
   const app = express();
@@ -117,9 +120,13 @@ export function createApp(opts: AppOptions = {}) {
    * env ini tidak ada header CORS sama sekali, jadi sandbox tetap tertutup.
    * `Access-Control-Allow-Credentials` tetap dikirim untuk sesi cookie satu
    * origin, meski UI lintas situs memakai Bearer token.
+   *
+   * Dua origin UI publik repo ini diizinkan secara default: tanpa itu situs
+   * GitHub Pages/Netlify tidak bisa memanggil backend sama sekali dan tampak
+   * seperti "mode demo".
    */
   const corsOrigins = new Set(
-    (process.env.CORS_ORIGINS ?? '')
+    (process.env.CORS_ORIGINS ?? DEFAULT_CORS_ORIGINS)
       .split(',')
       .map((s) => s.trim().replace(/\/$/, ''))
       .filter(Boolean),

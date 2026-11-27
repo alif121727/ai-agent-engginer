@@ -231,3 +231,18 @@ Detail panjang ada di `archive/MEMORY-full-2026-11-20.md` dan log harian.
 - Butuh dua metode baru di `StudioApi`: `getEvents()` dan `getArtifact()`.
   Mode demo mengembalikan kosong/null supaya UI tidak mengaku punya artefak.
 - Tombol "Setujui video" memanggil `api.publish()` (dry-run) — bukan unggah asli.
+## Mode demo sudah DIHAPUS (2026-11-27)
+- `pickApi()` tidak pernah mengembalikan `DemoStudioApi` lagi: kandidat
+  (`?backend=`, pilihan tersimpan, `__STUDIO_API__`, `__STUDIO_URL__`, origin)
+  diprobe; kalau semua gagal, UI tetap memakai `HttpStudioApi` supaya error
+  kelihatan. `DemoStudioApi` hanya dipakai tes.
+- Banner merah `BackendBanner` (components/shell.tsx) muncul saat
+  `/api/health` gagal, dengan input alamat + "Simpan & muat ulang".
+- Penyebab situs Pages tampak demo: `LINKS.studio` menunjuk host sandbox lama
+  (`work-1-lxpwikokempxmoli…`, mati). Sekarang default = host aktif, dan
+  `pages.yml` membekukan `vars.STUDIO_URL` bila variabel repo diisi.
+- Backend kini mengirim CORS untuk `https://alif121727.github.io` dan
+  `https://agent-studio-ai.netlify.app` secara default (`DEFAULT_CORS_ORIGINS`
+  di src/api/server.ts); tanpa itu Pages tidak bisa memanggil API sama sekali.
+- Verifikasi: `curl -H "Origin: https://alif121727.github.io" .../api/health`
+  harus memuat `Access-Control-Allow-Origin`.

@@ -553,7 +553,8 @@ const SERVER_STAGE: Record<string, string> = {
 
 export class HttpStudioApi implements StudioApi {
   kind = 'http' as const;
-  private base: string;
+  /** Alamat backend yang dipakai; dibaca UI untuk menampilkan status. */
+  readonly base: string;
   constructor(base: string) {
     this.base = base;
   }
@@ -819,26 +820,38 @@ export function lastProbeResults(): BackendProbe[] {
 }
 
 export async function pickApi(): Promise<StudioApi> {
-  // Urutan percobaan: backend pilihan pengguna, origin sendiri, override
-  // runtime, backend yang disuntikkan saat build (STUDIO_URL), lalu demo.
-  // Demo berarti tidak ada backend yang menjawab.
-  //
-  // Origin sendiri didahulukan karena pada deploy satu-alamat (Docker/Render)
-  // UI disajikan oleh backend yang sama, jadi jawabannya instan dan selalu
-  // benar. Di situs statis (Pages/Netlify) probe ini gagal cepat lalu
-  // diteruskan ke alamat backend yang tersimpan/dibekukan.
+  // Urutan percobaan: `?backend=` di URL (cara cepat mengarahkan situs statis),
+  // pilihan tersimpan, override runtime, alamat yang dibekukan saat build,
+  // lalu origin sendiri. Origin sendiri tetap dicoba supaya deploy satu-alamat
+  // (UI + API di server yang sama) langsung benar.
+  const fromQuery = (() => {
+    try {
+      return (new URLSearchParams(globalThis.location?.search ?? '').get('backend') ?? '').trim();
+    } catch {
+      return '';
+    }
+  })();
   const candidates = [
+    fromQuery,
     savedBackend(),
-    globalThis.location?.origin,
     (globalThis as any).__STUDIO_API__ as string | undefined,
     typeof __STUDIO_URL__ === 'string' && __STUDIO_URL__ ? __STUDIO_URL__ : undefined,
+    globalThis.location?.origin,
   ].filter((b): b is string => typeof b === 'string' && b.length > 0);
 
   lastProbe = [];
+  let fallback = '';
   for (const base of new Set(candidates)) {
+    if (!fallback) fallback = base;
     const ok = await probeBackend(base);
     lastProbe.push({ base, ok });
-    if (ok) return new HttpStudioApi(base.replace(/\/$/, ''));
+    if (ok) {
+      if (fromQuery && base === fromQuery) saveBackend(base);
+      return new HttpStudioApi(base.replace(/\/$/, ''));
+    }
   }
-  return new DemoStudioApi();
+  // Tidak ada backend yang menjawab. Jangan pernah menukar UI ke data
+  // simulasi: pakai tetap backend nyata supaya kegagalan kelihatan (login
+  // gagal / banner merah) dan pengguna bisa memperbaiki alamatnya.
+  return new HttpStudioApi((fallback || '').replace(/\/$/, ''));
 }

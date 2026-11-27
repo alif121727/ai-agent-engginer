@@ -67,7 +67,7 @@ const res = await build({
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
     __MEDIA_VERSION__: JSON.stringify(mediaHash),
-    __STUDIO_URL__: JSON.stringify(process.env.STUDIO_URL ?? LINKS.studio),
+    __STUDIO_URL__: JSON.stringify((process.env.STUDIO_URL ?? '').trim() || LINKS.studio),
   },
 });
 
@@ -91,7 +91,7 @@ fs.copyFileSync(path.join(src, '404.html'), path.join(out, '404.html'));
 // menampilkan tautan mati.
 // Tanpa env, pakai alamat yang sama dengan default bundel supaya halaman
 // tautan tidak pernah menampilkan href kosong.
-const studioUrl = process.env.STUDIO_URL ?? LINKS.studio;
+const studioUrl = (process.env.STUDIO_URL ?? '').trim() || LINKS.studio;
 const fillStudioUrl = (dir: string, file: string) => {
   const p = path.join(dir, file);
   if (!fs.existsSync(p)) return;

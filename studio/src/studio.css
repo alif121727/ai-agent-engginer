@@ -969,3 +969,14 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
 .kantor__note { font-size: 0.72rem; margin: 8px 0 0; }
 .kantor__log { font-size: 0.75rem; color: var(--text-2); max-height: 190px; overflow: auto; }
 .kantor__logline { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 1px 0; }
+
+/* --------------------------------------------------------- backend mati */
+.offline-bar {
+  position: sticky; top: 0; z-index: 60;
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between;
+  padding: 10px 16px; background: #2b131c; border-bottom: 1px solid #5c2434;
+  color: #ffd9de; font-size: 0.82rem;
+}
+.offline-bar__text { flex: 1 1 320px; }
+.offline-bar__form { display: flex; gap: 8px; flex: 1 1 420px; align-items: center; }
+.offline-bar__form .input { flex: 1 1 auto; min-width: 180px; }

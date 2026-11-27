@@ -1,7 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { StudioProvider, ToastHost, useStudio } from './state/store';
-import { Sidebar, Topbar, useHashRoute, type Route } from './components/shell';
+import { BackendBanner, Sidebar, Topbar, useHashRoute, type Route } from './components/shell';
 import { Dashboard } from './pages/Dashboard';
 import { NewVideo } from './pages/NewVideo';
 import { ProjectDetail } from './pages/ProjectDetail';
@@ -31,15 +31,24 @@ const TITLES: Record<Route['name'], { t: string; c?: string }> = {
 };
 
 function Router() {
-  const { user, api } = useStudio();
+  const { user, api, backend } = useStudio();
   const [route, go] = useHashRoute();
+  const online = backend?.ok !== false;
 
-  if (!user) return <Auth />;
+  if (!user)
+    return (
+      <>
+        <BackendBanner />
+        <Auth />
+      </>
+    );
 
   const meta = TITLES[route.name];
 
   return (
-    <div className="shell">
+    <>
+      <BackendBanner />
+      <div className="shell">
       <Sidebar route={route} go={go} />
       <div className="main">
         <Topbar
@@ -48,14 +57,14 @@ function Router() {
           right={
             <div className="row" style={{ gap: 8 }}>
               <span
-                className={`chip ${api.kind === 'http' ? 'chip--ok' : 'chip--info'}`}
+                className={`chip ${online ? 'chip--ok' : 'chip--err'}`}
                 title={
-                  api.kind === 'http'
+                  online
                     ? 'Terhubung ke backend repo: login, render, dan unggah berjalan sungguhan'
-                    : 'Situs statis: proyek disimpan di peramban dan video tidak dirender di sini'
+                    : 'Backend tidak menjawab — perbaiki alamat di bilah merah di atas'
                 }
               >
-                <span className="dot" /> {api.kind === 'http' ? 'backend' : 'mode demo (statis)'}
+                <span className="dot" /> {online ? 'backend' : 'backend mati'}
               </span>
               <button className="btn btn--primary btn--sm" onClick={() => go({ name: 'baru' })}>
                 Buat Video
@@ -75,9 +84,10 @@ function Router() {
         {route.name === 'garasi' && <Garage go={go} />}
         {route.name === 'model' && <Models />}
         {route.name === 'pengaturan' && <Settings />}
+        </div>
+        <ToastHost />
       </div>
-      <ToastHost />
-    </div>
+    </>
   );
 }
 

@@ -1,6 +1,8 @@
 import React from 'react';
 import { useStudio } from '../state/store';
 import { Icon } from './ui';
+import { saveBackend, savedBackend } from '../services/api';
+import { LINKS } from '../links';
 
 export type Route =
   | { name: 'dashboard' }
@@ -65,6 +67,57 @@ const NAV: Array<{ key: Route['name']; label: string; icon: React.ReactNode }> =
   { key: 'model', label: 'Model AI', icon: <Icon.Spark size={16} /> },
   { key: 'pengaturan', label: 'Pengaturan', icon: <Icon.Gear size={16} /> },
 ];
+
+
+/**
+ * Bilah peringatan saat backend tidak menjawab. Dulu kondisi ini membuat UI
+ * diam-diam pindah ke data simulasi; sekarang studio tetap memakai backend
+ * nyata dan menyuruh pengguna memperbaiki alamatnya.
+ */
+export function BackendBanner() {
+  const { backend, retryBackend } = useStudio();
+  const [url, setUrl] = React.useState(savedBackend() || LINKS.studio);
+  const [busy, setBusy] = React.useState(false);
+  if (!backend || backend.ok) return null;
+
+  async function retry() {
+    setBusy(true);
+    await retryBackend();
+    setBusy(false);
+  }
+
+  return (
+    <div className="offline-bar" role="alert">
+      <div className="offline-bar__text">
+        <b>Backend tidak terjangkau.</b> {backend.base || 'alamat backend kosong'} tidak menjawab{' '}
+        <span className="mono">/api/health</span>. Studio tidak berpindah ke mode demo: render, narasi, dan QA butuh
+        server ini.
+      </div>
+      <div className="offline-bar__form">
+        <input
+          className="input mono"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="https://host-backend-anda"
+          spellCheck={false}
+          aria-label="Alamat backend"
+        />
+        <button
+          className="btn btn--primary btn--sm"
+          onClick={() => {
+            saveBackend(url);
+            window.location.reload();
+          }}
+        >
+          Simpan &amp; muat ulang
+        </button>
+        <button className="btn btn--sm" onClick={retry} disabled={busy}>
+          {busy ? 'Memeriksa…' : 'Coba lagi'}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export function Sidebar({ route, go }: { route: Route; go: (r: Route) => void }) {
   const { user, logout, projects } = useStudio();

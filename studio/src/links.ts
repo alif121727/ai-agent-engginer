@@ -12,7 +12,7 @@ const fromBuild = typeof __STUDIO_URL__ === 'string' && __STUDIO_URL__ ? __STUDI
 
 export const LINKS = {
   /** Studio dengan backend nyata: render ffmpeg, worker, dan QA sungguhan. */
-  studio: fromBuild || 'https://work-1-lxpwikokempxmoli.prod-runtime.all-hands.dev',
+  studio: fromBuild || 'https://work-1-dqfkjmazfavmzfjk.prod-runtime.all-hands.dev',
   /** Salinan statis di GitHub Pages; aman dibuka tanpa backend. */
   pages: 'https://alif121727.github.io/ai-agent-engginer/',
   /** Deploy Netlify dari repo yang sama. */

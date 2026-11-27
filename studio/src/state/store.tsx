@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { pickApi, demoProjectsKey, rememberDeletion, type Project, type StudioApi } from '../services/api';
+import { pickApi, probeBackend, HttpStudioApi, demoProjectsKey, rememberDeletion, type Project, type StudioApi } from '../services/api';
 import { VIDEO_MODELS } from '../data/models';
 import type { Readiness } from '../services/api';
 
@@ -35,6 +35,10 @@ type Ctx = {
   readiness: Readiness | null;
   /** true bila model ini punya kredensial di server saat ini. */
   isModelReady(modelId: string): boolean;
+  /** Backend yang dipakai dan hasil probe terakhir (`ok:false` = tidak menjawab). */
+  backend: { base: string; ok: boolean } | null;
+  /** Periksa ulang backend tanpa memuat ulang halaman. */
+  retryBackend(): Promise<void>;
 };
 
 export type Settings = {
@@ -63,12 +67,17 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
   const [projectsLoaded, setProjectsLoaded] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [settings, setSettings] = useState<Settings>(DEFAULTS);
+  const [backend, setBackend] = useState<{ base: string; ok: boolean } | null>(null);
   const timers = useRef<Record<string, number>>({});
 
   useEffect(() => {
     (async () => {
       const a = await pickApi();
       setApi(a);
+      if (a.kind === 'http') {
+        const base = (a as HttpStudioApi).base;
+        setBackend({ base, ok: await probeBackend(base) });
+      }
       let stored: User | null = null;
       try {
         const u = localStorage.getItem('asa.user');
@@ -238,12 +247,18 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     [readiness],
   );
 
+  const retryBackend = useCallback(async () => {
+    if (!api || api.kind !== 'http') return;
+    const base = (api as HttpStudioApi).base;
+    setBackend({ base, ok: await probeBackend(base) });
+  }, [api]);
+
   const value = useMemo<Ctx | null>(
     () =>
       api
-        ? { ready, api, user, login, register, logout, projects, loadingProjects, projectsLoaded, refresh, upsert, remove, toasts, toast, dismiss, settings, saveSettings, readiness, isModelReady }
+        ? { ready, api, user, login, register, logout, projects, loadingProjects, projectsLoaded, refresh, upsert, remove, toasts, toast, dismiss, settings, saveSettings, readiness, isModelReady, backend, retryBackend }
         : null,
-    [ready, api, user, login, register, logout, projects, loadingProjects, projectsLoaded, refresh, upsert, remove, toasts, toast, dismiss, settings, saveSettings, readiness, isModelReady],
+    [ready, api, user, login, register, logout, projects, loadingProjects, projectsLoaded, refresh, upsert, remove, toasts, toast, dismiss, settings, saveSettings, readiness, isModelReady, backend, retryBackend],
   );
 
   if (!value) {

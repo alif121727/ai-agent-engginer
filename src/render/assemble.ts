@@ -445,10 +445,14 @@ async function joinClips(
   }
   filters.push(`[${lastLabel}]scale=${width}:${height},format=yuv420p[final]`);
 
+  // `veryfast` khusus pass gabung: isinya klip yang sudah di-encode, dan pass
+  // ini yang paling mahal (rantai xfade 6 input). Di 2 vCPU shared, `medium`
+  // membuatnya 20 menit lebih; `veryfast` + crf 20 tidak terlihat bedanya
+  // setelah satu generasi kompresi.
   const res = spawnSync(
     'ffmpeg',
     [...args, '-filter_complex', filters.join(';'), '-map', '[final]',
-     '-c:v', 'libx264', '-preset', 'medium', '-crf', '20',
+     '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20',
      '-pix_fmt', 'yuv420p', '-movflags', '+faststart', outFile],
     { encoding: 'utf8' },
   );

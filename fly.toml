@@ -17,12 +17,12 @@ kill_timeout = 60
   dockerfile = "Dockerfile"
 
 # ffmpeg 1080p + Piper butuh lebih dari 256 MB (default `fly launch`).
-# 4 vCPU dipilih setelah mengukur: dengan 2 vCPU, encode 30 dtk menyita CPU
-# sampai /api/health butuh 8 dtk, health check (timeout 5 dtk) gagal terus, dan
-# Fly menghentikan mesin di tengah render — job "macet" di 87%.
+# 2 vCPU / 2 GB adalah batas akun trial (4 vCPU ditolak: "trial is limited to
+# 2 CPU cores per Machine"). Karena itu health check diberi timeout 10 dtk dan
+# worker anak diturunkan prioritasnya, supaya API tetap menjawab saat render.
 [[vm]]
-  size = "shared-cpu-4x"
-  memory = "4gb"
+  size = "shared-cpu-2x"
+  memory = "2gb"
 
 [env]
   PORT = "8080"
@@ -51,12 +51,15 @@ kill_timeout = 60
   auto_start_machines = true
   min_machines_running = 1
 
+  # Check TCP, bukan HTTP: saat ffmpeg memakai seluruh CPU (shared CPU Fly
+  # diturunkan ke baseline setelah burst habis), event loop Node bisa tertahan
+  # >10 dtk, sehingga check HTTP gagal terus dan Fly menghentikan mesin di
+  # tengah render (requested_stop=true, job "macet" di 87%). Check TCP cukup
+  # memastikan port 8080 menerima koneksi, yang tetap benar walau event loop
+  # sedang sibuk.
   [[http_service.checks]]
+    type = "tcp"
+    port = 8080
     grace_period = "30s"
     interval = "30s"
-    method = "GET"
-    path = "/api/health"
-    # 10 dtk, bukan 5: saat ffmpeg memakai seluruh vCPU, API bisa butuh
-    # beberapa detik untuk menjawab. Timeout 5 dtk membuat check gagal terus
-    # selama render dan Fly menghentikan mesin (requested_stop=true).
     timeout = "10s"

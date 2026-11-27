@@ -844,8 +844,13 @@ export function pixabayAdapter(def: VisualAdapterDef): VisualAdapter {
           continue;
         }
         const pilih = kandidat[req.scene.index % kandidat.length];
-        const berkas =
-          pilih.videos?.large ?? pilih.videos?.medium ?? pilih.videos?.small ?? pilih.videos?.tiny;
+        // Ambil varian terdekat ke 1920 px: klip 4K memperlambat decode dan
+        // menghabiskan memori tanpa menambah kualitas akhir (keluaran 1080p).
+        const varian = ['large', 'medium', 'small', 'tiny']
+          .map((k) => pilih.videos?.[k])
+          .filter((v): v is { url: string; width: number; height: number } => Boolean(v?.url))
+          .sort((a, b) => Math.abs(a.width - 1920) - Math.abs(b.width - 1920));
+        const berkas = varian[0];
         if (!berkas?.url) {
           gagal = `klip ${pilih.id} tanpa berkas mp4`;
           continue;

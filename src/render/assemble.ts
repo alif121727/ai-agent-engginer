@@ -223,7 +223,9 @@ export async function assembleVideo(ctx: AgentContext): Promise<RenderResult> {
       // hits the edge and the frame jitters.
       `scale=${Math.round(width * 1.15)}:${Math.round(height * 1.15)}:force_original_aspect_ratio=increase:flags=lanczos`,
       `crop=${Math.round(width * 1.15)}:${Math.round(height * 1.15)}`,
-      `scale=${width * 2}:${height * 2}:flags=lanczos`,
+      // Cukup 1x: upscale tambahan (dulu 2x = 3840x2160) memperlambat zoompan
+      // 2-3x tanpa tambahan ketajaman yang terlihat di keluaran 1080p.
+      `scale=${width}:${height}:flags=lanczos`,
       cameraFilterFor(move, frames, width, height, fps, scene.motionStrength ?? 1),
       ...gradeFilters(theme),
     ];
@@ -259,11 +261,13 @@ export async function assembleVideo(ctx: AgentContext): Promise<RenderResult> {
       '-vf', filters.join(','),
       '-r', String(fps),
       '-c:v', 'libx264',
-      '-preset', 'medium',
+      '-preset', 'veryfast',
       '-crf', '20',
       '-maxrate', '12M',
       '-bufsize', '24M',
       '-pix_fmt', 'yuv420p',
+      // Batasi thread: mesin 2 vCPU, dan tiap thread menambah frame buffer.
+      '-threads', '2',
       '-an',
       clip,
     ];

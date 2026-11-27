@@ -214,3 +214,10 @@ Detail panjang ada di `archive/MEMORY-full-2026-11-20.md` dan log harian.
   (Mazda RX-7 FD3S, 30 dtk, mode final) selesai `done`, QA 26/26 tanpa gagal,
   video 1920x1080 h264 + AAC stereo, 27,6 MB, RMS -18,1 dB (narasi Piper ada).
   Artinya jalur penuh API -> worker -> render -> QA hidup setelah reset.
+- "Buat ulang" proyek yang hilang = POST /api/jobs lagi dengan brief yang sama
+  (baca `artifacts/script.json` model + `plan.json` durationSec/aspect/theme).
+  Foto asli ada di `assets/own/<slug>/` (ikut git) sehingga hasilnya sama;
+  artefak baru hanya ~60 KB dan aman di-commit, sedangkan `video.mp4` tetap
+  gitignored. Contoh: job 753b0220 (Porsche 911 GT3 RS, 30 dtk, QA 26/26).
+- Baris proyek TIDAK bisa dipulihkan dari artefak secara otomatis; DB harus
+  dibuat ulang. Artefak lama tetap berguna sebagai sumber brief/naskah.

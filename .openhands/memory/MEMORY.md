@@ -307,3 +307,28 @@ Detail panjang ada di `archive/MEMORY-full-2026-11-20.md` dan log harian.
 - Akun produksi: `admin@studio.id` / user `admin123` / sandi `alif121727`.
 - `.dockerignore` mengeluarkan `assets/tts` (62 MB, diunduh di image) dan
   `assets/car-chase` (23 MB).
+
+## Fly: batas mesin trial (mahal dipelajari)
+- **Mesin trial Fly dihentikan paksa setiap 5 menit.** Log mentahnya:
+  `Trial machine stopping. To run for longer than 5m0s, add a credit card`
+  lalu `reboot: Restarting system`. Render 30 dtk butuh >5 menit CPU di
+  2 vCPU, jadi job selalu terputus, worker memulihkan job "basi", dan render
+  diulang dari awal -> progres terlihat macet di 56%/84% selamanya.
+  Ini BUKAN bug pipeline. Solusi: kartu di fly.io/trial, atau render di sandbox.
+- `flyctl deploy --image` **mempertahankan health check HTTP lama** di config
+  mesin walau `fly.toml` sudah TCP/tanpa check. Hapus lewat Machines API:
+  GET lalu POST `/v1/apps/<app>/machines/<id>` dengan `services[].checks` dibuang.
+- Memori mesin bisa dinaikkan tanpa ganti CPU: `flyctl machine update <id> --memory 4096`.
+
+## Sumber klip nyata (Pexels/Pixabay/Wikimedia)
+- Foto contoh bawaan `assets/own/<slug>/foto-*.jpg` dulu disajikan adapter
+  `local`, jadi SELALU menang sebelum sumber klip -> semua "video" keluar dari
+  foto. Sekarang foto bawaan ditangani adapter `katalog` yang ditaruh SETELAH
+  stok/AI video. Urutan: local -> video-gen -> stock-api -> pixabay ->
+  wikimedia -> katalog -> image-gen -> image-gen-free.
+- Unggahan pengguna pindah ke `/data/uploads/<slug>` (`paths.uploads`) supaya
+  selamat dari deploy; `assets/own` tetap untuk foto bawaan.
+- Pixabay cukup kunci gratis dan memberi klip nyata (teruji: 3 klip 2,4-13,2 MB).
+  Pilih varian ~1920 px; varian 4K memperlambat decode 2-3x.
+- Bukti scene memakai klip nyata: `assets.json` -> `kind: "video"`,
+  `provider: "pixabay"`, plus `credit`. Jangan percaya ekstensi berkas saja.

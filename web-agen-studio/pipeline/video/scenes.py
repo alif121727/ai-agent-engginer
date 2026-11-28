@@ -9,6 +9,7 @@ import math
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 
+from . import mesh
 from . import postfx
 from .traffic import LANE_W, hero_lane, traffic_at
 
@@ -58,7 +59,9 @@ def _fog_mix(color: np.ndarray, dist: float, far: float = 150.0) -> np.ndarray:
 
 
 def _shade(base: np.ndarray, normal: np.ndarray) -> np.ndarray:
-    lam = max(0.0, float(normal @ LIGHT))
+    # abs(): winding quad bisa terbalik, dan muka yang menghadap kamera tetap
+    # harus kena cahaya. Tanpa ini atap mobil jadi gelap.
+    lam = abs(float(normal @ LIGHT))
     return base * (0.44 + 0.72 * lam)
 
 
@@ -270,37 +273,49 @@ class SceneGraph:
         pil.alpha_composite(overlay)
 
     # ---------------- kendaraan ----------------
-    def _draw_car(self, draw, cx: float, z: float, base: np.ndarray, hero: bool = False) -> None:
-        lw, ww = 2.25, 0.92  # setengah panjang, setengah lebar
-        ban = np.array([18, 18, 22], dtype=np.float32)
-        for wx in (cx - ww - 0.10, cx + ww - 0.02):
-            for wz in (z - lw * 0.62, z + lw * 0.52):
-                self._draw_box(draw, wx, wx + 0.20, 0.02, 0.70, wz, wz + 0.66, ban)
-        self._draw_box(draw, cx - ww, cx + ww, 0.30, 1.02, z - lw, z + lw, base)
-        self._draw_box(draw, cx - ww * 0.84, cx + ww * 0.84, 1.02, 1.44, z - lw * 0.46, z + lw * 0.30, base * 0.90)
+    def _draw_car(self, draw, cx: float, z: float, base: np.ndarray, hero: bool = False,
+                  brake: bool = False) -> None:
+        quads = mesh.car_quads(cx, z, hero=hero, brake=brake)
+        cam = np.array([self.cam.x, self.cam.height, self.cam.z], dtype=np.float32)
+        berurutan = []
+        for corners, tag in quads:
+            center = corners.mean(axis=0)
+            berurutan.append((float(np.linalg.norm(center - cam)), corners, tag, center))
+        berurutan.sort(key=lambda item: -item[0])
 
-        zr = z - lw - 0.02
-        self._poly(draw, np.array([[cx - ww * 0.74, 1.10, zr], [cx + ww * 0.74, 1.10, zr],
-                                   [cx + ww * 0.68, 1.40, zr], [cx - ww * 0.68, 1.40, zr]], dtype=np.float32),
-                   np.array([26, 32, 44], dtype=np.float32), np.array([0, 0, -1], dtype=np.float32))
-        lampu = np.array([255, 52, 44], dtype=np.float32) if hero else np.array([220, 40, 36], dtype=np.float32)
-        for s in (-1, 1):
-            self._poly(draw, np.array([
-                [cx + s * ww * 0.42, 0.74, zr], [cx + s * ww * 0.95, 0.74, zr],
-                [cx + s * ww * 0.95, 0.94, zr], [cx + s * ww * 0.42, 0.94, zr]], dtype=np.float32),
-                lampu, np.array([0, 0, -1], dtype=np.float32))
-        if hero:
-            self._poly(draw, np.array([[cx - 0.17, 0.52, zr], [cx + 0.17, 0.52, zr],
-                                       [cx + 0.17, 0.63, zr], [cx - 0.17, 0.63, zr]], dtype=np.float32),
-                       np.array([208, 208, 198], dtype=np.float32), np.array([0, 0, -1], dtype=np.float32))
-            # Bemper belakang: garis gelap supaya bodi tidak terlihat seperti kotak.
-            self._poly(draw, np.array([[cx - ww, 0.30, zr], [cx + ww, 0.30, zr],
-                                       [cx + ww, 0.44, zr], [cx - ww, 0.44, zr]], dtype=np.float32),
-                       base * 0.55, np.array([0, 0, -1], dtype=np.float32))
-            # Bibir bagasi tipis, bukan sayap besar: sayap besar terbaca sebagai
-            # kotak terpisah saat dilihat dari belakang.
-            self._draw_box(draw, cx - ww * 0.98, cx + ww * 0.98, 0.98, 1.04, z - lw - 0.12, z - lw + 0.3,
-                           base * 0.75)
+        for dist, corners, tag, _center in berurutan:
+            if tag == mesh.PAINT:
+                col = base * 0.92
+            elif tag == mesh.GLASS:
+                col = np.array([20, 27, 40], dtype=np.float32)
+            elif tag == mesh.TRIM:
+                col = base * 0.55
+            elif tag == mesh.TYRE:
+                col = np.array([16, 16, 20], dtype=np.float32)
+            elif tag == mesh.PLATE:
+                col = np.array([206, 206, 196], dtype=np.float32)
+            elif tag == "lampu_rem":
+                col = np.array([255, 96, 78], dtype=np.float32)
+            else:
+                col = np.array([236, 44, 38], dtype=np.float32)
+
+            if tag in (mesh.PAINT, mesh.TRIM):
+                # Muka bodi ikut arah cahaya; kaca dan lampu tidak.
+                n = np.cross(corners[1] - corners[0], corners[2] - corners[0])
+                norm = float(np.linalg.norm(n)) or 1.0
+                col = _shade(_fog_mix(col, dist), n / norm)
+            elif tag == mesh.GLASS:
+                col = _fog_mix(col, dist)
+            self._draw_quad(draw, corners, col)
+
+    def _draw_quad(self, draw, corners: np.ndarray, color) -> None:
+        sx, sy, fwd = self.cam.project(corners)
+        if np.any(fwd <= 0.30):
+            return
+        if sx.max() < -40 or sx.min() > self.W + 40 or sy.max() < -40 or sy.min() > self.H + 40:
+            return
+        draw.polygon(list(zip(sx.tolist(), sy.tolist())),
+                     fill=tuple(int(min(255, max(0, c))) for c in color))
 
     def _draw_windows(self, draw, b: dict) -> None:
         zc = b["z"] - b["d"] / 2 - 0.02
@@ -361,8 +376,7 @@ class SceneGraph:
                            z - b["d"] / 2, z + b["d"] / 2, b["base"])
             if z < 150 and b["h"] > 8:
                 self._draw_windows(draw, {**b, "z": z})
-        # Urutan jauh->dekat supaya bangunan dekat menutup yang jauh.
-        draw._image = draw._image if False else draw._image
+
 
         self._draw_lamp_pools(pil, travel)
         draw = ImageDraw.Draw(pil)
@@ -372,14 +386,18 @@ class SceneGraph:
                 if 3 < zz < 190:
                     self._draw_lamp(draw, lamp_x, zz)
 
-        for car in traffic_at(t, self.dur):
+        mobil = traffic_at(t, self.dur)
+        for car in mobil:
             if car.z < -9:
                 continue
             self._draw_car(draw, car.x, car.z, self.other_colors[car.variant % len(self.other_colors)])
 
-        self._draw_car(draw, hero_x, 0.0, self.hero_color, hero=True)
+        # Lampu rem menyala kalau ada mobil lambat tepat di depan lane hero.
+        rem = any(abs(car.x - hero_x) < 1.4 and 3.0 < car.z < 24.0 for car in mobil
+                  if car.z > 0)
+        self._draw_car(draw, hero_x, 0.0, self.hero_color, hero=True, brake=rem)
 
-        frame = np.asarray(pil.convert("RGB"), dtype=np.float32)
+        frame = self._motion_blur(pil)
         self._bloom(frame)
         frame[:, :, 0] *= 1.03
         frame[:, :, 2] *= 1.05
@@ -387,6 +405,19 @@ class SceneGraph:
         frame *= self.vignette[:, :, None]
         postfx.fade_to_black(frame, t, self.dur)
         return np.clip(frame, 0, 255).astype(np.uint8)
+
+    def _motion_blur(self, pil: Image.Image) -> np.ndarray:
+        """Zoom blur radial dari titik hilang: kesan kamera melaju, bukan gambar diam."""
+        img = pil.convert("RGB")
+        k = 1.035
+        cx, hy = self.cam.cx, self.horizon
+        zoom = img.transform(img.size, Image.AFFINE,
+                             (k, 0, cx * (1 - k), 0, k, hy * (1 - k)), Image.BILINEAR)
+        base = np.asarray(img, dtype=np.float32)
+        kabur = np.asarray(zoom, dtype=np.float32)
+        rows = np.arange(self.H, dtype=np.float32)[:, None, None]
+        bobot = np.clip((rows - hy) / max(1.0, self.H - hy), 0.0, 1.0) * 0.42
+        return base * (1 - bobot) + kabur * bobot
 
     def _bloom(self, frame: np.ndarray) -> None:
         small = Image.fromarray(np.clip(frame, 0, 255).astype(np.uint8)).resize(

@@ -382,3 +382,5 @@ Detail panjang ada di `archive/MEMORY-full-2026-11-20.md` dan log harian.
 - Versi 3D: kamera pinhole `Camera.ground_distance` (baris layar -> jarak Z) untuk jalan;
   kamera DIAM dan dunia yang bergerak (bangunan wrap 286 m). Marka lane di ±LANE_W/2.
   Jebakan: slice numpy berindeks negatif mengecat seluruh baris (garis putih selebar layar).
+- Sanbox reset menghapus /tmp/publik DAN server 12000. Recreate dir + `python3 -m http.server 12000 --directory /tmp/publik &`.
+- Shading quad pakai abs(normal·L); winding tidak konsisten (atap mobil pernah gelap).

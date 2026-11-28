@@ -25,6 +25,8 @@ python3 pipeline/video/render.py --model toyota-gr-supra --dur 8 \
 data/mobil.json              daftar model + warna + ukuran
 pipeline/video/scenes.py     scene 3D: kamera kejar, jalan mengecil ke horizon, kotak 3D
 pipeline/video/traffic.py    jadwal menyalip dalam meter (4 kali) + hero sendirian setelah detik 23
+pipeline/video/mesh.py       mesh mobil low-poly (bodi, kaca miring, pilar, roda)
+ui/kantor-4-ruang.html       tampilan 4 ruang (naskah, render, periksa, kirim)
 pipeline/video/cars.py       sprite PNG atau mobil prosedural
 pipeline/video/postfx.py     vignette, grain, bayangan mobil, fade-to-black
 pipeline/video/render.py     render chunked -> ffmpeg stdin, resume per segmen, mux audio

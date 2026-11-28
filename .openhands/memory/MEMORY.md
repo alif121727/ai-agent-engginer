@@ -379,3 +379,6 @@ Detail panjang ada di `archive/MEMORY-full-2026-11-20.md` dan log harian.
   Studio lama: centang Voiceover mengirim `narasiSuara` (bawaan mati).
 - Referensi UI `Kantor Agent IG.html` ada di root repo (3 kartu ruang + canvas pixel-art,
   jam, toggle sapaan, tombol setujui, log bergulir).
+- Versi 3D: kamera pinhole `Camera.ground_distance` (baris layar -> jarak Z) untuk jalan;
+  kamera DIAM dan dunia yang bergerak (bangunan wrap 286 m). Marka lane di ±LANE_W/2.
+  Jebakan: slice numpy berindeks negatif mengecat seluruh baris (garis putih selebar layar).

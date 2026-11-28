@@ -1,0 +1,8 @@
+{
+  "models": [
+    { "id": "toyota-gr-supra", "name": "Toyota GR Supra", "sprite": "assets/img/mobil/toyota-gr-supra.png", "color": "#C8102E", "accent": "#141821", "size": { "w": 260, "h": 110 }, "wheel_offsets": [[62, 88], [196, 88]], "spec": "I6 3.0L turbo, 340 PS, 500 Nm", "default": true },
+    { "id": "sedan-merah", "name": "Sedan Merah", "sprite": "assets/img/mobil/sedan-merah.png", "color": "#d63a3a", "accent": "#1a1d26", "size": { "w": 240, "h": 120 }, "wheel_offsets": [[60, 90], [180, 90]] },
+    { "id": "suv-hitam", "name": "SUV Hitam", "sprite": "assets/img/mobil/suv-hitam.png", "color": "#2a2a2a", "accent": "#101218", "size": { "w": 260, "h": 140 }, "wheel_offsets": [[65, 105], [195, 105]] },
+    { "id": "sport-kuning", "name": "Sport Kuning", "sprite": "assets/img/mobil/sport-kuning.png", "color": "#e0b030", "accent": "#20242e", "size": { "w": 250, "h": 100 }, "wheel_offsets": [[60, 75], [190, 75]] }
+  ]
+}

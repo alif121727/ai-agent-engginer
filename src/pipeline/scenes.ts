@@ -25,13 +25,24 @@ const BASE_SCENES: SceneSpec[] = [
   {
     key: 'hook',
     label: 'Hook',
-    shot: 'extreme close-up lampu depan, grill, dan velg',
-    camera: 'static dengan dorongan pelan',
-    lens: '85mm',
+    shot: 'mobil melaju mendekat ke kamera, lampu depan menyala, wajah mobil jelas',
+    camera: 'kamera rendah di jalan, mobil datang ke arah lensa',
+    lens: '50mm',
     weight: 1,
     move: 'slow_dolly_in',
-    action: 'headlight glass catches a slow sweep of light as the lens eases closer',
-    ambient: 'dust motes drift through the beam, reflections crawl across the paint',
+    action: 'the car closes on the lens head-on, headlights flaring, road streaking beneath it',
+    ambient: 'light spills across the asphalt, reflections run along the bonnet',
+  },
+  {
+    key: 'overtake',
+    label: 'Menyalip',
+    shot: 'mobil menyalip kendaraan lain di jalan raya, dua mobil terlihat satu frame',
+    camera: 'kamera mengikuti dari samping jalan, mobil lain lewat lebih lambat',
+    lens: '35mm',
+    weight: 1.4,
+    move: 'pan_left',
+    action: 'the car swings out and passes the slower traffic ahead, closing the gap fast',
+    ambient: 'roadside poles flash past, tyre spray lifts off the wet lane',
   },
   {
     key: 'exterior',
@@ -54,17 +65,6 @@ const BASE_SCENES: SceneSpec[] = [
     move: 'pan_right',
     action: 'the surface detail travels across frame, edges catching the key light',
     ambient: 'fine dust settles slowly, reflections shift along the panel gaps',
-  },
-  {
-    key: 'interior',
-    label: 'Interior & detail',
-    shot: 'kabin dari pintu pengemudi, jok, setir',
-    camera: 'dolly masuk perlahan',
-    lens: '35mm',
-    weight: 1,
-    move: 'crane_up',
-    action: 'the cabin rises into view as the lens lifts over the wheel',
-    ambient: 'soft daylight breathes through the windows, stitching glints',
   },
   {
     key: 'action',
@@ -91,6 +91,17 @@ const BASE_SCENES: SceneSpec[] = [
 ];
 
 const EXTRA_SCENES: SceneSpec[] = [
+  {
+    key: 'interior',
+    label: 'Interior & detail',
+    shot: 'kabin dari pintu pengemudi, jok, setir',
+    camera: 'dolly masuk perlahan',
+    lens: '35mm',
+    weight: 1,
+    move: 'crane_up',
+    action: 'the cabin rises into view as the lens lifts over the wheel',
+    ambient: 'soft daylight breathes through the windows, stitching glints',
+  },
   {
     key: 'detail_wheel',
     label: 'Detail velg & rem',

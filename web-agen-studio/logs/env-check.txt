@@ -1,0 +1,24 @@
+# env-check 2026-11-28T08:48:40+00:00
+python3    OK /usr/local/bin/python3
+pip        OK /usr/local/bin/pip
+node       OK /usr/local/bin/node
+npm        OK /usr/local/bin/npm
+git        OK /usr/bin/git
+ffmpeg     TIDAK ADA
+ffprobe    TIDAK ADA
+espeak-ng  TIDAK ADA
+piper      TIDAK ADA
+
+disk bebas: 24.6 GB
+RAM total : 16.8 GB
+modul numpy: OK
+modul PIL: OK
+modul edge_tts: TIDAK ADA (ModuleNotFoundError)
+modul gtts: TIDAK ADA (ModuleNotFoundError)
+modul faster_whisper: TIDAK ADA (ModuleNotFoundError)
+piper model: /workspace/project/assets/tts/id_ID-news_tts-medium.onnx True
+
+# path eksplisit (di luar PATH)
+/workspace/tools/bin/ffmpeg: ADA
+/workspace/tools/bin/ffprobe: ADA
+/home/openhands/.local/bin/piper: ADA

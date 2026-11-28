@@ -1,0 +1,16 @@
+{
+  "durasi": 30.0,
+  "fps": "30/1",
+  "codec": "h264",
+  "resolusi": "1920x1080",
+  "audio": true,
+  "brightness_awal": 28.8,
+  "brightness_tengah": 30.4,
+  "brightness_akhir": 5.2,
+  "gerak_awal_tengah": 16.2,
+  "gerak_antar_frame": 11.07,
+  "overtake": 4,
+  "hero_sendirian": true,
+  "lulus": true,
+  "gagal": []
+}

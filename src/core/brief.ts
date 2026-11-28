@@ -23,6 +23,8 @@ export const BriefSchema = z.object({
    * dari jenis mobil supaya pengguna tidak perlu memikirkan istilah teknis.
    */
   suaraTone: z.enum(['energik', 'sinematik', 'hangat', 'tegas']).optional(),
+  /** Penjelasan sebagai teks saja (bawaan) atau dibacakan sebagai narasi. */
+  narasiSuara: z.boolean().optional(),
   /** Tema buatan AI yang dipilih pengguna, disimpan apa adanya di brief. */
   temaAi: z
     .object({

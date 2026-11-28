@@ -296,6 +296,80 @@ function rpmPoints(
  * atasnya, noise rasp yang digerbangi pulsa, ditambah turbo/kompresor yang
  * mengikuti rpm. Output stereo 48 kHz agar tidak lagi berupa drone mono.
  */
+/**
+ * Kurva jarak: mesin terdengar paling jelas saat mobil mendekat, meredup saat
+ * menjauh. Nilai ini bukan hiasan — tiap scene punya makna jarak yang jelas
+ * (hook: mendekat, menyalip: lewat lalu menjauh, cta: mobil berhenti jauh).
+ */
+const GAIN_PER_KEY: Record<string, [number, number, number]> = {
+  hook: [0.3, 0.65, 1.0],
+  overtake: [1.0, 1.25, 0.6],
+  action: [0.85, 1.0, 0.8],
+  exterior: [0.5, 0.5, 0.5],
+  features: [0.45, 0.45, 0.45],
+  detail_wheel: [0.5, 0.5, 0.5],
+  detail_engine: [0.7, 0.7, 0.7],
+  interior: [0.35, 0.35, 0.35],
+  night: [0.5, 0.6, 0.5],
+  lifestyle: [0.45, 0.45, 0.45],
+  cta: [0.35, 0.28, 0.2],
+};
+
+export function jarakPoints(scenes: ScenePlan[], durationSec: number): { t: number; g: number }[] {
+  const titik: { t: number; g: number }[] = [{ t: 0, g: 0.4 }];
+  let akhir = 0;
+  for (const scene of scenes) {
+    const key = scene.key.replace(/_r\d+$/, '').replace(/_\d+$/, '');
+    const [awal, tengah, selesai] = GAIN_PER_KEY[key] ?? [0.6, 0.6, 0.6];
+    const mulai = scene.start;
+    const akhirScene = scene.start + scene.duration;
+    titik.push({ t: mulai, g: awal });
+    titik.push({ t: mulai + scene.duration / 2, g: tengah });
+    titik.push({ t: akhirScene, g: selesai });
+    akhir = akhirScene;
+  }
+  titik.push({ t: Math.max(akhir, durationSec), g: titik[titik.length - 1].g });
+  return titik;
+}
+
+/**
+ * Ekspresi ffmpeg untuk garis patah-patah: g(t) = g0 + Σ kemiringan·max(0, t−t_i).
+ * Satu-satunya cara memberi volume dinamis per detik tanpa file otomasi.
+ */
+export function jarakExpression(points: { t: number; g: number }[]): string {
+  let expr = points[0].g.toFixed(3);
+  for (let i = 1; i < points.length; i++) {
+    const dx = points[i].t - points[i - 1].t;
+    const dy = points[i].g - points[i - 1].g;
+    if (dx <= 0.01 || Math.abs(dy) < 0.001) continue;
+    const slope = (dy / dx).toFixed(6);
+    const t = points[i].t.toFixed(3);
+    expr += `+${slope}*if(gt(t-${t},0),t-${t},0)`;
+  }
+  return expr;
+}
+
+/** Salinan dekat (penuh) + salinan jauh (teredam) yang saling menutupi. */
+function applyDistanceEnvelope(file: string, scenes: ScenePlan[], durationSec: number): string | null {
+  const dekat = jarakExpression(jarakPoints(scenes, durationSec));
+  // Salinan jauh hanya menambah "pudar" (lowpass) dengan bobot kecil, supaya
+  // selisih keras-pelan benar-benar datang dari jarak, bukan dari timbre.
+  const jauh = `0.35*(1-min(1,max(0,${dekat})))`;
+  const out = file.replace(/\.m4a$/, '-jarak.m4a');
+  const filter =
+    `[0:a]asplit=2[a][b];` +
+    `[a]volume='${dekat}':eval=frame[near];` +
+    `[b]lowpass=f=800,volume='${jauh}':eval=frame[far];` +
+    `[near][far]amix=inputs=2:duration=first:normalize=0[out]`;
+  const res = spawnSync(
+    'ffmpeg',
+    ['-v', 'error', '-y', '-i', file, '-filter_complex', filter, '-map', '[out]', '-c:a', 'aac', '-b:a', '192k', out],
+    { encoding: 'utf8' },
+  );
+  if (res.status !== 0 || !fs.existsSync(out)) return null;
+  return out;
+}
+
 export function buildEngineTrack(input: {
   jobId: string;
   durationSec: number;
@@ -308,11 +382,16 @@ export function buildEngineTrack(input: {
   const seg = recordedSegmentFor(input.model);
   if (seg) {
     const file = buildRecordedTrack({ jobId: input.jobId, durationSec: input.durationSec, seg });
-    if (file) return { file, profile, recorded: true };
+    if (file) {
+      const dekatJauh = applyDistanceEnvelope(file, input.scenes, input.durationSec);
+      return { file: dekatJauh ?? file, profile, recorded: true };
+    }
   }
 
   const synth = buildSynthTrack(input, profile);
-  return synth ? { ...synth, recorded: false } : null;
+  if (!synth) return null;
+  const dekatJauh = applyDistanceEnvelope(synth.file, input.scenes, input.durationSec);
+  return { file: dekatJauh ?? synth.file, profile, recorded: false };
 }
 
 /**

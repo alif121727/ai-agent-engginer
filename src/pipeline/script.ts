@@ -24,6 +24,23 @@ export function maxCharsFor(durationSec: number): number {
   return Math.max(24, Math.floor(durationSec * CHARS_PER_SECOND * 0.92));
 }
 
+/**
+ * Penjelasan hanya boleh jadi teks layar, jadi kalimat panjang dipendekkan ke
+ * satu baris caption. Memotong di tengah kata membuat caption terbaca rusak.
+ */
+export function ringkasUntukLayar(teks: string, maks = 68): string {
+  const bersih = teks.replace(/\s+/g, ' ').trim();
+  if (bersih.length <= maks) return bersih;
+  const potong = bersih.slice(0, maks);
+  const spasi = potong.lastIndexOf(' ');
+  return `${(spasi > 24 ? potong.slice(0, spasi) : potong).replace(/[,;:\-]$/, '')}`;
+}
+
+/** Narasi suara hanya dibuat kalau pengguna memintanya secara eksplisit. */
+export function inginNarasi(brief: Brief): boolean {
+  return brief.narasiSuara === true;
+}
+
 export interface ScriptLine {
   sceneIndex: number;
   onScreenText: string;
@@ -211,8 +228,6 @@ export async function generateScriptWithLlm(
       };
     });
 
-    // Scene tanpa narasi akan menghasilkan video bisu di bagian itu, jadi
-    // kelengkapan diperiksa sebelum hasil LLM dipakai.
     if (lines.some((l) => l.voiceover.length < 8)) {
       return { draft: null, alasan: 'ada scene tanpa narasi dari LLM' };
     }

@@ -1,0 +1,57 @@
+{
+  "model_stt": "whisper small",
+  "frasa": [
+    {
+      "no": 1,
+      "teks": "Toyota GR Supra melaju di jalan malam.",
+      "normal": "Toyota GR Supra melaju di jalan malam.",
+      "engine": "piper",
+      "wer": 0.143,
+      "lulus": false,
+      "stt": "Toyota GR Supra melaju di jalan Malang.",
+      "file": "out/audio/uji-1.mp3"
+    },
+    {
+      "no": 2,
+      "teks": "Tenaga 340 PS, dan torsi 500 Nm.",
+      "normal": "Tenaga tiga ratus empat puluh tenaga kuda, dan torsi lima ratus newton meter.",
+      "engine": "piper",
+      "wer": 0.077,
+      "lulus": true,
+      "stt": "tenaga 340 tenaga kuda dan torsi 500 nauton meter.",
+      "file": "out/audio/uji-2.mp3"
+    },
+    {
+      "no": 3,
+      "teks": "Dari nol sampai seratus km/jam, dalam 3,9 detik.",
+      "normal": "Dari nol sampai seratus kilometer per jam, dalam tiga koma sembilan detik.",
+      "engine": "piper",
+      "wer": 0.083,
+      "lulus": true,
+      "stt": "dari 0 sampai 100 km per jam dalam 3,9 detik.",
+      "file": "out/audio/uji-3.mp3"
+    },
+    {
+      "no": 4,
+      "teks": "Harga Rp1.240.000.000, untuk unit baru.",
+      "normal": "Harga satu miliar dua ratus empat puluh juta rupiah, untuk unit baru.",
+      "engine": "piper",
+      "wer": 0.083,
+      "lulus": true,
+      "stt": "harga Rp1.240.000.000 untuk unik baru.",
+      "file": "out/audio/uji-4.mp3"
+    },
+    {
+      "no": 5,
+      "teks": "AI dan API, membantu proses QA.",
+      "normal": "A I dan A P I, membantu proses kualitas.",
+      "engine": "piper",
+      "wer": 0.0,
+      "lulus": true,
+      "stt": "AI dan API membantu proses kualitas.",
+      "file": "out/audio/uji-5.mp3"
+    }
+  ],
+  "lulus": 4,
+  "total": 5
+}

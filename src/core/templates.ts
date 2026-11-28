@@ -43,6 +43,7 @@ export type SearchHit = {
 /** Kunci scene yang benar-benar dikenal `buildSceneList()`. */
 export const SCENE_KEYS = [
   'hook',
+  'overtake',
   'exterior',
   'features',
   'interior',

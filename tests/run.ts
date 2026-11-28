@@ -2017,8 +2017,11 @@ await check('template mengubah urutan scene yang direncanakan', async () => {
   const theme = pickTheme(brief.model, loadThemes().themes, 'generic');
   const bawaan = planScenes({ brief, durationSec: 30, theme, aspect: '9:16' });
   const track = planScenes({ brief, durationSec: 30, theme, aspect: '9:16', sceneKeys: ['hook', 'detail_wheel', 'action', 'detail_engine', 'cta'] });
-  assert(bawaan.some((s) => s.key === 'interior'), 'alur bawaan seharusnya punya interior');
-  assert(!track.some((s) => s.key === 'interior'), 'Track Day tidak boleh punya scene interior');
+  // Alur bawaan dimulai dari mobil yang mendekat lalu menyalip; template
+  // Track Day memakai urutan lain tanpa scene menyalip.
+  assert(bawaan.some((s) => s.key === 'overtake'), 'alur bawaan seharusnya punya scene menyalip');
+  assert(bawaan[0].key === 'hook', 'scene pembuka harus hook (mobil mendekat)');
+  assert(!track.some((s) => s.key === 'overtake'), 'Track Day tidak memakai scene menyalip');
   assert(track.some((s) => s.key === 'detail_wheel'), 'Track Day harus punya detail velg');
   assert(track.reduce((n, s) => n + s.duration, 0) === 30, 'total durasi harus tepat 30 detik');
 });

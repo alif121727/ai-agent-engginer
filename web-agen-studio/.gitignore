@@ -1,0 +1,7 @@
+out/video/*.mp4
+out/video/*.parts/
+out/audio/*
+!out/audio/.gitkeep
+out/models/
+__pycache__/
+*.pyc

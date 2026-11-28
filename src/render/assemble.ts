@@ -9,6 +9,7 @@ import type { AgentContext } from '../agents/guard.ts';
 import type { AssetRecord, Brief, ScenePlan, Theme } from '../core/types.ts';
 import { ffprobe, contactSheet, ffmpegHasFilter } from './ffmpeg.ts';
 import { buildMusicBed, buildEngineTrack, muxAudio } from './audio.ts';
+import { inginNarasi, ringkasUntukLayar } from '../pipeline/script.ts';
 import { buildNarration } from './narration.ts';
 import { ttsProviderName } from '../tts/provider.ts';
 import { describeProfile } from './engine.ts';
@@ -195,10 +196,24 @@ export async function assembleVideo(ctx: AgentContext): Promise<RenderResult> {
     throw new Error('render ditolak: ada aset FALLBACK buatan kode');
   }
 
+  /**
+   * Tanpa narasi suara, penjelasan tentang mobil tetap harus terbaca: kalimat
+   * deskripsi dipindahkan ke caption di layar. Nama model tidak diulang.
+   */
+  const scenesTampil = inginNarasi(brief)
+    ? scenes
+    : scenes.map((s) => {
+        const teks = (s.voiceover ?? '').trim();
+        const namaModel = (brief.model ?? '').trim().toLowerCase();
+        const sudahModel = s.onScreenText.trim().toLowerCase() === namaModel;
+        if (!teks || teks.toLowerCase() === namaModel) return s;
+        return { ...s, onScreenText: sudahModel ? s.onScreenText : ringkasUntukLayar(teks) };
+      });
+
   const clipPaths: string[] = [];
   /** Ringkasan overlay per scene, dipakai log job agar gaya bisa diperiksa. */
   const overlayNotes: string[] = [];
-  for (const scene of scenes) {
+  for (const scene of scenesTampil) {
     ctx.assertOnline();
     const asset = byScene.get(scene.index)!;
     const clip = path.join(clipsDir, `scene-${String(scene.index + 1).padStart(2, '0')}.mp4`);
@@ -327,9 +342,13 @@ export async function assembleVideo(ctx: AgentContext): Promise<RenderResult> {
    * final setelah klip digabung. Tanpa kunci TTS, `buildNarration` melewati
    * dirinya sendiri dan video tetap punya mesin + musik.
    */
+  // Penjelasan tentang mobil diminta sebagai teks, bukan suara. `voiceover`
+  // tetap disimpan di storyboard sebagai deskripsi job, tetapi tidak
+  // disintesis menjadi trek audio.
+  const scenesBersuara = inginNarasi(brief) ? scenes : scenes.map((s) => ({ ...s, voiceover: '' }));
   const narration = await buildNarration({
     jobId: ctx.jobId,
-    scenes,
+    scenes: scenesBersuara,
     model: brief.model ?? '',
     tone: brief.suaraTone,
     durationSec: expectedDuration,

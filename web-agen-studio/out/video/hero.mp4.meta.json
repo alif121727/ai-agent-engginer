@@ -1,0 +1,12 @@
+{
+  "model": "toyota-gr-supra",
+  "modelName": "Toyota GR Supra",
+  "dur": 30.0,
+  "fps": 30,
+  "aspect": "16:9",
+  "width": 1920,
+  "height": 1080,
+  "frames": 900,
+  "out": "out/video/hero.mp4",
+  "bytes": 38634982
+}

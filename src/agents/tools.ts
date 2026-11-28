@@ -30,7 +30,7 @@ import {
 import type { RenderResult } from '../render/assemble.ts';
 import { markSceneDone, readSceneCheckpoint, markStageComplete } from '../pipeline/checkpoint.ts';
 import { engineSfxPrompts, AUDIO_NEGATIVE } from '../core/prompts.ts';
-import { buildScript } from '../pipeline/script.ts';
+import { buildScript, inginNarasi } from '../pipeline/script.ts';
 import { engineProfileFor, describeProfile } from '../render/engine.ts';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -724,7 +724,11 @@ tool('approve_job', 'Verifikasi hasil akhir lalu setujui atau tolak', async (_ar
    * peringatan. Di sini naskah (yang memang punya voiceover) dibandingkan
    * dengan keberadaan trek narasi di hasil render.
    */
-  const wantsNarration = scenes.some((s) => (s.voiceover ?? '').trim().length > 0);
+  // Deskripsi teks tidak dihitung sebagai narasi: kalau suara dimatikan,
+  // tidak adanya trek narasi adalah hasil yang benar, bukan kegagalan.
+  const wantsNarration =
+    inginNarasi(ctx.brief as unknown as Brief) &&
+    scenes.some((s) => (s.voiceover ?? '').trim().length > 0);
   const narrationFile = path.join(jobDir(ctx.jobId), 'audio', 'narration', 'narration.wav');
   const hasNarrationTrack = fs.existsSync(narrationFile);
   checks.push({

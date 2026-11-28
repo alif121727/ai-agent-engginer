@@ -53,6 +53,11 @@ export interface Brief {
   modelId?: string;
   /** Nada suara narasi; kosong = dipilih otomatis dari jenis mobil. */
   suaraTone?: string;
+  /**
+   * Suara narasi di dalam video. Bawaan mati: penjelasan tentang mobil
+   * disampaikan sebagai teks di layar, bukan dibacakan.
+   */
+  narasiSuara?: boolean;
   /** Tema buatan AI; mengalahkan tema kata kunci bawaan. */
   temaAi?: Partial<Theme>;
 }

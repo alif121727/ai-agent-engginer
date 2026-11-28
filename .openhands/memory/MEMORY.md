@@ -332,3 +332,35 @@ Detail panjang ada di `archive/MEMORY-full-2026-11-20.md` dan log harian.
   Pilih varian ~1920 px; varian 4K memperlambat decode 2-3x.
 - Bukti scene memakai klip nyata: `assets.json` -> `kind: "video"`,
   `provider: "pixabay"`, plus `credit`. Jangan percaya ekstensi berkas saja.
+
+## Render lokal di sandbox (cara cepat membuktikan hasil)
+- `piper` hilang setelah reset: `pip install piper-tts` (biner di `~/.local/bin`).
+  ffmpeg di `/workspace/tools/bin` (dirapikan `src/core/env.ts`).
+- Skrip kerja: `STOCK_API_KEY=... STUDIO_DATA_DIR=/tmp/studio DB_PATH=/tmp/studio/studio.db
+  PORT=8099 WORKER_IN_PROCESS=1 node --experimental-strip-types src/api/main.ts`.
+  Akun dibuat lewat `POST /api/setup`, lalu masuk `POST /api/login`.
+- Di 4 vCPU, job 30 dtk selesai **~2,5 menit** (Fly 2 vCPU butuh >5 menit dan
+  kena batas trial). Ini cara tercepat menguji perubahan pipeline.
+- Sajikan hasil: `python3 -m http.server 12000 --directory <dir>` ->
+  `https://work-1-dqfkjmazfavmzfjk.prod-runtime.all-hands.dev/<berkas>`.
+
+## Pemilihan klip stok (adapters.ts) — pelajaran QA
+- **Kunci Pexels user sekarang 401 "Invalid API key"**; kunci Pixabay lama ada
+  sebagai secret Fly tapi tidak terbaca lagi (flyctl + token hilang saat reset).
+  Tanpa kunci, satu-satunya sumber klip nyata = Wikimedia Commons.
+- Wikimedia tanpa filter memberi sampah (CCTV, bodycam polisi, BLM). Yang
+  bekerja: kueri `rally car driving`, `rally car`, `cars driving at night`,
+  `cars in traffic`, `street traffic`, `motorway traffic`, `highway aerial`,
+  `city traffic night`; tolak judul polisi/patroli/kecelakaan/berita; skor
+  judul dengan bonus besar untuk `rally|rali|racing|race|circuit`; wajib
+  varian transkode >=1280x720 (QA menolak <720p).
+- **Tiap scene dijalankan di proses terpisah** — penanda "sudah dipakai" di
+  memori TIDAK berlaku; akibatnya 6 scene memakai klip yang sama persis dan QA
+  melaporkan "duplicate" dengan hash identik. Solusi: berkas klaim
+  (`fs.writeFileSync(..., {flag:'wx'})`) di `<outDir>/.klaim/`.
+- Klip "jalan lengang" bisa lolos resolusi tapi nyaris beku -> QA menolak
+  (`gerakan-scene-N` skor 0). Saring dengan `measureMotion(out).score < 0.2`
+  SEBELUM dipakai, lalu coba kandidat berikutnya.
+- `frameSharpness` tanpa normalisasi kontras menilai klip malam "buram"
+  (skor 1). Tambah `normalize=smoothing=0` -> klip malam 8, scene terang
+  26-68 (ambang 8 tetap).

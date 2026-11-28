@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { measureMotion } from '../pipeline/motion-score.ts';
 import { spawnSync } from 'node:child_process';
 import { ffprobe } from '../render/ffmpeg.ts';
 import path from 'node:path';
@@ -590,11 +591,16 @@ interface PexelsVideo {
   video_files?: PexelsVideoFile[];
 }
 
-/** Berkas terbaik yang tidak membuat unduhan membengkak (1080p, mp4). */
+/**
+ * Berkas terbaik yang tidak membuat unduhan membengkak (1080p, mp4).
+ * Batas bawah 1280x720 wajib: QA menolak scene di bawah 720p, dan Pexels
+ * sering menyertakan berkas 480p untuk klip yang sama.
+ */
 function fileTerbaik(v: PexelsVideo): PexelsVideoFile | undefined {
   const mp4 = (v.video_files ?? []).filter((f) => (f.file_type ?? '').includes('mp4'));
-  const pas = mp4.filter((f) => f.width >= 1280 && f.width <= 1920 && f.height >= 720);
-  return pas.sort((a, b) => b.width - a.width)[0] ?? mp4.sort((a, b) => b.width - a.width)[0];
+  const layak = mp4.filter((f) => f.width >= 1280 && f.height >= 720);
+  const pas = layak.filter((f) => f.width <= 1920);
+  return pas.sort((a, b) => b.width - a.width)[0] ?? layak.sort((a, b) => b.width - a.width)[0];
 }
 
 export function stockAdapter(def: VisualAdapterDef): VisualAdapter {
@@ -626,17 +632,15 @@ export function stockAdapter(def: VisualAdapterDef): VisualAdapter {
           continue;
         }
         const json = (await res.json()) as { videos?: PexelsVideo[] };
-        const kandidat = (json.videos ?? []).filter((v) => v.duration >= butuhDetik && !sudah.has(v.id));
+        const kandidat = (json.videos ?? []).filter(
+          (v) => v.duration >= butuhDetik && !sudah.has(v.id) && Boolean(fileTerbaik(v)),
+        );
         if (!kandidat.length) {
           gagal = `"${query}" tidak punya klip >= ${butuhDetik} dtk`;
           continue;
         }
         const pilih = kandidat[req.scene.index % kandidat.length];
-        const file = fileTerbaik(pilih);
-        if (!file) {
-          gagal = `klip ${pilih.id} tanpa berkas mp4`;
-          continue;
-        }
+        const file = fileTerbaik(pilih)!;
         const clip = await fetch(file.link);
         if (!clip.ok) {
           gagal = `unduh klip HTTP ${clip.status}`;
@@ -670,21 +674,34 @@ export function stockAdapter(def: VisualAdapterDef): VisualAdapter {
 /** Wikimedia memblokir (429) permintaan tanpa UA yang memuat kontak. */
 const WIKI_UA = 'ai-agent-engginer/1.0 (https://github.com/alif121727/ai-agent-engginer)';
 
+// Urutan ini sengaja dibuat beragam: QA menolak scene yang tampak sama dengan
+// scene sebelumnya, dan tiga klip "road traffic" bisa berasal dari jalan yang
+// sama. Tiap scene mulai mencari dari kata kunci yang berbeda.
 const WIKI_QUERY = [
-  'car driving highway',
-  'sports car driving',
-  'car driving road 4k',
-  'cars driving street',
+  'rally car driving',
+  'rally car',
+  'cars driving at night',
+  'cars in traffic',
+  'street traffic',
+  'motorway traffic',
+  'highway aerial',
+  'city traffic night',
 ];
 
 /** Judul yang jelas bukan mobil melaju (komedi, kejar-kejaran, dsb.). */
 const WIKI_TOLAK =
-  /bumper|autoscooter|police|crash|accident|chase|flee|arrest|toy|lego|animation|logo|test drive|repair|parking/i;
+  /bumper|autoscooter|police|deputy|sheriff|trooper|patrol|bodycam|felon|apprehend|maneuver|dashcam stop|crash|accident|collision|chase|flee|arrest|thief|dui|k-9|protest|demonstrat|toy|lego|animation|logo|test drive|repair|parking|court|news|report|prank|comedy|fail|earth from orbit|wikipedia|trump|outage|closure|pothole|signal|display|uglycar|campaign/i;
+
+/** Judul harus benar-benar tentang mobil yang melaju, bukan sekadar "car". */
+const WIKI_MIN_SKOR = 2;
 
 /** Judul yang menyebut berkendara di jalan lebih dulu daripada yang sekadar "car". */
 function skorJudul(judul: string): number {
   const t = judul.toLowerCase();
   let skor = 0;
+  // Klip reli/balap menampilkan mobil yang benar-benar melaju kencang, jadi
+  // diberi prioritas tertinggi untuk video otomotif.
+  if (/rally|rali|racing|race|circuit|hill ?climb/.test(t)) skor += 4;
   if (/driving|drive|drives/.test(t)) skor += 3;
   if (/highway|motorway|freeway|road|street/.test(t)) skor += 2;
   if (/car|auto|vehicle/.test(t)) skor += 1;
@@ -715,87 +732,138 @@ function bersihkanHtml(teks: string): string {
 }
 
 function transkodeTerbaik(v: NonNullable<WikiPage['videoinfo']>[number]): WikiDerivative | undefined {
-  const der = v.derivatives ?? [];
+  const der = (v.derivatives ?? []).filter((d) => (d.width ?? 0) >= 1280 && (d.height ?? 0) >= 720);
   const ambil = (kunci: string) => der.find((d) => (d.transcodekey ?? '').startsWith(kunci));
-  // Klip panjang di 1080p bisa puluhan MB padahal yang dipakai hanya beberapa
-  // detik; 480p sudah cukup setelah di-crop dan di-grade ke 1080p.
-  const panjang = (v.duration ?? 0) > 45;
+  // QA menolak scene di bawah 720p, jadi varian 480p/360p tidak ditawarkan.
+  // Klip panjang dipangkas ke 720p supaya unduhan tidak puluhan MB.
+  const panjang = (v.duration ?? 0) > 20;
   return panjang
-    ? ambil('480p.vp9') ?? ambil('720p.vp9') ?? ambil('360p.mpeg4')
-    : ambil('1080p.vp9') ?? ambil('720p.vp9') ?? ambil('480p.vp9') ?? ambil('360p.mpeg4');
+    ? ambil('720p') ?? ambil('1080p')
+    : ambil('1080p') ?? ambil('720p');
+}
+
+/** Nama seri = judul tanpa angka, supaya 6 klip dari satu syuting dikenali. */
+function seriKlip(judul: string): string {
+  return judul.replace(/\d+/g, '').replace(/[^a-z ]/gi, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
 }
 
 export function wikimediaAdapter(def: VisualAdapterDef): VisualAdapter {
-  const dipakai = new Map<string, Set<string>>();
   return {
     id: def.id,
     def,
     available: () => Boolean(def.enabled),
     async generate(req: GenerateRequest): Promise<GenerateResult> {
       const butuhDetik = Math.max(3, Math.ceil(req.scene.duration));
-      const sudah = dipakai.get(req.outDir) ?? new Set<string>();
-      dipakai.set(req.outDir, sudah);
+      const kandidat = await kolamWikimedia(butuhDetik);
+      if (!kandidat.length) throw new Error('Wikimedia tidak punya klip jalanan yang cocok');
+      // Scene dijalankan di proses terpisah, jadi penanda "sudah dipakai" di
+      // memori tidak berlaku. Klaim dilakukan lewat berkas di folder aset:
+      // hanya satu scene yang boleh memakai satu klip.
+      const klaimDir = path.join(req.outDir, '.klaim');
+      fs.mkdirSync(klaimDir, { recursive: true });
+      const klaimPath = (judul: string) =>
+        path.join(klaimDir, judul.replace(/[^a-z0-9]+/gi, '_').slice(0, 120));
+      const klaim = (judul: string): boolean => {
+        try {
+          fs.writeFileSync(klaimPath(judul), String(process.pid), { flag: 'wx' });
+          return true;
+        } catch {
+          return false;
+        }
+      };
+      const lepas = (judul: string) => fs.rmSync(klaimPath(judul), { force: true });
       let gagal = '';
-      for (const q of WIKI_QUERY) {
-        const url =
-          'https://commons.wikimedia.org/w/api.php?action=query&format=json&generator=search' +
-          `&gsrsearch=${encodeURIComponent(`filetype:video ${q}`)}` +
-          '&gsrnamespace=6&gsrlimit=20&prop=videoinfo&viprop=url|size|mime|derivatives|extmetadata';
-        const res = await fetch(url, { headers: { 'user-agent': WIKI_UA } });
-        if (!res.ok) {
-          gagal = `HTTP ${res.status}`;
+      for (let n = 0; n < kandidat.length; n++) {
+        const pilih = kandidat[(req.scene.index * 1 + n) % kandidat.length];
+        if (!klaim(pilih.judul)) continue;
+        const v = pilih.v!;
+        const kode = transkodeTerbaik(v)!;
+        const klip = await fetch(kode.src!, { headers: { 'user-agent': WIKI_UA } });
+        if (!klip.ok) {
+          lepas(pilih.judul);
+          gagal = `unduh klip HTTP ${klip.status}`;
           continue;
         }
-        const json = (await res.json()) as { query?: { pages?: Record<string, WikiPage> } };
-        const kandidat = Object.values(json.query?.pages ?? {})
-          .map((p) => ({ judul: p.title ?? '', v: p.videoinfo?.[0] }))
-          .filter((c) => {
-            const v = c.v;
-            if (!v || !/^video\//.test(v.mime ?? '')) return false;
-            if (WIKI_TOLAK.test(c.judul)) return false;
-            const dur = v.duration ?? 0;
-            // Batas atas mencegah unduhan raksasa; klip 1 jam tidak berguna.
-            if (dur < butuhDetik || dur > 240) return false;
-            const kode = transkodeTerbaik(v);
-            return Boolean(kode?.src) && !sudah.has(kode!.src!);
-          });
-        if (!kandidat.length) {
-          gagal = `"${q}" tidak punya klip ${butuhDetik}-240 dtk`;
+        const ext = (kode.src!.match(/\.(webm|ogv|mp4|mov)$/i)?.[1] ?? 'webm').toLowerCase();
+        const out = fileFor(req.outDir, req.scene.index, ext);
+        fs.writeFileSync(out, Buffer.from(await klip.arrayBuffer()));
+        // Klip "jalan lengang" bisa lolos resolusi tapi praktis beku; QA
+        // menolaknya, jadi saring sekarang dan coba kandidat berikutnya.
+        const gerak = measureMotion(out, 0).score;
+        if (gerak < 0.2) {
+          fs.rmSync(out, { force: true });
+          lepas(pilih.judul);
+          gagal = `klip ${pilih.judul.replace(/^File:/, '').slice(0, 30)} nyaris beku (gerak ${gerak})`;
           continue;
         }
-        kandidat.sort((a, b) => skorJudul(b.judul) - skorJudul(a.judul));
-        // Server unggah Wikimedia membalas 429 bila diminta terlalu cepat atau
-        // tanpa User-Agent, jadi beberapa kandidat dicoba bergantian.
-        for (let n = 0; n < Math.min(3, kandidat.length); n++) {
-          const pilih = kandidat[(req.scene.index + n) % kandidat.length];
-          const v = pilih.v!;
-          const kode = transkodeTerbaik(v)!;
-          const klip = await fetch(kode.src!, {
-            headers: { 'user-agent': WIKI_UA },
-          });
-          if (!klip.ok) {
-            gagal = `unduh klip HTTP ${klip.status}`;
-            continue;
-          }
-          const ext = (kode.src!.match(/\.(webm|ogv|mp4|mov)$/i)?.[1] ?? 'webm').toLowerCase();
-          const out = fileFor(req.outDir, req.scene.index, ext);
-          fs.writeFileSync(out, Buffer.from(await klip.arrayBuffer()));
-          sudah.add(kode.src!);
-          const penulis = bersihkanHtml(v.extmetadata?.Artist?.value ?? 'tanpa nama');
-          const lisensi = bersihkanHtml(v.extmetadata?.LicenseShortName?.value ?? 'CC');
-          return {
-            path: out,
-            kind: 'video',
-            provider: 'wikimedia',
-            source: 'stock-api',
-            credit: `${penulis} — ${lisensi} (Wikimedia Commons: ${pilih.judul.replace(/^File:/, '')})`,
-            cost: 0,
-          };
-        }
+        const penulis = bersihkanHtml(v.extmetadata?.Artist?.value ?? 'tanpa nama');
+        const lisensi = bersihkanHtml(v.extmetadata?.LicenseShortName?.value ?? 'CC');
+        return {
+          path: out,
+          kind: 'video',
+          provider: 'wikimedia',
+          source: 'stock-api',
+          credit: `${penulis} — ${lisensi} (Wikimedia Commons: ${pilih.judul.replace(/^File:/, '')})`,
+          cost: 0,
+        };
       }
-      throw new Error(`Wikimedia tidak menemukan klip (${gagal || 'hasil kosong'})`);
+      throw new Error(`Wikimedia gagal mengunduh klip (${gagal || 'hasil kosong'})`);
     },
   };
+}
+
+interface KandidatWiki {
+  judul: string;
+  v?: NonNullable<WikiPage['videoinfo']>[number];
+}
+
+async function kolamWikimedia(butuhDetik: number): Promise<KandidatWiki[]> {
+  const hasil: KandidatWiki[] = [];
+  const terlihat = new Set<string>();
+  for (const q of WIKI_QUERY) {
+    const url =
+      'https://commons.wikimedia.org/w/api.php?action=query&format=json&generator=search' +
+      `&gsrsearch=${encodeURIComponent(`filetype:video ${q}`)}` +
+      '&gsrnamespace=6&gsrlimit=20&prop=videoinfo&viprop=url|size|mime|derivatives|extmetadata';
+    const res = await fetch(url, { headers: { 'user-agent': WIKI_UA } });
+    if (!res.ok) continue;
+    const json = (await res.json()) as { query?: { pages?: Record<string, WikiPage> } };
+    const halaman = Object.values(json.query?.pages ?? {});
+    for (const p of halaman) {
+      const judul = p.title ?? '';
+      const v = p.videoinfo?.[0];
+      if (!v || !/^video\//.test(v.mime ?? '')) continue;
+      if (terlihat.has(judul) || WIKI_TOLAK.test(judul)) continue;
+      if (skorJudul(judul) < WIKI_MIN_SKOR) continue;
+      const dur = v.duration ?? 0;
+      if (dur < butuhDetik || dur > 240) continue;
+      if (!transkodeTerbaik(v)?.src) continue;
+      terlihat.add(judul);
+      hasil.push({ judul, v });
+    }
+  }
+  const urut = hasil.sort((a, b) => skorJudul(b.judul) - skorJudul(a.judul));
+  // Sebar per seri (round-robin) supaya scene berurutan tidak memakai jalan
+  // yang sama; QA menolak scene yang tampak mirip dengan scene sebelumnya.
+  const perSeri = new Map<string, KandidatWiki[]>();
+  for (const c of urut) {
+    const k = seriKlip(c.judul);
+    const arr = perSeri.get(k) ?? [];
+    arr.push(c);
+    perSeri.set(k, arr);
+  }
+  const sebar: KandidatWiki[] = [];
+  for (let lanjut = true; lanjut; ) {
+    lanjut = false;
+    for (const arr of perSeri.values()) {
+      const c = arr.shift();
+      if (c) {
+        sebar.push(c);
+        lanjut = true;
+      }
+    }
+  }
+  return sebar;
 }
 
 /**

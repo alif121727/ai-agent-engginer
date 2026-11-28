@@ -94,7 +94,10 @@ export function frameSharpness(file: string, atSec = 1): number {
   const tmp = path.join('/tmp', `sharp-${process.pid}-${Date.now()}.raw`);
   const res = spawnSync('ffmpeg', [
     '-v', 'error', '-y', ...seekArgs(file, atSec),
-    '-frames:v', '1', '-vf', `scale=${SHARP_W}:${SHARP_H},format=gray`, '-f', 'rawvideo', tmp,
+    // normalize wajib: tanpa itu klip malam (kontras rendah) diukur "buram"
+    // padahal tajam, karena metriknya hanya selisih piksel bersebelahan.
+    '-frames:v', '1', '-vf', `scale=${SHARP_W}:${SHARP_H},format=gray,normalize=smoothing=0`,
+    '-f', 'rawvideo', tmp,
   ]);
   if (res.status !== 0 || !fs.existsSync(tmp)) return 0;
   const buf = fs.readFileSync(tmp);

@@ -23,8 +23,8 @@ python3 pipeline/video/render.py --model toyota-gr-supra --dur 8 \
 
 ```
 data/mobil.json              daftar model + warna + ukuran
-pipeline/video/scenes.py     scene graph L0-L7 (langit, skyline, bangunan, jalan, traffic, hero, FX, fade)
-pipeline/video/traffic.py    jadwal menyalip (4 kali) + hero sendirian setelah detik 23
+pipeline/video/scenes.py     scene 3D: kamera kejar, jalan mengecil ke horizon, kotak 3D
+pipeline/video/traffic.py    jadwal menyalip dalam meter (4 kali) + hero sendirian setelah detik 23
 pipeline/video/cars.py       sprite PNG atau mobil prosedural
 pipeline/video/postfx.py     vignette, grain, bayangan mobil, fade-to-black
 pipeline/video/render.py     render chunked -> ffmpeg stdin, resume per segmen, mux audio
@@ -36,7 +36,8 @@ tests/check_video.py         gate video: durasi, codec, gerak, fade, jumlah over
 
 ## Bukti terakhir
 
-- `out/video/hero.mp4`: 30,0 dtk, 1920x1080, h264, audio AAC, 900 frame.
+- `out/video/hero.mp4`: 30,0 dtk, 1920x1080, h264, audio AAC, 900 frame,
+  kamera 3D di belakang mobil (jalan, bangunan, dan mobil lain punya kedalaman).
 - `logs/video-check/report.json`: lulus semua (fade akhir gelap, gerak antar frame,
   4 menyalip, hero sendirian setelah 23 dtk).
 - `logs/voice-test.json`: 4 dari 5 frasa lulus WER <= 10 persen; frasa yang gagal

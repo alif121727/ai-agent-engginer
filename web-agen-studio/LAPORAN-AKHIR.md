@@ -12,7 +12,7 @@ Tanggal: 2026-11-28. Dokumen ini jujur: yang belum selesai tidak ditandai selesa
 | P3 | Planner/Builder/QA demo | BELUM |
 | P4 | Deploy/Ops | BELUM |
 | P5 | Pipeline suara | SEBAGIAN — rantai engine, normalisasi, SSML, cache, WER nyata; frasa "malam" belum lulus |
-| P6 | Pipeline video | LULUS — 5 dtk preview + 30 dtk final, frame-by-frame, gaya lebih realistis (gradasi bodi, bloom lampu, pantulan aspal, kabut horizon) |
+| P6 | Pipeline video | LULUS — 30 dtk final dengan kamera 3D (jalan mengecil ke horizon, bangunan & mobil berkedalaman) |
 | P7 | Integrasi end-to-end | BELUM (UI belum ada) |
 | P8 | Uji akhir menyeluruh | BELUM |
 

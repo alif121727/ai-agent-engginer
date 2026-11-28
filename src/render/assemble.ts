@@ -218,15 +218,27 @@ export async function assembleVideo(ctx: AgentContext): Promise<RenderResult> {
 
     const frames = Math.max(2, Math.round(clipDuration * fps));
     const move = cameraMoveFor(scene);
+    // Klip nyata sudah bergerak sendiri. Menambahkan zoom/pan di atasnya membuat
+    // rekaman asli terasa seperti foto yang digeser-geser, jadi gerak kamera
+    // sintetis hanya dipakai untuk aset diam (foto).
+    const asetKlip = asset.kind === 'video';
+    const dasar = asetKlip
+      ? [
+          `scale=${width}:${height}:force_original_aspect_ratio=increase:flags=lanczos`,
+          `crop=${width}:${height}`,
+        ]
+      : [
+          // Overscan first: zoompan needs room to move, otherwise the crop window
+          // hits the edge and the frame jitters.
+          `scale=${Math.round(width * 1.15)}:${Math.round(height * 1.15)}:force_original_aspect_ratio=increase:flags=lanczos`,
+          `crop=${Math.round(width * 1.15)}:${Math.round(height * 1.15)}`,
+          // Cukup 1x: upscale tambahan (dulu 2x = 3840x2160) memperlambat zoompan
+          // 2-3x tanpa tambahan ketajaman yang terlihat di keluaran 1080p.
+          `scale=${width}:${height}:flags=lanczos`,
+          cameraFilterFor(move, frames, width, height, fps, scene.motionStrength ?? 1),
+        ];
     const filters = [
-      // Overscan first: zoompan needs room to move, otherwise the crop window
-      // hits the edge and the frame jitters.
-      `scale=${Math.round(width * 1.15)}:${Math.round(height * 1.15)}:force_original_aspect_ratio=increase:flags=lanczos`,
-      `crop=${Math.round(width * 1.15)}:${Math.round(height * 1.15)}`,
-      // Cukup 1x: upscale tambahan (dulu 2x = 3840x2160) memperlambat zoompan
-      // 2-3x tanpa tambahan ketajaman yang terlihat di keluaran 1080p.
-      `scale=${width}:${height}:flags=lanczos`,
-      cameraFilterFor(move, frames, width, height, fps, scene.motionStrength ?? 1),
+      ...dasar,
       ...gradeFilters(theme),
     ];
     if (scene.onScreenText) {

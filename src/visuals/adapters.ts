@@ -790,7 +790,7 @@ export function wikimediaAdapter(def: VisualAdapterDef): VisualAdapter {
         // Klip "jalan lengang" bisa lolos resolusi tapi praktis beku; QA
         // menolaknya, jadi saring sekarang dan coba kandidat berikutnya.
         const gerak = measureMotion(out, 0).score;
-        if (gerak < 0.2) {
+        if (gerak < 0.4) {
           fs.rmSync(out, { force: true });
           lepas(pilih.judul);
           gagal = `klip ${pilih.judul.replace(/^File:/, '').slice(0, 30)} nyaris beku (gerak ${gerak})`;

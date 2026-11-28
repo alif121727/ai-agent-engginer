@@ -296,6 +296,8 @@ class SceneGraph:
                 col = np.array([206, 206, 196], dtype=np.float32)
             elif tag == "lampu_rem":
                 col = np.array([255, 96, 78], dtype=np.float32)
+            elif tag == "lampu_redup":
+                col = np.array([214, 46, 40], dtype=np.float32)
             else:
                 col = np.array([236, 44, 38], dtype=np.float32)
 
@@ -316,6 +318,51 @@ class SceneGraph:
             return
         draw.polygon(list(zip(sx.tolist(), sy.tolist())),
                      fill=tuple(int(min(255, max(0, c))) for c in color))
+
+    # ---------------- bayangan & pantulan aspal ----------------
+    def _shadow(self, overlay: Image.Image, cx: float, z: float, panjang: float = 2.3) -> None:
+        """Bayangan lembut di bawah mobil: dua elips, bukan satu kotak gelap."""
+        d = ImageDraw.Draw(overlay)
+        for scale, alpha in ((1.0, 120), (1.5, 46)):
+            pts = []
+            for k in range(16):
+                a = 2 * math.pi * k / 16
+                pts.append([cx + math.cos(a) * 0.95 * scale, 0.01, z + math.sin(a) * panjang * scale])
+            sx, sy, fwd = self.cam.project(np.array(pts, dtype=np.float32))
+            if np.any(fwd <= 0.5):
+                continue
+            d.polygon(list(zip(sx.tolist(), sy.tolist())), fill=(0, 0, 0, alpha))
+
+    def _reflection(self, overlay: Image.Image, cx: float, z: float, base: np.ndarray,
+                    hero: bool = False) -> None:
+        """Pantulan mobil di aspal basah: muka dicerminkan ke bawah lalu dipepetkan."""
+        if z > 95:
+            return
+        d = ImageDraw.Draw(overlay)
+        for corners, tag in mesh.car_quads(cx, z, hero=hero, brake=False):
+            if tag == mesh.TYRE:
+                continue
+            if tag in (mesh.GLASS, mesh.TRIM):
+                warna, alfa = np.array([18, 22, 34], dtype=np.float32), 26
+            elif tag in (mesh.LIGHT, "lampu_redup", "lampu_rem"):
+                warna, alfa = np.array([210, 44, 40], dtype=np.float32), 74
+            elif tag == mesh.PLATE:
+                warna, alfa = np.array([170, 170, 165], dtype=np.float32), 40
+            else:
+                warna, alfa = base * 0.75, 22
+            # Aspal basah bukan cermin: pantulan dipencet (0,42) dan digeser
+            # sedikit, lalu dipudarkan bertingkat supaya terlihat seperti smear.
+            for lipat, sisa in ((0.42, 1.0), (0.30, 0.55), (0.20, 0.28)):
+                pts = corners.copy()
+                pts[:, 1] = -pts[:, 1] * lipat
+                pts[:, 2] = pts[:, 2] - 0.35
+                sx, sy, fwd = self.cam.project(pts)
+                if np.any(fwd <= 0.6):
+                    continue
+                if sx.max() < -20 or sx.min() > self.W + 20:
+                    continue
+                col = tuple(int(min(255, max(0, c))) for c in warna) + (int(alfa * sisa),)
+                d.polygon(list(zip(sx.tolist(), sy.tolist())), fill=col)
 
     def _draw_windows(self, draw, b: dict) -> None:
         zc = b["z"] - b["d"] / 2 - 0.02
@@ -387,6 +434,16 @@ class SceneGraph:
                     self._draw_lamp(draw, lamp_x, zz)
 
         mobil = traffic_at(t, self.dur)
+
+        # Bayangan dulu (di bawah mobil), lalu mobil, lalu pantulan di aspal.
+        bawah = Image.new("RGBA", (self.W, self.H), (0, 0, 0, 0))
+        for car in mobil:
+            if car.z >= -9:
+                self._shadow(bawah, car.x, car.z)
+        self._shadow(bawah, hero_x, 0.0, panjang=2.5)
+        pil.alpha_composite(bawah)
+        draw = ImageDraw.Draw(pil)
+
         for car in mobil:
             if car.z < -9:
                 continue
@@ -396,6 +453,14 @@ class SceneGraph:
         rem = any(abs(car.x - hero_x) < 1.4 and 3.0 < car.z < 24.0 for car in mobil
                   if car.z > 0)
         self._draw_car(draw, hero_x, 0.0, self.hero_color, hero=True, brake=rem)
+
+        # Aspal basah: pantulan tiap mobil, dopet makin ke bawah.
+        pantul = Image.new("RGBA", (self.W, self.H), (0, 0, 0, 0))
+        for car in mobil:
+            if car.z >= -9:
+                self._reflection(pantul, car.x, car.z, self.other_colors[car.variant % len(self.other_colors)])
+        self._reflection(pantul, hero_x, 0.0, self.hero_color, hero=True)
+        pil.alpha_composite(pantul)
 
         frame = self._motion_blur(pil)
         self._bloom(frame)

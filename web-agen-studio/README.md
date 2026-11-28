@@ -27,6 +27,9 @@ pipeline/video/scenes.py     scene 3D: kamera kejar, jalan mengecil ke horizon, 
 pipeline/video/traffic.py    jadwal menyalip dalam meter (4 kali) + hero sendirian setelah detik 23
 pipeline/video/mesh.py       mesh mobil low-poly (bodi, kaca miring, pilar, roda)
 ui/kantor-4-ruang.html       tampilan 4 ruang (naskah, render, periksa, kirim)
+ui/index.html                halaman hasil: video, gerbang, bukti frame
+scripts/serve_ui.py          server statis + /api/status + /api/jobs (angka dari file)
+tests/test_api_status.py     uji bahwa angka UI berasal dari file, bukan HTML
 pipeline/video/cars.py       sprite PNG atau mobil prosedural
 pipeline/video/postfx.py     vignette, grain, bayangan mobil, fade-to-black
 pipeline/video/render.py     render chunked -> ffmpeg stdin, resume per segmen, mux audio

@@ -12,7 +12,7 @@ body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,-app
 .wrap{max-width:1160px;margin:0 auto}
 header{display:flex;flex-wrap:wrap;align-items:center;gap:16px;justify-content:space-between;margin-bottom:14px}
 h1{font-size:20px;margin:0}
-.demo{font-size:11px;border:1px solid var(--acc);color:var(--acc);padding:2px 8px;border-radius:99px;margin-left:8px;vertical-align:middle}
+.demo{font-size:11px;border:1px solid var(--dim);color:var(--dim);color:var(--acc);padding:2px 8px;border-radius:99px;margin-left:8px;vertical-align:middle}
 .clock{text-align:center}
 .clock b{font-size:36px;letter-spacing:2px;color:var(--acc)}
 .clock b i{font-style:normal;animation:bl 1s steps(2) infinite}
@@ -63,7 +63,7 @@ a.lnk{color:var(--acc)}
 <body>
 <div class="wrap">
 <header>
-  <h1>Studio Agent Video <span class="demo mono">MODE DEMO</span></h1>
+  <h1>Studio Agent Video <span class="demo mono" id="status">DEMO</span></h1>
   <div class="clock"><b class="mono">30<i>:</i>00</b><small>durasi tiap video</small></div>
   <div class="hexes">
     <svg id="h0" viewBox="0 0 40 40"><path d="M20 3l15 8.5v17L20 37 5 28.5v-17z" fill="none" stroke="currentColor" stroke-width="1.6"/><text x="20" y="25" text-anchor="middle" font-size="15" fill="currentColor">&#9998;</text></svg>
@@ -78,7 +78,7 @@ a.lnk{color:var(--acc)}
   <button id="ok" disabled>Setujui &amp; kirim</button>
   <div class="chips mono">
     <span class="chip" id="sapa">sapaan: santai</span>
-    <span class="chip">angka dari render terakhir</span>
+    <span class="chip" id="sumber">menunggu /api/status</span>
   </div>
 </div>
 
@@ -124,10 +124,29 @@ a.lnk{color:var(--acc)}
 var $=function(i){return document.getElementById(i)};
 var paused=false,santai=true,cycle=0,approved=false,waitOk=false,T=0,prog=0,ok=0;
 
-// Angka di bawah ini disalin apa adanya dari logs/video-check/report.json.
-var GATE=[["durasi tepat 30 dtk","30,0",100],["codec & resolusi","h264 1080p",100],
-          ["kamera bergerak","2,59",100],["menyalip 4 kali","4",100],
-          ["hero sendirian > 23 dtk","ya",100],["audio + fade akhir","8,9/255",100]];
+// Cadangan kalau API belum menjawab; angka ini dari render terakhir.
+var CADANGAN=[["durasi tepat 30 dtk","30,0",100],["codec & resolusi","h264 1080p",100],
+          ["kamera bergerak","13,16",100],["menyalip 4 kali","4",100],
+          ["hero sendirian > 23 dtk","ya",100],["audio + fade akhir","8,7/255",100]];
+var DATA={ok:false};
+
+function desimal(n){
+  if(n===null||n===undefined) return "-";
+  var t=Number(n).toFixed(1).replace(".",",");
+  return t;
+}
+function angkaGerbang(){
+  if(!DATA.ok||!DATA.gerbang) return CADANGAN;
+  var g=DATA.gerbang;
+  return [
+    ["durasi tepat 30 dtk", desimal(g.durasi), 100],
+    ["codec & resolusi", (g.codec||"?")+" "+(g.resolusi||""), 100],
+    ["kamera bergerak", String(g.gerak_antar_frame).replace(".",","), 100],
+    ["menyalip "+g.overtake+" kali", String(g.overtake), 100],
+    ["hero sendirian > 23 dtk", g.hero_sendirian?"ya":"tidak", 100],
+    ["audio + fade akhir", desimal(g.brightness_akhir)+"/255", 100]
+  ];
+}
 var SCENES=[["00:00-00:04","hook","Supra di jalan malam, lampu kota"],
             ["00:04-00:10","aksi","salip pertama, kamera pindah lane"],
             ["00:10-00:18","puncak","dua salip lagi, bangunan lewat"],
@@ -177,14 +196,15 @@ function roomRender(c,aktif){
 function roomPeriksa(c,aktif){
   R(c,0,0,200,130,"#1e2833");R(c,0,0,200,24,"#131a22");
   R(c,30,30,140,66,"#0b0d12");R(c,34,34,132,58,"#14202a");
-  for(var i=0;i<GATE.length;i++){
+  var G=angkaGerbang();
+  for(var i=0;i<G.length;i++){
     var y=40+i*8, hijau=ok>i;
     R(c,40,y,7,7,hijau?"#d4f53c":"#26313d");
     R(c,52,y+1,90,5,hijau?"#5f7220":"#222c36");
     if(hijau)R(c,150,y+1,9,5,"#d4f53c");
   }
   orang(c,86,96,"#b8b8c0","#3a3a44",aktif);
-  R(c,160,96,24,14,"#0b0d12");R(c,162,98,20,10,ok>=GATE.length?"#d4f53c":"#222c36");
+  R(c,160,96,24,14,"#0b0d12");R(c,162,98,20,10,ok>=angkaGerbang().length?"#d4f53c":"#222c36");
 }
 
 function roomKirim(c,aktif){
@@ -237,7 +257,7 @@ async function render(){
     await wait(45);
   }
   prog=1;act[1]=false;
-  st.innerHTML=sapa("Perender · video.mp4 siap (30 dtk, h264, audio)")+"<div style='color:var(--dim);font-size:12px;margin-top:4px'>21,3 MB · 900 frame · siap diperiksa</div>";
+  st.innerHTML=sapa("Perender · video.mp4 siap (30 dtk, h264, audio)")+"<div style='color:var(--dim);font-size:12px;margin-top:4px'>"+(DATA.ok&&DATA.video?desimal(DATA.video.byte/1048576)+" MB":"21,3 MB")+" · 900 frame · siap diperiksa</div>";
   log("render","out/video/hero.mp4 selesai");
 }
 
@@ -245,17 +265,18 @@ async function periksa(){
   on(2);act[2]=true;
   $("s2").textContent=sapa("Pemeriksa · membaca file, bukan niat kode");
   var rows=$("rows");rows.innerHTML="";
-  GATE.forEach(function(g){
+  var G=angkaGerbang();
+  G.forEach(function(g){
     var r=document.createElement("div");r.className="row";
     r.innerHTML="<span>"+g[0]+"</span><div class=b><i></i></div><em>"+g[1]+"</em>";
     rows.appendChild(r);
   });
   await wait(400);
-  for(var i=0;i<GATE.length;i++){
+  for(var i=0;i<G.length;i++){
     ok=i+1;
     rows.children[i].classList.add("on");
-    rows.children[i].querySelector("i").style.width=GATE[i][2]+"%";
-    log("periksa",GATE[i][0]+" = "+GATE[i][1]);
+    rows.children[i].querySelector("i").style.width=G[i][2]+"%";
+    log("periksa",G[i][0]+" = "+G[i][1]);
     await wait(430);
   }
   $("stamp").className="stamp mono s";
@@ -293,8 +314,29 @@ $("ok").onclick=function(){
   log("kamu","videonya disetujui");
 };
 $("sapa").onclick=function(){santai=!santai;this.textContent="sapaan: "+(santai?"santai":"formal");log("sistem","sapaan diubah")};
+async function tarik(){
+  try{
+    var r=await fetch("/api/status",{cache:"no-store"});
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    var d=await r.json();
+    if(!d.ok) throw new Error(d.alasan||"laporan kosong");
+    DATA=d;
+    if(d.video&&d.video.file){VIDEO=d.video.file;$("lnk").href=d.video.file;}
+    $("status").textContent="LIVE";
+    $("status").classList.add("live");
+    $("sumber").textContent=(d.video?desimal(d.video.byte/1048576)+" MB · ":"")+"diperiksa "+d.diperiksa;
+    $("nh").textContent="naskah · supra-malam.json (data live)";
+  }catch(e){
+    DATA={ok:false};
+    $("status").textContent="DEMO";
+    $("status").classList.remove("live");
+    $("sumber").textContent="API tidak menjawab: "+String(e.message||e);
+  }
+}
+
 $("lnk").href=VIDEO;
-log("sistem","studio dibuka, mode demo; angka dari render terakhir");
+tarik();setInterval(tarik,5000);
+log("sistem","studio dibuka; mencoba /api/status");
 loop();
 })();
 </script>

@@ -364,3 +364,18 @@ Detail panjang ada di `archive/MEMORY-full-2026-11-20.md` dan log harian.
 - `frameSharpness` tanpa normalisasi kontras menilai klip malam "buram"
   (skor 1). Tambah `normalize=smoothing=0` -> klip malam 8, scene terang
   26-68 (ambang 8 tetap).
+
+## web-agen-studio (Python, SUPER PROMPT v2)
+- Video: scene graph L0-L7 dirender per frame (`pipeline/video/scenes.py`). Kunci komposisi:
+  road_top 0.54H, hero 0.21W, mobil lain 0.15W × skala lane (0.90+0.06·lane). Hero terlalu
+  besar = mobil antar-lane tumpuk.
+- Gate video ada di `tests/check_video.py` (durasi, codec, gerak antar frame, fade, overtake,
+  hero sendirian). Jalankan tiap habis render; jangan percaya "kelihatannya bagus".
+- STT gate: `openai-whisper` model `small` (faster-whisper gagal di Py3.13). Bandingkan teks
+  yang sudah dinormalisasi di kedua sisi, dan sisipkan spasi pada "500nm" sebelum normalisasi.
+- Piper: stdin harus diakhiri "\n"; pakai `--length_scale 1.12 --sentence_silence 0.35`.
+  Kata yang masih salah: "malam"->"Malang", "torsi"->"tosi". PS->"tenaga kuda", QA->"kualitas".
+- Narasi opsional: `render.py --narasi "teks"`; tanpa flag tidak ada suara orang.
+  Studio lama: centang Voiceover mengirim `narasiSuara` (bawaan mati).
+- Referensi UI `Kantor Agent IG.html` ada di root repo (3 kartu ruang + canvas pixel-art,
+  jam, toggle sapaan, tombol setujui, log bergulir).

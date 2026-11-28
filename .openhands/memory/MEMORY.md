@@ -384,3 +384,6 @@ Detail panjang ada di `archive/MEMORY-full-2026-11-20.md` dan log harian.
   Jebakan: slice numpy berindeks negatif mengecat seluruh baris (garis putih selebar layar).
 - Sanbox reset menghapus /tmp/publik DAN server 12000. Recreate dir + `python3 -m http.server 12000 --directory /tmp/publik &`.
 - Shading quad pakai abs(normal·L); winding tidak konsisten (atap mobil pernah gelap).
+- Pantulan aspal: lipat y 0,42 (bukan 1,0) + z-0,35, lewat overlay RGBA; PIL polygon
+  RGBA langsung tidak memblend.
+- `scripts/serve_ui.py` = server statis + /api/status + /api/jobs (baca report.json).

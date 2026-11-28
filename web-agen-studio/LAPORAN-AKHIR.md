@@ -12,7 +12,7 @@ Tanggal: 2026-11-28. Dokumen ini jujur: yang belum selesai tidak ditandai selesa
 | P3 | Planner/Builder/QA demo | BELUM |
 | P4 | Deploy/Ops | BELUM |
 | P5 | Pipeline suara | SEBAGIAN — rantai engine, normalisasi, SSML, cache, WER nyata; frasa "malam" belum lulus |
-| P6 | Pipeline video | LULUS — 5 dtk preview + 30 dtk final, frame-by-frame |
+| P6 | Pipeline video | LULUS — 5 dtk preview + 30 dtk final, frame-by-frame, gaya lebih realistis (gradasi bodi, bloom lampu, pantulan aspal, kabut horizon) |
 | P7 | Integrasi end-to-end | BELUM (UI belum ada) |
 | P8 | Uji akhir menyeluruh | BELUM |
 
@@ -63,6 +63,8 @@ Catatan teknis yang mahal dipelajari:
 | T18 tidak ada crossfade | LULUS (inspeksi `scenes.py`) |
 | T19 resume setelah kill | SEBAGIAN (segmen per 120 frame; belum diuji dengan kill) |
 | T11 5 frasa WER <= 10% | GAGAL (4/5) |
+| Narasi opsional | LULUS — `--narasi` menghasilkan suara; tanpa flag tidak ada. Audio final ditranskrip balik WER 0.0 |
+| Toggle narasi di studio UI | LULUS — `narasiSuara` dikirim dari centang Voiceover; tes `narasi suara hanya dibuat kalau diminta` lulus |
 | T12 fallback engine terbukti | SEBAGIAN (edge & gTTS tidak terpasang; jatuh ke piper, tercatat di log) |
 | T01-T10, T20 | BELUM (UI belum dibangun) |
 
@@ -84,7 +86,15 @@ python3 tests/check_video.py out/video/hero.mp4 30
 python3 pipeline/voice/tts.py "Tenaga 340 PS, dan torsi 500 Nm." --out out/audio/uji.mp3
 ```
 
-## 7 Risiko
+## 7 Catatan realism (permintaan terbaru)
+
+Video tetap animasi prosedural, bukan rekaman. Yang ditambahkan supaya terasa
+lebih nyata: gradasi bodi + garis panel + rim light, roda dengan pelek berjari,
+pantulan mobil di aspal basah, kolam cahaya lampu jalan, bloom lampu, kabut
+kota, gradasi bangunan, dan goyangan kamera halus. Batasnya: ini masih
+tampilan samping 2D; perspektif 3D (jalan mengecil ke horizon) belum dibuat.
+
+## 8 Risiko
 
 - Piper + whisper kecil masih bisa salah pada kata mirip ("malam"/"Malang").
 - Video adalah animasi prosedural, bukan rekaman nyata. Ini sesuai §5 (scene graph),

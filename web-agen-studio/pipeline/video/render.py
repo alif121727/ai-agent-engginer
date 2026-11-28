@@ -17,6 +17,7 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from pipeline.video.scenes import SceneGraph  # noqa: E402
+from pipeline.voice.tts import synth as synth_speech  # noqa: E402
 
 ASPECTS = {"16:9": (1920, 1080), "9:16": (1080, 1920), "1:1": (1080, 1080)}
 
@@ -100,11 +101,29 @@ def concat_segments(parts: list, out: str) -> None:
         sys.exit("ffmpeg gagal menggabungkan segmen")
 
 
+def mix_final(engine: str, narasi: str, mulai: float, out_wav: str) -> None:
+    """Mesin + (opsional) narasi. Narasi hanya ada kalau diminta."""
+    if narasi:
+        delay = int(mulai * 1000)
+        filt = (
+            f"[1:a]adelay={delay}|{delay},volume=1.0[vox];"
+            "[0:a][vox]amix=inputs=2:duration=first:normalize=0,"
+            "loudnorm=I=-16:TP=-1.5:LRA=11[a]"
+        )
+        cmd = [ffmpeg_bin(), "-v", "error", "-y", "-i", engine, "-i", narasi,
+               "-filter_complex", filt, "-map", "[a]", "-ar", "48000", "-ac", "2", out_wav]
+    else:
+        cmd = [ffmpeg_bin(), "-v", "error", "-y", "-i", engine,
+               "-af", "loudnorm=I=-16:TP=-1.5:LRA=11", "-ar", "48000", "-ac", "2", out_wav]
+    if subprocess.run(cmd).returncode != 0:
+        sys.exit("ffmpeg gagal menyiapkan audio akhir")
+
+
 def mux_audio(video: str, audio: str, out: str) -> None:
     res = subprocess.run(
         [ffmpeg_bin(), "-v", "error", "-y", "-i", video, "-i", audio,
-         "-c:v", "copy", "-af", "loudnorm=I=-16:TP=-1.5:LRA=11",
-         "-c:a", "aac", "-b:a", "128k", "-shortest", "-movflags", "+faststart", out]
+         "-c:v", "copy", "-c:a", "aac", "-b:a", "128k", "-shortest",
+         "-movflags", "+faststart", out]
     )
     if res.returncode != 0:
         sys.exit("ffmpeg gagal mux audio")
@@ -122,6 +141,9 @@ def main() -> None:
     ap.add_argument("--crf", type=int, default=20)
     ap.add_argument("--preset", default="medium")
     ap.add_argument("--no-audio", action="store_true")
+    # Narasi TIDAK pernah dibuat tanpa permintaan eksplisit.
+    ap.add_argument("--narasi", default=None, help="teks narasi (kosong = tanpa suara orang)")
+    ap.add_argument("--narasi-mulai", type=float, default=2.0)
     args = ap.parse_args()
 
     models = json.load(open(args.mobil))["models"]
@@ -157,9 +179,17 @@ def main() -> None:
     if args.no_audio:
         shutil.move(silent, args.out)
     else:
-        wav = os.path.join("out", "audio", os.path.basename(args.out) + ".wav")
-        build_audio(wav, args.dur, graph.travel / max(1.0, float(graph.travel.max() or 1.0)), args.fps)
-        mux_audio(silent, wav, args.out)
+        engine_wav = os.path.join("out", "audio", os.path.basename(args.out) + ".wav")
+        build_audio(engine_wav, args.dur, graph.travel / max(1.0, float(graph.travel.max() or 1.0)), args.fps)
+        narasi_info = None
+        narasi_file = ""
+        if args.narasi:
+            narasi_file = os.path.join("out", "audio", os.path.basename(args.out) + ".narasi.mp3")
+            narasi_info = synth_speech(args.narasi, narasi_file, tone="formal")
+            print(f"[narasi] {narasi_info['engine']} · WER {narasi_info.get('validasi', {}).get('wer')}")
+        final_wav = os.path.join("out", "audio", os.path.basename(args.out) + ".final.wav")
+        mix_final(engine_wav, narasi_file, args.narasi_mulai, final_wav)
+        mux_audio(silent, final_wav, args.out)
         os.remove(silent)
 
     shutil.rmtree(parts_dir, ignore_errors=True)
@@ -175,6 +205,9 @@ def main() -> None:
         "frames": total,
         "out": args.out,
         "bytes": size,
+        "narasi": args.narasi,
+        "narasiEngine": (narasi_info or {}).get("engine"),
+        "narasiWer": ((narasi_info or {}).get("validasi") or {}).get("wer"),
     }
     with open(args.out + ".meta.json", "w") as f:
         json.dump(meta, f, indent=2)

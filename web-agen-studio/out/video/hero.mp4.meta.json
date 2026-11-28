@@ -8,5 +8,8 @@
   "height": 1080,
   "frames": 900,
   "out": "out/video/hero.mp4",
-  "bytes": 38634982
+  "bytes": 32888613,
+  "narasi": null,
+  "narasiEngine": null,
+  "narasiWer": null
 }

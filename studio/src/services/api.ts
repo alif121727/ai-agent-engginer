@@ -622,6 +622,8 @@ export class HttpStudioApi implements StudioApi {
         ...(input.suaraTone ? { suaraTone: input.suaraTone } : {}),
         // Model yang dipilih di UI menentukan adapter vendor di worker.
         ...(input.modelId ? { modelId: input.modelId } : {}),
+        // Narasi hanya dibuat kalau pengguna mencentang voiceover.
+        narasiSuara: Boolean(input.audio?.voiceover),
       }),
     });
     // Job dari server memakai nama kolom snake_case; tanpa pemetaan ini UI

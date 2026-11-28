@@ -11,6 +11,7 @@ import { spawnSync } from 'node:child_process';
 import '../src/core/env.ts';
 import { openDb, closeDb } from '../src/db/index.ts';
 import { createJob, createStages, getJob, listStages, setStageStatus, nextPendingStage, dailyCost, addDailyCost } from '../src/db/repo.ts';
+import { inginNarasi } from '../src/pipeline/script.ts';
 import { parseBrief, resolveDuration, BriefError } from '../src/core/brief.ts';
 import { planScenes, buildSceneList, estimateCost } from '../src/pipeline/scenes.ts';
 import { loadThemes, loadDefaults, loadAgents, loadAdapters } from '../src/core/config.ts';
@@ -2024,6 +2025,15 @@ await check('template mengubah urutan scene yang direncanakan', async () => {
   assert(!track.some((s) => s.key === 'overtake'), 'Track Day tidak memakai scene menyalip');
   assert(track.some((s) => s.key === 'detail_wheel'), 'Track Day harus punya detail velg');
   assert(track.reduce((n, s) => n + s.duration, 0) === 30, 'total durasi harus tepat 30 detik');
+});
+
+await check('narasi suara hanya dibuat kalau diminta', async () => {
+  const mati = parseBrief(JSON.stringify({ model: 'Toyota GR Supra', durasi: 30 }));
+  const hidup = parseBrief(JSON.stringify({ model: 'Toyota GR Supra', durasi: 30, narasiSuara: true }));
+  assert(inginNarasi(mati) === false, 'narasi harus mati secara bawaan');
+  assert(inginNarasi(hidup) === true, 'narasi harus menyala saat diminta');
+  const diminta = parseBrief(JSON.stringify({ model: 'Toyota GR Supra', narasiSuara: false }));
+  assert(inginNarasi(diminta) === false, 'narasiSuara:false harus dihormati');
 });
 
 await check('brief membawa template dan tema AI ke worker', async () => {

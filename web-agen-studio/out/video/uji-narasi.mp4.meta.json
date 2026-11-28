@@ -1,0 +1,15 @@
+{
+  "model": "toyota-gr-supra",
+  "modelName": "Toyota GR Supra",
+  "dur": 8.0,
+  "fps": 30,
+  "aspect": "16:9",
+  "width": 1920,
+  "height": 1080,
+  "frames": 240,
+  "out": "out/video/uji-narasi.mp4",
+  "bytes": 7838720,
+  "narasi": "Toyota GR Supra melaju di jalan malam.",
+  "narasiEngine": "piper",
+  "narasiWer": 0.143
+}

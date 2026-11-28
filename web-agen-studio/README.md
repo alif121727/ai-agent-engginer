@@ -13,6 +13,10 @@ python3 pipeline/video/render.py --model toyota-gr-supra --dur 5  --out out/vide
 python3 pipeline/video/render.py --model toyota-gr-supra --dur 30 --out out/video/hero.mp4
 python3 tests/check_video.py out/video/hero.mp4 30      # gate T13/T14/T16/T17
 python3 pipeline/voice/tts.py "Tenaga 340 PS, dan torsi 500 Nm." --out out/audio/uji.mp3
+
+# Narasi hanya dibuat kalau diminta (tanpa flag = tanpa suara orang)
+python3 pipeline/video/render.py --model toyota-gr-supra --dur 8 \
+  --out out/video/uji-narasi.mp4 --narasi "Toyota GR Supra melaju di jalan malam."
 ```
 
 ## Struktur
@@ -37,6 +41,9 @@ tests/check_video.py         gate video: durasi, codec, gerak, fade, jumlah over
   4 menyalip, hero sendirian setelah 23 dtk).
 - `logs/voice-test.json`: 4 dari 5 frasa lulus WER <= 10 persen; frasa yang gagal
   tercatat apa adanya (piper melafalkan "malam" seperti "Malang").
+- Narasi opsional terbukti: `out/video/uji-narasi.mp4` (8 dtk). Audio finalnya
+  ditranskrip balik dan hasilnya "Toyota GR Supra Melaju di Jalan Malam", WER 0.0.
+  Tanpa `--narasi`, video tetap tanpa suara orang.
 
 ## Belum dikerjakan
 
